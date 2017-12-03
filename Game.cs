@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Collections;
 using System.Collections.Generic;
+using SimpleJSON;
 
 namespace Gj
 {
@@ -10,11 +11,8 @@ namespace Gj
 	{
 		public static Game single;
 
-		private bool isMusicPlaying = false;
 		private AudioSource audioMusicSource;
-		private bool musicMute = false;
 		private AudioSource audioSoundSource;
-		private bool soundMute = false;
 
 		private List<string> sceneList;
 
@@ -35,7 +33,7 @@ namespace Gj
 			single.audioSoundSource.volume = Cache.soundVolume;
 		}
 
-		public static int getLanguage ()
+		public static LG getLanguage ()
 		{
 			string lg = Application.systemLanguage.ToString ();
 			if (lg == "ChineseSimplified" || lg == "ChineseTraditional" || lg == "Chinese") {
@@ -45,12 +43,14 @@ namespace Gj
 			}
 		}
 
-		public static string getVersion() {
+		public static string getVersion ()
+		{
 			return Application.unityVersion;
 		}
 
-		public static string getDevice () {
-			return Application.platform.ToString();
+		public static string getDevice ()
+		{
+			return Application.platform.ToString ();
 		}
 
 		public void addScene (string sceneName)
@@ -119,33 +119,45 @@ namespace Gj
 			}
 		}
 
-		public void waitSeconds (float time, Action handle)
+		public void waitSeconds (float time, Action CB)
 		{
-			StartCoroutine (waitSecondsAsync (time, handle));
+			StartCoroutine (waitSecondsAsync (time, CB));
 		}
 
-		IEnumerator waitSecondsAsync (float time, Action handle)
+		IEnumerator waitSecondsAsync (float time, Action CB)
 		{
 			yield return new WaitForSeconds (time);
-			handle ();
+			CB ();
 		}
 
-		public void loadImage (string url, Action<Texture2D> callback)
+		public void loadImage (string url, Action<bool, Texture2D, string> CB)
 		{
 			if (url == null || url == "")
 				return;
-			StartCoroutine (loadUrlAsyn (url, "imageTmp", "png", (www) => {callback(www.texture);}));
+			StartCoroutine (loadUrlAsyn (url, "imageTmp", "png", (success, www, message) => {
+				if (success) {
+					CB (true, www.texture, "success");
+				} else {
+					CB (false, null, message);
+				}
+			}));
 		}
 
-		public void loadAssetbundle (string url, Action<AssetBundle> callback)
+		public void loadAssetbundle (string url, Action<bool, AssetBundle, string> CB)
 		{
 			if (url == null || url == "")
 				return;
-			StartCoroutine (loadUrlAsyn (url, "assetBundleTmp", "model", (www) => {callback(www.assetBundle.mainAsset);}));
+			StartCoroutine (loadUrlAsyn (url, "assetBundleTmp", "model", (success, www, message) => {
+				if (success) {
+					CB (true, www.assetBundle, "success");
+				} else {
+					CB (false, null, message);
+				}
+			}));
 		}
 
 
-		IEnumerator loadUrlAsyn (string url, string folderName, string suffix, Action<WWW> callback)
+		IEnumerator loadUrlAsyn (string url, string folderName, string suffix, Action<bool, WWW, string> CB)
 		{
 			string path = Application.persistentDataPath;
 			string fileName = Tools.md5 (url) + "." + suffix;
@@ -160,12 +172,71 @@ namespace Gj
 			}
 			yield return www;
 			if (www != null && www.isDone && string.IsNullOrEmpty (www.error)) {
-				callback (www);
+				CB (true, www, "success");
 				if (!local) {
 					FileTools.createFolder (path, folderName);
-					FileTools.saveFile (path + "/" + folderName + "/" + fileName, info);
+					FileTools.saveFile (path + "/" + folderName + "/" + fileName, www.bytes);
 				}
+			} else {
+				CB (false, null, "is error!");
 			}
+		}
+
+		public void uploadOSS (string filepath, JSONNode result, string mime, Action<bool, string, string> CB)
+		{
+			string host = result ["host"];
+			string key = result ["key"];
+			string OSSAccessKeyId = result ["OSSAccessKeyId"];
+			string policy = result ["policy"];
+			string signature = result ["signature"];
+			string url = result ["url"];
+			FileInfo file = new FileInfo (filepath);
+			Dictionary<string, string> headers = new Dictionary<string, string> ();
+			var boundary = "--" + Tools.generateStr (32) + "--";
+			headers.Add ("Content-Type", "multipart/form-data; boundary=" + boundary);
+			var requestBody = "--" + boundary + "\r\n"
+			                  + "Content-Disposition: form-data; name=\"key\"\r\n"
+			                  + "\r\n" + key + "\r\n"
+			                  + "--" + boundary + "\r\n"
+			                  + "Content-Disposition: form-data; name=\"OSSAccessKeyId\"\r\n"
+			                  + "\r\n" + OSSAccessKeyId + "\r\n"
+			                  + "--" + boundary + "\r\n"
+			                  + "Content-Disposition: form-data; name=\"policy\"\r\n"
+			                  + "\r\n" + policy + "\r\n"
+			                  + "--" + boundary + "\r\n"
+			                  + "Content-Disposition: form-data; name=\"Signature\"\r\n"
+			                  + "\r\n" + signature + "\r\n"
+			                  + "--" + boundary + "\r\n"
+			                  + "Content-Disposition: form-data; name=\"file\"; filename=\"" + file.Name + "\"\r\n"
+			                  + "Content-Type: " + mime + "\r\n"
+			                  + "\r\n";
+			var requestBodyByte = System.Text.Encoding.Default.GetBytes (requestBody);
+			var fileByte = File.ReadAllBytes (filepath);
+
+			var lastBody = "\r\n--" + boundary + "--\r\n";
+			var requestlastBodyByte = System.Text.Encoding.Default.GetBytes (lastBody);
+
+			//WWWForm wf = new WWWForm();
+			//headers.Add("Content-Length", requestBody.Length.ToString());
+			//wf.AddField("OSSAccessKeyId", OSSAccessKeyId);
+			//wf.AddField("policy", policy);
+			//wf.AddField("Signature", signature);
+			//wf.AddField("key", key);
+			//wf.AddField("success_action_status", result["success_action_status"].AsInt);
+			//wf.AddBinaryData("file", File.ReadAllBytes(filepath), file.Name, mime);
+			var by = new byte[requestBodyByte.Length + fileByte.Length + requestlastBodyByte.Length];
+
+			Array.Copy (requestBodyByte, 0, by, 0, requestBodyByte.Length);
+			Array.Copy (fileByte, 0, by, requestBodyByte.Length, fileByte.Length);
+			Array.Copy (requestlastBodyByte, 0, by, requestBodyByte.Length + fileByte.Length, requestlastBodyByte.Length);
+			StartCoroutine (Http.getInstance ().Post (result ["host"], by, headers, (success, www, message) => {
+				if (success) {
+					CB (true, url.Replace ("{key}", key), "success");
+				} else {
+					CB (false, null, message);
+				}
+
+			}));
 		}
 	}
 }

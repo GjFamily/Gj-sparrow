@@ -5,9 +5,9 @@ namespace Gj
 	public class Share
 	{
 		public enum Platform {
-			SINA = "SINA",
-			WEIXIN = "WEIXIN",
-			FACEBOOK = "FACEBOOK"
+			SINA,
+			WEIXIN,
+			FACEBOOK
 		}
 
 		public class ShareObject {
@@ -31,7 +31,7 @@ namespace Gj
 		}
 
 		private void UMShare (Platform platform, ShareObject shareObject, Action<bool, string> CB) {
-			int umPlatform;
+			UM.Platform umPlatform;
 			switch(platform) {
 			case Platform.SINA:
 				umPlatform = UM.Platform.QQ;
@@ -44,6 +44,7 @@ namespace Gj
 				break;
 			default:
 				CB (false, "platform is error!");
+				return;
 			}
 			UM.DirectShare (umPlatform, shareObject.text, shareObject.imagePath, shareObject.title, shareObject.targeturl, shareObject.videourl, (platformId, code, message) => {
 				if (code == UM.SUCCESS) {

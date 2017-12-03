@@ -47,7 +47,7 @@ namespace socket.io {
                 return pkt;
             }
             catch (Exception e) {
-                throw;
+                throw e;
             }
         }
 

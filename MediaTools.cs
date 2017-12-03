@@ -27,7 +27,7 @@ namespace Gj
 		//	#if !UNITY_EDITOR
 		static private IntPtr _session;
 		//	#endif
-		public static IEnumerator photo (Camera camera, int x, int y, int width, int height, Action<byte[]> callback)
+		public static IEnumerator photo (Camera camera, int x, int y, int width, int height, Action<bool, byte[], string> CB)
 		{
 			yield return new WaitForEndOfFrame ();
 			//		yield return new WaitForFixedUpdate ();
@@ -43,19 +43,19 @@ namespace Gj
 			camera.targetTexture = null;
 			RenderTexture.active = tmp;
 			byte[] bs = photo.EncodeToPNG ();
-			callback (bs);
+			CB (true, bs, "message");
 		}
 
-		public static void GenerateMovieImage (string movie, Action<bool, string> callback)
+		public static void GenerateMovieImage (string movie, Action<bool, string, string> CB)
 		{
 			if (__generating) {
 				Debug.Log ("Generating, do not start again");
-				callback (false, null);
+				CB (false, null, "Generating, do not start again");
 				return;
 			}
 			var file = Application.persistentDataPath + "/" + Tools.generateStr (10) + ".png";
 			generateCallBack = () => {
-				callback (true, file);
+				CB (true, file, "success");
 			};
 			unity_movieToImage (movie, file, _movie_imageCallBack);
 		}
@@ -184,31 +184,31 @@ namespace Gj
 				errorCallBack ();
 		}
 
-		public static void CancelRecord (Action callback)
+		public static void CancelRecord (Action CB)
 		{
 			if (!__recording) {
 //			Debug.Log ("Record not start");
-				callback ();
+				CB ();
 				return;
 			}
 			//		bool error = false;
 			if (!__inter_recording) {
 				Debug.Log ("Record is error");
-				callback ();
+				CB ();
 				return;
 			}
 			__inter_recording = false;
 			stop ((success) => {
 				release ();
-				callback ();
+				CB ();
 			});
 		}
 
-		public static void StopRecord (Action<bool, string> callback)
+		public static void StopRecord (Action<bool, string, string> CB)
 		{
 			if (!__recording) {
 				Debug.Log ("Record not start");
-				callback (false, null);
+				CB (false, null, "Record not start");
 				return;
 			}
 			bool error = false;
@@ -219,9 +219,9 @@ namespace Gj
 			stop ((success) => {
 				release ();
 				if (!success || error) {
-					callback (false, null);
+					CB (false, null, "Record is error");
 				} else {
-					callback (true, mediaAllPath);
+					CB (true, mediaAllPath, "success");
 				}
 			});
 		}

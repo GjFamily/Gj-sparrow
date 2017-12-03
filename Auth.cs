@@ -8,11 +8,11 @@ namespace Gj
 	public class Auth
 	{
 		public enum Platform {
-			GUEST = "GUEST",
-			GAMECENTER = "GAMECENTER",
-			QQ = "QQ",
-			WEIXIN = "WEIXIN",
-			FACEBOOK = "FACEBOOK"
+			GUEST,
+			GAMECENTER,
+			QQ,
+			WEIXIN,
+			FACEBOOK
 		}
 
 		public class PlayerInfo
@@ -22,44 +22,44 @@ namespace Gj
 			public string platform;
 		}
 
-		public void gameCenter (Action<PlayerInfo> successCB, Action<String> errorCB)
+		public void gameCenter (Action<bool, PlayerInfo, string> CB)
 		{
 			Social.localUser.Authenticate ((success) => {
 				if (success) {
 					PlayerInfo play = new PlayerInfo ();
-					play.platform = Platform.GAMECENTER;
+					play.platform = Platform.GAMECENTER.ToString();
 					play.identity = Social.localUser.id;
 					play.name = Social.localUser.userName;
-					successCB(play);
+					CB(true, play, "success");
 				} else {
-					errorCB("gameCenter auth error!");
+					CB(false, null, "gameCenter auth error!");
 				}
 			});	
 		}
 
-		public void guest (Action<PlayerInfo> successCB, Action<String> errorCB)
+		public void guest (Action<bool, PlayerInfo, string> CB)
 		{
 			PlayerInfo play = new PlayerInfo ();
-			play.platform = Platform.GUEST;
-			play.identity = DateTime.Now.ToFileTimeUtc();
+			play.platform = Platform.GUEST.ToString();
+			play.identity = DateTime.Now.ToFileTimeUtc().ToString();
 			play.name = "";
-			successCB(play);
+			CB(true, play, "success");
 		}
 
-		public void qq (Action<PlayerInfo> successCB, Action<String> errorCB) {
-			UMAuth (Platform.QQ, successCB, errorCB);
+		public void qq (Action<bool, PlayerInfo, string> CB) {
+			UMAuth (Platform.QQ, CB);
 		}
 
-		public void weiXin (Action<PlayerInfo> successCB, Action<String> errorCB) {
-			UMAuth (Platform.WEIXIN, successCB, errorCB);
+		public void weiXin (Action<bool, PlayerInfo, string> CB) {
+			UMAuth (Platform.WEIXIN, CB);
 		}
 
-		public void faceBook (Action<PlayerInfo> successCB, Action<String> errorCB) {
-			UMAuth (Platform.FACEBOOK, successCB, errorCB);
+		public void faceBook (Action<bool, PlayerInfo, string> CB) {
+			UMAuth (Platform.FACEBOOK, CB);
 		}
 
-		private void UMAuth (Platform platform, Action<PlayerInfo> successCB, Action<String> errorCB) {
-			int umPlatform;
+		private void UMAuth (Platform platform, Action<bool, PlayerInfo, string> CB) {
+			UM.Platform umPlatform;
 			switch(platform) {
 			case Platform.QQ:
 				umPlatform = UM.Platform.QQ;
@@ -71,17 +71,18 @@ namespace Gj
 				umPlatform = UM.Platform.FACEBOOK;
 				break;
 			default:
-				errorCB ("platform is error!");
+				CB (false, null, "platform is error!");
+				return;
 			}
 			UM.Authorize (umPlatform, (platformId, code, data) => {
 				if (code == UM.SUCCESS) {
 					PlayerInfo play = new PlayerInfo ();
-					play.platform = platform;
+					play.platform = platform.ToString();
 					play.identity = data["uid"];
 					play.name = data["name"];
-					successCB(play);
+					CB(true, play, "success");
 				} else {
-					errorCB(data["message"]);
+					CB(false, null, data["message"]);
 				}
 			});
 		}

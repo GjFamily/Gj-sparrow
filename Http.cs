@@ -31,7 +31,7 @@ namespace Gj
 			return instance;
 		}
 
-		public IEnumerator Get (string url, Dictionary<string,string> data, Dictionary<string,string> headers, Action<string,WWW> callBack = null)
+		public IEnumerator Get (string url, Dictionary<string,string> data, Dictionary<string,string> headers, Action<bool,WWW,string> CB)
 		{
 			Dictionary<string, string>.Enumerator etor = data.GetEnumerator ();
 			url += "?";
@@ -39,103 +39,91 @@ namespace Gj
 				url += etor.Current.Key + "=" + WWW.EscapeURL (etor.Current.Value) + "&";
 			}
 			url = url.Remove (-1);
-			return IESend (url, null, headers, callBack);
+			return IESend (url, null, headers, CB);
 		}
 
-		public IEnumerator Post (string url, Dictionary<string,string> data, Dictionary<string,string> headers, Action<string,WWW> callBack = null)
+		public IEnumerator Post (string url, Dictionary<string,string> data, Dictionary<string,string> headers, Action<bool,WWW,string> CB)
 		{
 			WWWForm wf = new WWWForm ();
 			Dictionary<string, string>.Enumerator etor = data.GetEnumerator ();
 			while (etor.MoveNext ()) {
 				wf.AddField (etor.Current.Key, etor.Current.Value);
 			}
-			return Post (url, wf, headers, callBack);
+			return Post (url, wf, headers, CB);
 		}
 
-		public IEnumerator Post (string url, string data, Dictionary<string, string> headers, Action<string,WWW> callBack = null)
+		public IEnumerator Post (string url, string data, Dictionary<string, string> headers, Action<bool,WWW,string> CB)
 		{
 			byte[] postData = System.Text.UTF8Encoding.UTF8.GetBytes (data); 
-			return Post (url, postData, headers, callBack);
+			return Post (url, postData, headers, CB);
 		}
 
-		public IEnumerator Post (string url, byte[] data, Dictionary<string, string> headers, Action<string, WWW> callBack = null)
+		public IEnumerator Post (string url, byte[] data, Dictionary<string, string> headers, Action<bool,WWW,string> CB)
 		{
-			return IESend (url, data, headers, callBack);
+			return IESend (url, data, headers, CB);
 		}
 
-		public IEnumerator Post (string url, WWWForm form, Dictionary<string, string> headers, Action<string, WWW> callBack = null)
+		public IEnumerator Post (string url, WWWForm form, Dictionary<string, string> headers, Action<bool,WWW,string> CB)
 		{
 			Dictionary<string, string>.Enumerator etorHeader = form.headers.GetEnumerator ();
 			while (etorHeader.MoveNext ()) {
 				headers.Add (etorHeader.Current.Key, etorHeader.Current.Value);
 			}
-			return IESend (url, form.data, headers, callBack);
+			return IESend (url, form.data, headers, CB);
 		}
 
-		public IEnumerator WrapGet (string url, Dictionary<string,string> data, Action<JSONNode> success = null, Action<string> fail = null)
+		public IEnumerator WrapGet (string url, Dictionary<string,string> data, Action<bool, JSONNode, string> CB)
 		{
 			Dictionary<string,string> headers = new Dictionary<string, string> ();
 			headers.Add ("Content-type", "application/json");
-			return Get (url, data, headers, (result, www) => {
-				if (result == null) {
-					if (fail != null)
-						fail (www.error);
-					return;
+			return Get (url, data, headers, (success, www, message) => {
+				if (!success) {
+					CB (false, null, message);
 				}
-				var o = JSONNode.Parse (result);
+				var o = JSONNode.Parse (www.text);
 				if (o ["status"].AsInt != 200) {
-					if (fail != null)
-						fail (o ["message"]);
+					CB(false, null, o["message"]);
 				} else {
-					if (success != null)
-						success (o ["result"].AsObject);
+					CB(true, o ["result"].AsObject, "success");
 				}
 			});
 
 		}
 
-		public IEnumerator WrapPost (string url, Dictionary<string,string> data, Action<JSONNode> success = null, Action<string> fail = null)
+		public IEnumerator WrapPost (string url, Dictionary<string,string> data, Action<bool, JSONNode, string> CB)
 		{
 			Dictionary<string,string> headers = new Dictionary<string, string> ();
 			headers.Add ("Content-type", "application/json");
-			return Post (url, data, headers, (result, www) => {
-				if (result == null) {
-					if (fail != null)
-						fail (www.error);
-					return;
+			return Post (url, data, headers, (success, www, message) => {
+				if (!success) {
+					CB (false, null, message);
 				}
-				var o = JSONNode.Parse (result);
+				var o = JSONNode.Parse (www.text);
 				if (o ["status"].AsInt != 200) {
-					if (fail != null)
-						fail (o ["message"]);
+					CB(false, null, o["message"]);
 				} else {
-					if (success != null)
-						success (o ["result"].AsObject);
+					CB(true, o ["result"].AsObject, "success");
 				}
 			});
 		}
 
-		public IEnumerator WrapPostForm (string url, WWWForm form, Action<JSONNode> success = null, Action<string> fail = null)
+		public IEnumerator WrapPostForm (string url, WWWForm form, Action<bool, JSONNode, string> CB)
 		{
 			Dictionary<string, string> headers = new Dictionary<string, string> ();
-			return Post (url, form, headers, (result, www) => {
-				if (result == null) {
-					if (fail != null)
-						fail (www.error);
-					return;
+			return Post (url, form, headers, (success, www, message) => {
+				if (!success) {
+					CB (false, null, message);
 				}
-				var o = JSONNode.Parse (result);
+				var o = JSONNode.Parse (www.text);
 				if (o ["status"].AsInt != 200) {
-					if (fail != null)
-						fail (o ["message"]);
+					CB(false, null, o["message"]);
 				} else {
-					if (success != null)
-						success (o ["result"].AsObject);
+					CB(true, o ["result"].AsObject, "success");
 				}
 			});
 		}
 
-		IEnumerator IESend (string url, byte[] data, Dictionary<string,string> headers, Action<string,WWW> callBack)
+		IEnumerator IESend (string url, byte[] data, Dictionary<string,string> headers, Action<bool,WWW,string> CB)
 		{
 			headers.Add ("Cookie", cookieJar.generate (url));
 			WWW www = new WWW (url, data, headers);
@@ -147,11 +135,11 @@ namespace Gj
 				cookieJar.parse (www);
 			}
 
-			if (callBack != null) {
+			if (CB != null) {
 				if (www.error != null) {
-					callBack (null, www);
+					CB (false, www, www.error);
 				} else {
-					callBack (www.text, www);
+					CB (true, www, "success");
 				}
 			}
 
@@ -215,65 +203,6 @@ namespace Gj
 
 				return cookie;
 			}
-
-		}
-
-		public void uploadOSS(string filepath, JSONNode result, string mime, Action<string> callback){
-			string host = result["host"];
-			string key = result["key"];
-			string OSSAccessKeyId = result["OSSAccessKeyId"];
-			string policy = result["policy"];
-			string signature = result["signature"];
-			string url = result["url"];
-			FileInfo file = new FileInfo(filepath);
-			WWWForm wf = new WWWForm();
-			Dictionary<string, string> headers = new Dictionary<string, string>();
-			var boundary = "--" + Tools.generateStr(32) + "--";
-			headers.Add("Content-Type", "multipart/form-data; boundary=" + boundary);
-			var requestBody = "--" + boundary + "\r\n"
-				+ "Content-Disposition: form-data; name=\"key\"\r\n"
-				+ "\r\n" + key + "\r\n"
-				+ "--" + boundary + "\r\n"
-				+ "Content-Disposition: form-data; name=\"OSSAccessKeyId\"\r\n"
-				+ "\r\n" + OSSAccessKeyId + "\r\n"
-				+ "--" + boundary + "\r\n"
-				+ "Content-Disposition: form-data; name=\"policy\"\r\n"
-				+ "\r\n" + policy + "\r\n"
-				+ "--" + boundary + "\r\n"
-				+ "Content-Disposition: form-data; name=\"Signature\"\r\n"
-				+ "\r\n" + signature + "\r\n"
-				+ "--" + boundary + "\r\n"
-				+ "Content-Disposition: form-data; name=\"file\"; filename=\"" + file.Name + "\"\r\n"
-				+ "Content-Type: " + mime + "\r\n"
-				+ "\r\n";
-			var requestBodyByte = System.Text.Encoding.Default.GetBytes(requestBody);
-			var fileByte = File.ReadAllBytes(filepath);
-
-			var lastBody = "\r\n--" + boundary + "--\r\n";
-			var requestlastBodyByte = System.Text.Encoding.Default.GetBytes(lastBody);
-
-			//headers.Add("Content-Length", requestBody.Length.ToString());
-			//wf.AddField("OSSAccessKeyId", OSSAccessKeyId);
-			//wf.AddField("policy", policy);
-			//wf.AddField("Signature", signature);
-			//wf.AddField("key", key);
-			//wf.AddField("success_action_status", result["success_action_status"].AsInt);
-			//wf.AddBinaryData("file", File.ReadAllBytes(filepath), file.Name, mime);
-			var by = new byte[requestBodyByte.Length + fileByte.Length + requestlastBodyByte.Length];
-
-			Array.Copy(requestBodyByte, 0, by, 0, requestBodyByte.Length);
-			Array.Copy(fileByte, 0, by, requestBodyByte.Length, fileByte.Length);
-			Array.Copy(requestlastBodyByte, 0, by, requestBodyByte.Length + fileByte.Length, requestlastBodyByte.Length);
-			StartCoroutine(Post(result["host"], by, headers, (body, www) => {
-				if(body == null)
-				{
-					callback(null);
-				}
-				else
-				{
-					callback(url.Replace("{key}", key));
-				}
-			}));
 		}
 	}
 }

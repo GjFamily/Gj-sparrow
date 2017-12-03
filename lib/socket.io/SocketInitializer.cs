@@ -122,9 +122,9 @@ namespace socket.io {
         /// </summary>
         [Serializable]
         class PollingUrlAnswer {
-            public string sid;
-            public int pingInterval;
-            public int pingTimeout;
+            public string sid = null;
+            public int pingInterval = 0;
+            public int pingTimeout = 0;
         }
 
         /// <summary>

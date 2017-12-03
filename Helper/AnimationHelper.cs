@@ -4,7 +4,7 @@ using System;
 
 namespace Gj
 {
-	public class Magic : MonoBehaviour {
+	public class AnimationHelper : MonoBehaviour {
 		
 		public float valueFrom = 0.0f;
 		public float valueTo = 1.0f;
@@ -36,14 +36,14 @@ namespace Gj
 			ht.Add( "easetype", this.easeType );
 
 			ht.Add( "onstart", (Action<object>)( newVal => {
-				magicUpdate( this.valueFrom );
-				magicStart();
+				_update( this.valueFrom );
+				_start();
 			} ) );
 			ht.Add( "onupdate", (Action<object>)( newVal => {
-				magicUpdate( (float)newVal );
+				_update( (float)newVal );
 			} ) );
 			ht.Add( "oncomplete", (Action<object>)( newVal => {
-				magicComplete();
+				_end();
 			} ) );
 
 			ht.Add( "ignoretimescale", ignoreTimescale );
@@ -51,15 +51,15 @@ namespace Gj
 			iTween.ValueTo( this.gameObject, ht );
 		}
 
-		public virtual void magicStart () {
+		public virtual void _start () {
 			
 		}
 
-		public virtual void magicComplete () {
+		public virtual void _end () {
 			
 		}
 
-		public virtual void magicUpdate (float value) {
+		public virtual void _update (float value) {
 		
 		}
 	}

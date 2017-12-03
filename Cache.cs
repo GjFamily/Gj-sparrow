@@ -87,7 +87,7 @@ namespace Gj
 			PlayerPrefs.SetString (key, value);
 		}
 
-		public static string getVal (string key, int defalut) {
+		public static int getVal (string key, int defalut) {
 			return PlayerPrefs.GetInt (key, defalut);
 		}
 
@@ -95,7 +95,7 @@ namespace Gj
 			PlayerPrefs.SetInt (key, value);
 		}
 
-		public static string getVal (string key, float defalut) {
+		public static float getVal (string key, float defalut) {
 			return PlayerPrefs.GetFloat (key, defalut);
 		}
 
@@ -103,7 +103,7 @@ namespace Gj
 			PlayerPrefs.SetFloat (key, value);
 		}
 
-		public static string getVal (string key, bool defalut) {
+		public static bool getVal (string key, bool defalut) {
 			return PlayerPrefs.GetBool (key, defalut);
 		}
 
@@ -111,7 +111,7 @@ namespace Gj
 			PlayerPrefs.SetBool (key, value);
 		}
 
-		public static string getVal (string key, long defalut) {
+		public static long getVal (string key, long defalut) {
 			return PlayerPrefs.GetLong (key, defalut);
 		}
 

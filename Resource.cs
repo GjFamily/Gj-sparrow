@@ -9,10 +9,10 @@ namespace Gj
 	public class Resource
 	{
 
-		public Dictionary<string, AudioClip> audioClipMap = new Dictionary<string, AudioClip> ();
-		public Dictionary<string, Texture> textureMap = new Dictionary<string, Texture> ();
+		public static Dictionary<string, AudioClip> audioClipMap = new Dictionary<string, AudioClip> ();
+		public static Dictionary<string, Texture> textureMap = new Dictionary<string, Texture> ();
 
-		public Texture getTexture (string tag)
+		public static Texture getTexture (string tag)
 		{
 			if (!textureMap.ContainsKey (tag)) {
 				textureMap.Add (tag, Resources.Load<Texture> ("texture/" + tag));
@@ -20,7 +20,7 @@ namespace Gj
 			return textureMap [tag];
 		}
 
-		public AudioClip getAudioClip (string tag)
+		public static AudioClip getAudioClip (string tag)
 		{
 			if (!audioClipMap.ContainsKey (tag)) {
 				audioClipMap.Add (tag, Resources.Load<AudioClip> ("audio/" + tag));

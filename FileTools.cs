@@ -42,7 +42,7 @@ namespace Gj
 
 		public static void saveFile (string path, byte[] info, bool append = false)
 		{
-			Stream sw;
+			StreamWriter sw;
 			FileInfo t = new FileInfo (path);
 			if (!t.Exists) {
 				sw = t.CreateText ();
@@ -53,7 +53,7 @@ namespace Gj
 					return;
 				}
 			}
-			sw.Write (info, 0, info.GetLength ());
+			sw.Write (info);
 			sw.Close ();
 			sw.Dispose ();
 		}
@@ -120,7 +120,7 @@ namespace Gj
 			File.Delete(path + name);
 		}
 
-		public static bool deleteFolder(string path, string name)
+		public static void deleteFolder(string path, string name)
 		{
 			string FolderPath = path + name;
 

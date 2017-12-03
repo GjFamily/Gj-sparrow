@@ -329,7 +329,7 @@ namespace Gj
 
 		#endif
 
-		static string appKey = null;
+		public static string appKey = null;
 
 		static AuthDelegate authDelegate = null;
 

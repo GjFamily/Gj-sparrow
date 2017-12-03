@@ -12,7 +12,7 @@ namespace Gj
 		private static Pay m_instance;
 
 		private static bool m_purchasing = false;
-		private static Action<bool, Product> m_callback;
+		private static Action<bool, Product, string> m_callback;
 
 		private ConfigurationBuilder _builder;
 
@@ -38,13 +38,14 @@ namespace Gj
 			return;
 		}
 
-		public static void BuyProduct (string productId, Action<bool, Product> callback)
+		public static void BuyProduct (string productId, Action<bool, Product, string> CB)
 		{
 			var instance = getInstance ();
-			if (!instance.IsInitialized ())
+			if (!instance.IsInitialized ()) {
+				CB(false, null, "buy product need init!");
 				return;
-			getInstance ().BuyProductID (productId, callback);
-			return;
+			}
+			getInstance ().BuyProductID (productId, CB);
 		}
 
 		public static void InitializePurchasing ()
@@ -73,16 +74,16 @@ namespace Gj
 			});
 		}
 
-		public void BuyProductID (string productId, Action<bool, Product> callback)
+		public void BuyProductID (string productId, Action<bool, Product, string> callback)
 		{
 			if (IsInitialized () == false) {
 				Debug.Log ("BuyProductID FAIL. Not initialized.");
-				callback (false, null);
+				callback (false, null, "BuyProductID FAIL. Not initialized.");
 				return;
 			}
 			if (m_purchasing == true) {
 				Debug.Log ("BuyProductID FAIL. Purchasing.");
-				callback (false, null);
+				callback (false, null, "BuyProductID FAIL. Purchasing.");
 				return;
 			}
 			Product product = m_StoreController.products.WithID (productId);
@@ -94,7 +95,7 @@ namespace Gj
 				m_StoreController.InitiatePurchase (product);
 			} else {
 				Debug.Log ("BuyProductID: FAIL. Not purchasing product, either is not found or is not available for purchase");
-				callback (false, null);
+				callback (false, null, "BuyProductID: FAIL. Not purchasing product, either is not found or is not available for purchase");
 				return;
 			}
 		}
@@ -107,7 +108,7 @@ namespace Gj
 			}
 
 			if (Application.platform == RuntimePlatform.IPhonePlayer ||
-			   Application.platform == RuntimePlatform.OSXPlayer) {
+			    Application.platform == RuntimePlatform.OSXPlayer) {
 				Debug.Log ("RestorePurchases started ...");
 
 				var apple = m_StoreExtensionProvider.GetExtension<IAppleExtensions> ();
@@ -137,7 +138,7 @@ namespace Gj
 		{
 			m_purchasing = false;
 			if (m_callback != null)
-				m_callback (true, args.purchasedProduct);
+				m_callback (true, args.purchasedProduct, "success");
 			return PurchaseProcessingResult.Complete;
 		}
 
@@ -145,7 +146,7 @@ namespace Gj
 		{
 			m_purchasing = false;
 			if (m_callback != null)
-				m_callback (false, null);
+				m_callback (false, null, failureReason.ToString());
 			Debug.Log (string.Format ("OnPurchaseFailed: FAIL. Product: '{0}', PurchaseFailureReason: {1}", product.definition.storeSpecificId, failureReason));
 		}
 	}
