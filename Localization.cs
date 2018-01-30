@@ -26,7 +26,7 @@ namespace Gj
         private const string english = "English";
 
         //选择自已需要的本地语言    
-        public const string language = english;
+        public string language = chinese;
 
 
         private Dictionary<string, string> dic = new Dictionary<string, string>();
@@ -35,19 +35,18 @@ namespace Gj
         /// </summary>    
         public Localization()
         {
-            TextAsset ta = Resources.Load<TextAsset>(language);
-            string text = ta.text;
-
-            string[] lines = text.Split('\n');
-            foreach (string line in lines)
+            switch (Application.systemLanguage)
             {
-                if (line == null)
-                {
-                    continue;
-                }
-                string[] keyAndValue = line.Split('=');
-                dic.Add(keyAndValue[0], keyAndValue[1]);
+                case SystemLanguage.Chinese:
+                case SystemLanguage.ChineseTraditional:
+                case SystemLanguage.ChineseSimplified:
+                    language = chinese;
+                    break;
+                default:
+                    language = english;
+                    break;
             }
+            dic = Resource.GetLanguage(language);
         }
 
         /// <summary>    

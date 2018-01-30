@@ -16,7 +16,7 @@ namespace Gj
 
 		private ConfigurationBuilder _builder;
 
-		public static Pay getInstance ()
+		public static Pay GetInstance ()
 		{
 			if (m_instance == null) {
 				m_instance = new Pay ();
@@ -31,29 +31,29 @@ namespace Gj
 
 		public static void AddConsumProduct (string productId, string storeName)
 		{
-			var instance = getInstance ();
+			var instance = GetInstance ();
 			if (instance.IsInitialized ())
 				return;
-			getInstance ().AddProduct (productId, storeName, ProductType.Consumable);
+			GetInstance ().AddProduct (productId, storeName, ProductType.Consumable);
 			return;
 		}
 
 		public static void BuyProduct (string productId, Action<bool, Product, string> CB)
 		{
-			var instance = getInstance ();
+			var instance = GetInstance ();
 			if (!instance.IsInitialized ()) {
 				CB(false, null, "buy product need init!");
 				return;
 			}
-			getInstance ().BuyProductID (productId, CB);
+			GetInstance ().BuyProductID (productId, CB);
 		}
 
 		public static void InitializePurchasing ()
 		{
-			var instance = getInstance ();
+			var instance = GetInstance ();
 			if (instance.IsInitialized ())
 				return;
-			getInstance ().Initialize ();
+			GetInstance ().Initialize ();
 			return;
 		}
 

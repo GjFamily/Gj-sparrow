@@ -13,7 +13,7 @@ namespace Gj
 {
 	public class ModelTools
 	{
-		public static GameObject create (GameObject prefab)
+		public static GameObject Create (GameObject prefab)
 		{
 			if (prefab != null) {
 				return GameObject.Instantiate (prefab);
@@ -22,22 +22,22 @@ namespace Gj
 			}
 		}
 
-		public static GameObject create (GameObject prefab, GameObject parent)
+		public static GameObject Create (GameObject prefab, GameObject parent)
 		{
 
-			GameObject obj = create (prefab);
+			GameObject obj = Create (prefab);
 			obj.transform.SetParent (parent.transform, false);
 			return obj;
 		}
 
-		public static GameObject create (GameObject prefab, Canvas parent)
+		public static GameObject Create (GameObject prefab, Canvas parent)
 		{
-			GameObject obj = create (prefab);
+			GameObject obj = Create (prefab);
 			obj.transform.SetParent (parent.transform, false);
 			return obj;
 		}
 
-		public static void addTriggersListener (GameObject obj, EventTriggerType eventID, UnityAction<BaseEventData> action)
+		public static void AddTriggersListener (GameObject obj, EventTriggerType eventID, UnityAction<BaseEventData> action)
 		{
 			EventTrigger trigger = obj.GetComponent<EventTrigger> ();
 			if (trigger == null) {
@@ -63,28 +63,28 @@ namespace Gj
 			Transparent
 		}
 
-		public static Material getMaterial (GameObject obj)
+		public static Material GetMaterial (GameObject obj)
 		{
 			return obj.GetComponent<Renderer> ().material;
 		}
 
-		public static void changeColor (GameObject obj, Color color)
+		public static void ChangeColor (GameObject obj, Color color)
 		{
-			Material material = getMaterial (obj);
+			Material material = GetMaterial (obj);
 			material.color = color;
 		}
 
-		public static void changeAlpha (GameObject obj, float alpha)
+		public static void ChangeAlpha (GameObject obj, float alpha)
 		{
-			Material material = getMaterial (obj);
+			Material material = GetMaterial (obj);
 			Color color = material.color;
 			color.a = alpha;
 			material.color = color;
 		}
 
-		public static void changeRenderMode (GameObject obj, BlendMode blendMode)
+		public static void ChangeRenderMode (GameObject obj, BlendMode blendMode)
 		{
-			Material material = getMaterial (obj);
+			Material material = GetMaterial (obj);
 			switch (blendMode) {
 			case BlendMode.Opaque:
 				material.SetInt ("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.One);
@@ -125,7 +125,7 @@ namespace Gj
 			}
 		}
 
-		public static float computeRotaion (float value)
+		public static float ComputeRotaion (float value)
 		{
 			if (value > 360) {
 				return value - 360;

@@ -18,15 +18,15 @@ namespace Gj
 			public string videourl;
 		}
 
-		public void sina (ShareObject shareObject, Action<bool, string> CB) {
+		public void Sina (ShareObject shareObject, Action<bool, string> CB) {
 			UMShare(Platform.SINA, shareObject, CB);
 		}
 
-		public void weiXin (ShareObject shareObject, Action<bool, string> CB) {
+		public void WeiXin (ShareObject shareObject, Action<bool, string> CB) {
 			UMShare(Platform.WEIXIN, shareObject, CB);
 		}
 
-		public void faceBook (ShareObject shareObject, Action<bool, string> CB) {
+		public void FaceBook (ShareObject shareObject, Action<bool, string> CB) {
 			UMShare(Platform.FACEBOOK, shareObject, CB);
 		}
 

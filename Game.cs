@@ -16,12 +16,6 @@ namespace Gj
 
 		private List<string> sceneList;
 
-		public enum LG
-		{
-			ZH,
-			EN
-		}
-
 		static Game ()
 		{
 			GameObject game = new GameObject ("Game");
@@ -33,27 +27,17 @@ namespace Gj
 			single.audioSoundSource.volume = Cache.soundVolume;
 		}
 
-		public static LG getLanguage ()
-		{
-			string lg = Application.systemLanguage.ToString ();
-			if (lg == "ChineseSimplified" || lg == "ChineseTraditional" || lg == "Chinese") {
-				return LG.ZH;
-			} else {
-				return LG.EN;
-			}
-		}
-
-		public static string getVersion ()
+		public static string GetVersion ()
 		{
 			return Application.unityVersion;
 		}
 
-		public static string getDevice ()
+		public static string GetDevice ()
 		{
 			return Application.platform.ToString ();
 		}
 
-		public void addScene (string sceneName)
+		public void AddScene (string sceneName)
 		{
 			if (sceneList == null) {
 				sceneList = new List<string> ();
@@ -61,7 +45,7 @@ namespace Gj
 			sceneList.Add (sceneName);
 		}
 
-		public string getLastScene ()
+		public string GetLastScene ()
 		{
 			string sceneName = "main";
 			if (sceneList != null && sceneList.Count > 0) {
@@ -73,68 +57,68 @@ namespace Gj
 			return sceneName;
 		}
 
-		public void changeSpeed (float value)
+		public void ChangeSpeed (float value)
 		{
 			Time.timeScale = 1.0f * value;
 		}
 
-		public void recoverySpeed ()
+		public void RecoverySpeed ()
 		{
 			Time.timeScale = 1.0f;
 		}
 
-		public void changeMusicVolume (float value)
+		public void ChangeMusicVolume (float value)
 		{
 			Cache.musicVolume = value;
 			audioMusicSource.volume = Cache.musicVolume;
 		}
 
-		public void changeSoundVolume (float value)
+		public void ChangeSoundVolume (float value)
 		{
 			Cache.soundVolume = value;
 			audioSoundSource.volume = Cache.soundVolume;
 		}
 
-		public void playMusic (string tag)
+		public void PlayMusic (string tag)
 		{
-			AudioClip audioClip = Resource.getAudioClip (tag);
+			AudioClip audioClip = Resource.GetAudioClip (tag);
 			if (audioClip != null) {
 				audioMusicSource.PlayOneShot (audioClip);
 			}
 		}
 
-		public void playSound (string tag)
+		public void PlaySound (string tag)
 		{
-			AudioClip audioClip = Resource.getAudioClip (tag);
+			AudioClip audioClip = Resource.GetAudioClip (tag);
 			if (audioClip != null) {
 				audioSoundSource.PlayOneShot (audioClip);
 			}
 		}
 
-		public void playSound (string tag, Vector3 position)
+		public void PlaySound (string tag, Vector3 position)
 		{
-			AudioClip audioClip = Resource.getAudioClip (tag);
+			AudioClip audioClip = Resource.GetAudioClip (tag);
 			if (audioClip != null) {
 				AudioSource.PlayClipAtPoint (audioClip, position, Cache.soundVolume);
 			}
 		}
 
-		public void waitSeconds (float time, Action CB)
+		public void WaitSeconds (float time, Action CB)
 		{
-			StartCoroutine (waitSecondsAsync (time, CB));
+			StartCoroutine (WaitSecondsAsync (time, CB));
 		}
 
-		IEnumerator waitSecondsAsync (float time, Action CB)
+		IEnumerator WaitSecondsAsync (float time, Action CB)
 		{
 			yield return new WaitForSeconds (time);
 			CB ();
 		}
 
-		public void loadImage (string url, Action<bool, Texture2D, string> CB)
+		public void LoadImage (string url, Action<bool, Texture2D, string> CB)
 		{
 			if (url == null || url == "")
 				return;
-			StartCoroutine (loadUrlAsyn (url, "imageTmp", "png", (success, www, message) => {
+			StartCoroutine (LoadUrlAsyn (url, "imageTmp", "png", (success, www, message) => {
 				if (success) {
 					CB (true, www.texture, "success");
 				} else {
@@ -143,11 +127,11 @@ namespace Gj
 			}));
 		}
 
-		public void loadAssetbundle (string url, Action<bool, AssetBundle, string> CB)
+		public void LoadAssetbundle (string url, Action<bool, AssetBundle, string> CB)
 		{
 			if (url == null || url == "")
 				return;
-			StartCoroutine (loadUrlAsyn (url, "assetBundleTmp", "model", (success, www, message) => {
+			StartCoroutine (LoadUrlAsyn (url, "assetBundleTmp", "model", (success, www, message) => {
 				if (success) {
 					CB (true, www.assetBundle, "success");
 				} else {
@@ -157,10 +141,10 @@ namespace Gj
 		}
 
 
-		IEnumerator loadUrlAsyn (string url, string folderName, string suffix, Action<bool, WWW, string> CB)
+		IEnumerator LoadUrlAsyn (string url, string folderName, string suffix, Action<bool, WWW, string> CB)
 		{
 			string path = Application.persistentDataPath;
-			string fileName = Tools.md5 (url) + "." + suffix;
+			string fileName = Tools.Md5 (url) + "." + suffix;
 			string localUrl = path + "/" + folderName + "/" + fileName;
 			bool local = false;
 			WWW www;
@@ -174,15 +158,15 @@ namespace Gj
 			if (www != null && www.isDone && string.IsNullOrEmpty (www.error)) {
 				CB (true, www, "success");
 				if (!local) {
-					FileTools.createFolder (path, folderName);
-					FileTools.saveFile (path + "/" + folderName + "/" + fileName, www.bytes);
+					FileTools.CreateFolder (path, folderName);
+					FileTools.SaveFile (path + "/" + folderName + "/" + fileName, www.bytes);
 				}
 			} else {
 				CB (false, null, "is error!");
 			}
 		}
 
-		public void uploadOSS (string filepath, JSONNode result, string mime, Action<bool, string, string> CB)
+		public void UploadOSS (string filepath, JSONNode result, string mime, Action<bool, string, string> CB)
 		{
 			string host = result ["host"];
 			string key = result ["key"];
@@ -192,7 +176,7 @@ namespace Gj
 			string url = result ["url"];
 			FileInfo file = new FileInfo (filepath);
 			Dictionary<string, string> headers = new Dictionary<string, string> ();
-			var boundary = "--" + Tools.generateStr (32) + "--";
+			var boundary = "--" + Tools.GenerateStr (32) + "--";
 			headers.Add ("Content-Type", "multipart/form-data; boundary=" + boundary);
 			var requestBody = "--" + boundary + "\r\n"
 			                  + "Content-Disposition: form-data; name=\"key\"\r\n"
@@ -229,7 +213,7 @@ namespace Gj
 			Array.Copy (requestBodyByte, 0, by, 0, requestBodyByte.Length);
 			Array.Copy (fileByte, 0, by, requestBodyByte.Length, fileByte.Length);
 			Array.Copy (requestlastBodyByte, 0, by, requestBodyByte.Length + fileByte.Length, requestlastBodyByte.Length);
-			StartCoroutine (Http.getInstance ().Post (result ["host"], by, headers, (success, www, message) => {
+			StartCoroutine (Http.GetInstance ().Post (result ["host"], by, headers, (success, www, message) => {
 				if (success) {
 					CB (true, url.Replace ("{key}", key), "success");
 				} else {

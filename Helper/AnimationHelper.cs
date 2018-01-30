@@ -21,10 +21,10 @@ namespace Gj
 
 		void Awake() {
 			if ( this.autoPlay )
-				this.play();
+				this.Play();
 		}
 
-		public virtual void play() {
+        public virtual void Play() {
 			Hashtable ht = new Hashtable();
 
 			ht.Add( "from", this.valueFrom );
@@ -36,14 +36,14 @@ namespace Gj
 			ht.Add( "easetype", this.easeType );
 
 			ht.Add( "onstart", (Action<object>)( newVal => {
-				_update( this.valueFrom );
-				_start();
+                OnUpdate( this.valueFrom );
+                OnStart();
 			} ) );
 			ht.Add( "onupdate", (Action<object>)( newVal => {
-				_update( (float)newVal );
+                OnUpdate( (float)newVal );
 			} ) );
 			ht.Add( "oncomplete", (Action<object>)( newVal => {
-				_end();
+                OnEnd();
 			} ) );
 
 			ht.Add( "ignoretimescale", ignoreTimescale );
@@ -51,15 +51,15 @@ namespace Gj
 			iTween.ValueTo( this.gameObject, ht );
 		}
 
-		public virtual void _start () {
+		public virtual void OnStart () {
 			
 		}
 
-		public virtual void _end () {
+		public virtual void OnEnd () {
 			
 		}
 
-		public virtual void _update (float value) {
+		public virtual void OnUpdate (float value) {
 		
 		}
 	}

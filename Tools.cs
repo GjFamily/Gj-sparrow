@@ -8,7 +8,7 @@ namespace Gj
 {
 	public class Tools
 	{
-		public static string generateStr (int Length)
+		public static string GenerateStr (int Length)
 		{
 			char[] chars = {
 				'0',
@@ -82,7 +82,7 @@ namespace Gj
 			return newRandom.ToString ();
 		}
 
-		public static string generateStr (string[] chars, int Length)
+		public static string GenerateStr (string[] chars, int Length)
 		{
 			int count = chars.Length;
 			System.Text.StringBuilder newRandom = new System.Text.StringBuilder (count);
@@ -104,12 +104,12 @@ namespace Gj
 			return newRandom.ToString ();
 		}
 
-		public static string[] stringToList (string str)
+		public static string[] StringToList (string str)
 		{
 			return str.Split ('*');
 		}
 
-		public static string md5 (string str)
+		public static string Md5 (string str)
 		{
 			string pwd = "";
 			MD5 md5 = MD5.Create ();
@@ -120,7 +120,7 @@ namespace Gj
 			return pwd;
 		}
 
-		public static float computeRotaion (float value)
+		public static float CSomputeRotaion (float value)
 		{
 			if (value > 360) {
 				return value - 360;

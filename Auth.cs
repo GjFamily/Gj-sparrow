@@ -22,7 +22,7 @@ namespace Gj
 			public string platform;
 		}
 
-		public void gameCenter (Action<bool, PlayerInfo, string> CB)
+		public void GameCenter (Action<bool, PlayerInfo, string> CB)
 		{
 			Social.localUser.Authenticate ((success) => {
 				if (success) {
@@ -37,7 +37,7 @@ namespace Gj
 			});	
 		}
 
-		public void guest (Action<bool, PlayerInfo, string> CB)
+		public void Guest (Action<bool, PlayerInfo, string> CB)
 		{
 			PlayerInfo play = new PlayerInfo ();
 			play.platform = Platform.GUEST.ToString();
@@ -46,15 +46,15 @@ namespace Gj
 			CB(true, play, "success");
 		}
 
-		public void qq (Action<bool, PlayerInfo, string> CB) {
+		public void QQ (Action<bool, PlayerInfo, string> CB) {
 			UMAuth (Platform.QQ, CB);
 		}
 
-		public void weiXin (Action<bool, PlayerInfo, string> CB) {
+		public void WeiXin (Action<bool, PlayerInfo, string> CB) {
 			UMAuth (Platform.WEIXIN, CB);
 		}
 
-		public void faceBook (Action<bool, PlayerInfo, string> CB) {
+		public void FaceBook (Action<bool, PlayerInfo, string> CB) {
 			UMAuth (Platform.FACEBOOK, CB);
 		}
 

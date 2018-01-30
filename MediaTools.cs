@@ -27,7 +27,7 @@ namespace Gj
 		//	#if !UNITY_EDITOR
 		static private IntPtr _session;
 		//	#endif
-		public static IEnumerator photo (Camera camera, int x, int y, int width, int height, Action<bool, byte[], string> CB)
+		public static IEnumerator Photo (Camera camera, int x, int y, int width, int height, Action<bool, byte[], string> CB)
 		{
 			yield return new WaitForEndOfFrame ();
 			//		yield return new WaitForFixedUpdate ();
@@ -53,7 +53,7 @@ namespace Gj
 				CB (false, null, "Generating, do not start again");
 				return;
 			}
-			var file = Application.persistentDataPath + "/" + Tools.generateStr (10) + ".png";
+			var file = Application.persistentDataPath + "/" + Tools.GenerateStr (10) + ".png";
 			generateCallBack = () => {
 				CB (true, file, "success");
 			};
@@ -103,7 +103,7 @@ namespace Gj
 		[DllImport ("__Internal")]
 		private static extern bool unity_bindView ();
 
-		public static void bindView ()
+		public static void BindView ()
 		{
 			#if UNITY_IOS && !UNITY_EDITOR
 		unity_bindView ();
@@ -143,7 +143,7 @@ namespace Gj
 			__recording = true;
 			__inter_recording = true;
 
-			mediaAllPath = Application.persistentDataPath + "/" + Tools.generateStr (10) + ".mp4";
+			mediaAllPath = Application.persistentDataPath + "/" + Tools.GenerateStr (10) + ".mp4";
 			bool started = unity_startRecord (_session, mediaAllPath);
 			if (!started) {
 				Debug.Log ("Recording start error");
@@ -198,8 +198,8 @@ namespace Gj
 				return;
 			}
 			__inter_recording = false;
-			stop ((success) => {
-				release ();
+			Stop ((success) => {
+				Release ();
 				CB ();
 			});
 		}
@@ -216,8 +216,8 @@ namespace Gj
 				Debug.Log ("Record is error");
 				error = true;
 			}
-			stop ((success) => {
-				release ();
+			Stop ((success) => {
+				Release ();
 				if (!success || error) {
 					CB (false, null, "Record is error");
 				} else {
@@ -226,7 +226,7 @@ namespace Gj
 			});
 		}
 
-		private static void stop (Action<bool> finishCB)
+		private static void Stop (Action<bool> finishCB)
 		{
 			finishCallBack = finishCB;
 			unity_stopRecord (_session, _finishCallBack);
@@ -241,7 +241,7 @@ namespace Gj
 				finishCallBack (success);
 		}
 
-		private static void release ()
+		private static void Release ()
 		{
 			unity_releaseRecordSession (_session);
 			//		_session = null;

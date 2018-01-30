@@ -19,7 +19,7 @@ namespace Gj
 		{
 		}
 
-		public static Http getInstance ()
+		public static Http GetInstance ()
 		{
 			if (instance == null) {
 				lock (_lock) {
@@ -125,14 +125,14 @@ namespace Gj
 
 		IEnumerator IESend (string url, byte[] data, Dictionary<string,string> headers, Action<bool,WWW,string> CB)
 		{
-			headers.Add ("Cookie", cookieJar.generate (url));
+			headers.Add ("Cookie", cookieJar.Generate (url));
 			WWW www = new WWW (url, data, headers);
 			yield return www;
 			if (www.error != null) {
 				Debug.LogError (www.error);
 				Debug.LogError (www.text);
 			} else {
-				cookieJar.parse (www);
+				cookieJar.Parse (www);
 			}
 
 			if (CB != null) {
@@ -149,19 +149,19 @@ namespace Gj
 		{
 			private CookieContainer cc = new CookieContainer ();
 
-			public void set (string name, string value)
+			public void Set (string name, string value)
 			{
 				Cookie c = new Cookie (name, value);
 				cc.Add (c);
 			}
 
-			public void set (string name, string value, string path, string domain)
+			public void Set (string name, string value, string path, string domain)
 			{
 				Cookie c = new Cookie (name, value, path, domain);
 				cc.Add (c);
 			}
 
-			public void parse (WWW www)
+			public void Parse (WWW www)
 			{
 				if (!www.responseHeaders.ContainsKey ("SET-COOKIE")) {
 					return;
@@ -193,11 +193,11 @@ namespace Gj
 					if (info.Length != 2) {
 						continue;
 					}
-					set (info [0], info [1], "/", uri.Host);
+					Set (info [0], info [1], "/", uri.Host);
 				}
 			}
 
-			public string generate (string url)
+			public string Generate (string url)
 			{
 				string cookie = cc.GetCookieHeader (new Uri (url));
 
