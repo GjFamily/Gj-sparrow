@@ -1,16 +1,11 @@
 ﻿using System;
 using System.IO;
-using System.Text;
 using System.Collections;
-using System.Security.Cryptography;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.Events;
-using Random = UnityEngine.Random;
 
 namespace Gj
 {
-	public class FileTools
+    public class FileTools
 	{
 
 		public static string CreateFolder (string path, string name)
