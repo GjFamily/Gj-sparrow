@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections;
 using System.Security.Cryptography;
 using Random = UnityEngine.Random;
+using UnityEngine;
 
 namespace Gj
 {
@@ -120,7 +121,7 @@ namespace Gj
 			return pwd;
 		}
 
-		public static float CSomputeRotaion (float value)
+		public static float ComputeRotaion (float value)
 		{
 			if (value > 360) {
 				return value - 360;
@@ -130,5 +131,23 @@ namespace Gj
 				return value;
 			}
 		}
+
+        public static float width = 800;
+
+        public static float GetSystemRatio () {
+            return width / Screen.width;
+        }
+
+        public static float GetX (float x)
+        {
+            float ratio = GetSystemRatio();
+            return x * ratio;
+        }
+
+        public static float GetY (float y)
+        {
+            float ratio = GetSystemRatio();
+            return y * ratio;
+        }
 	}
 }

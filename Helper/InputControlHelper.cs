@@ -9,7 +9,10 @@ namespace Gj
         private float radius;
         public Image item;
         public float size;
+        public float offsetX;
+        public float offsetY;
         public bool left;
+        public bool refresh = true;
         // Use this for initialization
         void Start()
         {
@@ -25,41 +28,48 @@ namespace Gj
         public void OnPointerDown(PointerEventData eventData)
         {
             Vector2 position = GetPosition(eventData.position.x, eventData.position.y);
-            item.rectTransform.localPosition = GetPosition(eventData.position.x, eventData.position.y);
+            item.rectTransform.localPosition = position;
             ChangeValue(position.x / radius, position.y / radius);
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            item.rectTransform.localPosition = new Vector2(0, 0);
+            if (refresh) {
+                item.rectTransform.localPosition = new Vector2(0, 0);
+            }
             ChangeValue(0, 0);
         }
 
         public void OnDrag(PointerEventData eventData)
         {
             Vector2 position = GetPosition(eventData.position.x, eventData.position.y);
-            item.rectTransform.localPosition = GetPosition(eventData.position.x, eventData.position.y);
+            item.rectTransform.localPosition = position;
             ChangeValue(position.x / radius, position.y / radius);
         }
 
         private void ChangeValue(float x, float y) {
             if (left) {
-                SystemInput.px = x;
-                SystemInput.py = y;
+                SystemInput.lh = x / radius;
+                SystemInput.lv = y / radius;
             } else {
-                SystemInput.rx = x;
-                SystemInput.ry = y;
+                SystemInput.rh = x / radius;
+                SystemInput.rv = y / radius;
             }
         }
 
         private float GetPositionX(float x)
         {
-            return x - radius;
+            
+            if (left) {
+                return x - radius - offsetX;
+            } else {
+                return x - Tools.width + radius + offsetX;
+            }
         }
 
         private float GetPositionY(float y)
         {
-            return y - radius;
+            return y - radius - offsetY;
         }
 
         private bool IsOut(float x, float y)
@@ -70,8 +80,8 @@ namespace Gj
 
         private Vector2 GetPosition(float x, float y)
         {
-            float targetX = GetPositionX(x);
-            float targetY = GetPositionY(y);
+            float targetX = GetPositionX(Tools.GetX(x));
+            float targetY = GetPositionY(Tools.GetY(y));
             if (IsOut(targetX, targetY))
             {
                 //获取x，y坐标点弧度

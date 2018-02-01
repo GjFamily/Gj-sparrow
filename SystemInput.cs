@@ -2,9 +2,9 @@
 {
     public class SystemInput
     {
-        public static float px;
-        public static float py;
-        public static float rx;
-        public static float ry;
+        public static float lh;
+        public static float lv;
+        public static float rh;
+        public static float rv;
     }
 }
