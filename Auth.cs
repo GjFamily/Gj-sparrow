@@ -45,46 +45,5 @@ namespace Gj
 			play.name = "";
 			CB(true, play, "success");
 		}
-
-		public void QQ (Action<bool, PlayerInfo, string> CB) {
-			UMAuth (Platform.QQ, CB);
-		}
-
-		public void WeiXin (Action<bool, PlayerInfo, string> CB) {
-			UMAuth (Platform.WEIXIN, CB);
-		}
-
-		public void FaceBook (Action<bool, PlayerInfo, string> CB) {
-			UMAuth (Platform.FACEBOOK, CB);
-		}
-
-		private void UMAuth (Platform platform, Action<bool, PlayerInfo, string> CB) {
-			UM.Platform umPlatform;
-			switch(platform) {
-			case Platform.QQ:
-				umPlatform = UM.Platform.QQ;
-				break;
-			case Platform.WEIXIN:
-				umPlatform = UM.Platform.WEIXIN;
-				break;
-			case Platform.FACEBOOK:
-				umPlatform = UM.Platform.FACEBOOK;
-				break;
-			default:
-				CB (false, null, "platform is error!");
-				return;
-			}
-			UM.Authorize (umPlatform, (platformId, code, data) => {
-				if (code == UM.SUCCESS) {
-					PlayerInfo play = new PlayerInfo ();
-					play.platform = platform.ToString();
-					play.identity = data["uid"];
-					play.name = data["name"];
-					CB(true, play, "success");
-				} else {
-					CB(false, null, data["message"]);
-				}
-			});
-		}
 	}
 }
