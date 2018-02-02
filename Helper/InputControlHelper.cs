@@ -12,7 +12,6 @@ namespace Gj
         public float offsetX;
         public float offsetY;
         public bool left;
-        public bool refresh = true;
         // Use this for initialization
         void Start()
         {
@@ -34,9 +33,7 @@ namespace Gj
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (refresh) {
-                item.rectTransform.localPosition = new Vector2(0, 0);
-            }
+            item.rectTransform.localPosition = new Vector2(0, 0);
             ChangeValue(0, 0);
         }
 
@@ -47,11 +44,15 @@ namespace Gj
             ChangeValue(position.x / radius, position.y / radius);
         }
 
-        private void ChangeValue(float x, float y) {
-            if (left) {
+        private void ChangeValue(float x, float y)
+        {
+            if (left)
+            {
                 SystemInput.lh = x / radius;
                 SystemInput.lv = y / radius;
-            } else {
+            }
+            else
+            {
                 SystemInput.rh = x / radius;
                 SystemInput.rv = y / radius;
             }
@@ -59,10 +60,13 @@ namespace Gj
 
         private float GetPositionX(float x)
         {
-            
-            if (left) {
+
+            if (left)
+            {
                 return x - radius - offsetX;
-            } else {
+            }
+            else
+            {
                 return x - Tools.width + radius + offsetX;
             }
         }

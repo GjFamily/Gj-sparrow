@@ -6,23 +6,21 @@ namespace Gj
     public class CameraHelper : MonoBehaviour
     {
         public GameObject target;
-        public float offsetX;
-        public float offsetY;
-        public float offsetZ;
+        private float speed = 5;
         private Vector3 offsetPosition;
 
         // Use this for initialization
         void Start()
         {
-            offsetPosition = new Vector3(offsetX, offsetY, offsetZ);
+            offsetPosition = target.transform.position - transform.position;
         }
 
         // Update is called once per frame
         void Update()
         {
             if (target != null) {
-                transform.position = offsetPosition + target.transform.position;
-                transform.LookAt(target.transform);
+                transform.position = Vector3.Lerp(transform.position, target.transform.position - offsetPosition, Time.deltaTime * speed);
+                //transform.LookAt(target.transform);
             }
         }
     }
