@@ -3,24 +3,29 @@ using System.Collections;
 
 namespace Gj
 {
-    public class CameraHelper : MonoBehaviour
+    public class Follow : Part
     {
-        public GameObject target;
         private float speed = 5;
+        private GameObject target;
         private Vector3 offsetPosition;
 
         // Use this for initialization
         void Start()
         {
-            offsetPosition = target.transform.position - transform.position;
+            offsetPosition = Vector3.zero - transform.position;
+        }
+
+        public void FollowTarget(GameObject target, float speed)
+        {
+            this.speed = speed;
+            this.target = target;
         }
 
         // Update is called once per frame
         void Update()
         {
-            if (target != null) {
+            if (target) {
                 transform.position = Vector3.Lerp(transform.position, target.transform.position - offsetPosition, Time.deltaTime * speed);
-                //transform.LookAt(target.transform);
             }
         }
     }

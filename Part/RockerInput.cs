@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Gj
 {
-    public class InputControlHelper : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
+    public class RockerInput : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
         private float radius;
         public Image item;
@@ -48,13 +48,13 @@ namespace Gj
         {
             if (left)
             {
-                SystemInput.lh = x / radius;
-                SystemInput.lv = y / radius;
+                SystemInput.lh = x;
+                SystemInput.lv = y;
             }
             else
             {
-                SystemInput.rh = x / radius;
-                SystemInput.rv = y / radius;
+                SystemInput.rh = x;
+                SystemInput.rv = y;
             }
         }
 
