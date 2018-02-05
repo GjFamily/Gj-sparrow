@@ -4,7 +4,7 @@ using System;
 
 namespace Gj
 {
-    public class Entity : BaseComponent
+    public class BaseEntity : BaseComponent
     {
         // Use this for initialization
         void Start()

@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace Gj
 {
-    public class Part : BaseComponent
+    public class BasePart : BaseComponent
     {
         // Use this for initialization
         void Start()

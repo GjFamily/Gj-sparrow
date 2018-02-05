@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Gj
 {
-    public class RockerInput : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
+    public class RockerInput : BasePart, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
         private float radius;
         public Image item;

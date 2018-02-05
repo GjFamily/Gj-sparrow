@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace Gj
 {
-    public class Move : Part
+    public class Move : BasePart
     {
         private Vector3 end = Vector3.zero;
         private Vector3 direction = Vector3.zero;

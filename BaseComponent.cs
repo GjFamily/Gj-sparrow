@@ -24,7 +24,7 @@ namespace Gj
         void BindPart()
         {
             Type type = this.GetType();
-            // 遍历 Rectangle 类的特性
+
             foreach (System.Object attributes in type.GetCustomAttributes(false))
             {
                 AddPart addPart = (AddPart)attributes;

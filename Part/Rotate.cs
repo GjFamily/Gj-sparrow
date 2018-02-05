@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace Gj
 {
-    public class Rotate : Part
+    public class Rotate : BasePart
     {
         private float angle = 0;
         private float speed = 0;

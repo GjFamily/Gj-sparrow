@@ -3,12 +3,14 @@ using System.Collections;
 
 namespace Gj
 {
-    public class UIInput : Part
+    [AddPart(typeof(Follow))]
+    public class FollowCamera : BaseManage
     {
+        public Main system;
         // Use this for initialization
         void Start()
         {
-
+            GetComponent<Follow>().FollowTarget(system.play, 5);
         }
 
         // Update is called once per frame

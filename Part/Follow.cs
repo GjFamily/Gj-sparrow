@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace Gj
 {
-    public class Follow : Part
+    public class Follow : BasePart
     {
         private float speed = 5;
         private GameObject target;
