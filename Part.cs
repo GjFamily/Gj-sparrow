@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace Gj
 {
-    public class Part : MonoBehaviour
+    public class Part : BaseComponent
     {
         // Use this for initialization
         void Start()
