@@ -27,10 +27,12 @@ namespace Gj
 
             foreach (System.Object attributes in type.GetCustomAttributes(false))
             {
-                AddPart addPart = (AddPart)attributes;
-                if (null != addPart)
+                RequirePart requirePart = (RequirePart)attributes;
+                if (null != requirePart)
                 {
-                    gameObject.AddComponent(addPart.part);
+                    if (gameObject.GetComponent(requirePart.part) == null) {
+                        gameObject.AddComponent(requirePart.part);
+                    }
                 }
             }
         }

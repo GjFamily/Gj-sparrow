@@ -1,6 +1,6 @@
 ﻿namespace Gj
 {
-    public class SystemInput
+    public static class SystemInput
     {
         public static float lh;
         public static float lv;

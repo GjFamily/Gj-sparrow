@@ -3,7 +3,7 @@ using System;
 namespace Gj
 {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public sealed class AddPart : Attribute
+    public sealed class ModelRequirPart : Attribute
     {
         //
         // Fields
@@ -13,7 +13,7 @@ namespace Gj
         //
         // Constructors
         //
-        public AddPart(Type part) {
+        public ModelRequirPart(Type part) {
             this.part = part;
         }
     }

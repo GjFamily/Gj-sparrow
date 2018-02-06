@@ -3,14 +3,14 @@ using System.Collections;
 
 namespace Gj
 {
-    [AddPart(typeof(Follow))]
+    [RequirePart(typeof(Follow))]
     public class FollowCamera : BaseManage
     {
-        public Main system;
+        public BaseSystem system;
         // Use this for initialization
         void Start()
         {
-            GetComponent<Follow>().FollowTarget(system.play, 5);
+            GetComponent<Follow>().FollowTarget(system.player.gameObject, 5);
         }
 
         // Update is called once per frame

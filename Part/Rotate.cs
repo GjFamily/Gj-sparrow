@@ -14,7 +14,8 @@ namespace Gj
 
         }
 
-        public void SetAngle(float angle) {
+        public void SetAngle(float angle)
+        {
             transform.rotation = Quaternion.Euler(0, angle, 0);
         }
 
@@ -34,14 +35,14 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (angle > 0)
+            if (transform.rotation.eulerAngles.y == angle)
             {
-                if (transform.rotation.eulerAngles.y == angle) {
-                    Cancel();
-                } else {
-                    rotating = true;
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, angle, 0), Time.deltaTime * speed);
-                }
+                Cancel();
+            }
+            else
+            {
+                rotating = true;
+                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, angle, 0), Time.deltaTime * speed);
             }
         }
     }
