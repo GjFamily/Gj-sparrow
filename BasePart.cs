@@ -3,18 +3,9 @@ using System;
 
 namespace Gj
 {
-    public class BasePart : BaseComponent
+    public class BasePart : MonoBehaviour
     {
-        private GameObject _model;
-        public GameObject Model {
-            get {
-                return _model;
-            }
-            set {
-                _model = value;
-                this.ModelBindPart();
-            }
-        }
+
         // Use this for initialization
         void Start()
         {
@@ -27,18 +18,18 @@ namespace Gj
 
         }
 
-        void ModelBindPart () {
-
+        void BindPart()
+        {
             Type type = this.GetType();
 
-            foreach (System.Object attributes in type.GetCustomAttributes(false))
+            foreach (object attributes in type.GetCustomAttributes(typeof(RequirePart), false))
             {
-                ModelRequirPart modelRequirePart = (ModelRequirPart)attributes;
-                if (null != modelRequirePart)
+                RequirePart requirePart = attributes as RequirePart;
+                if (null != requirePart)
                 {
-                    if (_model.GetComponent(modelRequirePart.part) == null)
+                    if (gameObject.GetComponent(requirePart.part) == null)
                     {
-                        _model.AddComponent(modelRequirePart.part);
+                        gameObject.AddComponent(requirePart.part);
                     }
                 }
             }
