@@ -15,36 +15,17 @@ namespace Gj
             set
             {
                 _model = value;
-                this.BindPart();
+                Tools.BindPart(this, _model);
             }
         }
-        // Use this for initialization
-        void Start()
-        {
 
+        protected T GetSubComponent<T>() {
+            return Model.GetComponent<T>();
         }
 
-        // Update is called once per frame
-        void Update()
+        protected T[] GetSubComponents<T>()
         {
-
-        }
-
-        void BindPart()
-        {
-            Type type = this.GetType();
-
-            foreach (System.Object attributes in type.GetCustomAttributes(false))
-            {
-                SubRequirePart subRequirePart = (SubRequirePart)attributes;
-                if (null != subRequirePart)
-                {
-                    if (_model.GetComponent(subRequirePart.part) == null)
-                    {
-                        _model.AddComponent(subRequirePart.part);
-                    }
-                }
-            }
+            return Model.GetComponents<T>();
         }
     }
 }

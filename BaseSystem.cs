@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections;
+using System;
+using System.Reflection;
 
 namespace Gj
 {
@@ -9,6 +11,13 @@ namespace Gj
         public GameObject player;
         private bool leftRockerTouch = false;
         private bool rightRochkerTouch = false;
+
+        protected virtual void Awake()
+        {
+            Tools.BindPart(this, gameObject);
+            Tools.AddSub(this, gameObject);
+        }
+
         // Use this for initialization
         protected virtual void Start()
         {
@@ -21,7 +30,8 @@ namespace Gj
             if (System.Math.Abs(SystemInput.lh) > 0 || System.Math.Abs(SystemInput.lv) > 0)
             {
                 HandleRocker(SystemInput.lh, SystemInput.lv, true);
-                if (!leftRockerTouch) {
+                if (!leftRockerTouch)
+                {
                     LeftRockerEnter();
                     leftRockerTouch = true;
                 }
@@ -38,7 +48,8 @@ namespace Gj
             if (System.Math.Abs(SystemInput.rh) > 0 || System.Math.Abs(SystemInput.rv) > 0)
             {
                 HandleRocker(SystemInput.rh, SystemInput.rv, false);
-                if (!rightRochkerTouch) {
+                if (!rightRochkerTouch)
+                {
                     RightRockerEnter();
                     rightRochkerTouch = true;
                 }
@@ -71,7 +82,7 @@ namespace Gj
             return Mathf.Atan2(h, v) * Mathf.Rad2Deg;
         }
 
-        protected virtual void UIClick(string key) {}
+        protected virtual void UIClick(string key) { }
 
         protected virtual void LeftRockerEnter() { }
 

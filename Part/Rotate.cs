@@ -35,14 +35,17 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (transform.rotation.eulerAngles.y == angle)
+            if (speed > 0)
             {
-                Cancel();
-            }
-            else
-            {
-                rotating = true;
-                transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, angle, 0), Time.deltaTime * speed);
+                if (transform.rotation.eulerAngles.y == angle)
+                {
+                    Cancel();
+                }
+                else
+                {
+                    rotating = true;
+                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, angle, 0), Time.deltaTime * speed);
+                }
             }
         }
     }
