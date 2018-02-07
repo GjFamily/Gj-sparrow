@@ -2,7 +2,7 @@ using System;
 
 namespace Gj
 {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
     public sealed class RequirePart : Attribute
     {
         //

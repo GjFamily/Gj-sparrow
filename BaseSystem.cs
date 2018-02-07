@@ -14,7 +14,6 @@ namespace Gj
 
         protected virtual void Awake()
         {
-            Tools.BindPart(this, gameObject);
             Tools.AddSub(this, gameObject);
         }
 
