@@ -191,9 +191,6 @@ namespace Gj
                         {
                             if (t.GetComponent(addFeature.feature) == null)
                             {
-                                Debug.Log(t);
-                                Debug.Log(addFeature.feature);
-                                Debug.Log(fieldInfo.GetValue(c));
                                 BaseFeature baseSub = t.AddComponent(addFeature.feature) as BaseFeature;
                                 GameObject obj = fieldInfo.GetValue(c) as GameObject;
                                 if (obj != null) {

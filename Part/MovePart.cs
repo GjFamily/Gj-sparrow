@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections;
 
@@ -17,12 +18,14 @@ namespace Gj
 
         public void SetEnd(Vector3 end, float speed)
         {
+            moving = true;
             this.end = end;
             this.speed = speed;
         }
 
         public void SetDirection(Vector3 direction, float speed)
         {
+            moving = true;
             this.direction = direction;
             this.speed = speed;
         }
@@ -43,13 +46,11 @@ namespace Gj
                 if (transform.position.Equals(end)) {
                     Cancel();
                 } else {
-                    moving = true;
                     transform.position = Vector3.Lerp(transform.position, end, Time.deltaTime * speed);
                 }
             }
             else if (speed > 0 && !Vector3.zero.Equals(direction))
             {
-                moving = true;
                 transform.Translate(direction * Time.deltaTime * speed, Space.World);
             }
         }

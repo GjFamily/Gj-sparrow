@@ -21,21 +21,12 @@ namespace Gj
             return identity;
         }
 
-        public bool IsPartner (GameObject obj) {
-            return false;
+        public bool IsPartner (RelationPart relation) {
+            return true;
         }
 
-        public bool IsEnemy (GameObject obj) {
-            return false;
-        }
-
-        private Identity GetIdentity (GameObject obj) {
-            RelationPart reationPart = obj.GetComponent<RelationPart>();
-            if (reationPart == null) {
-                return Identity.Empty;
-            } else {
-                return reationPart.GetIdentity();
-            }
+        public bool IsEnemy (RelationPart relation) {
+            return true;
         }
 
 

@@ -16,6 +16,14 @@ namespace Gj
             {
                 _model = value;
                 Tools.BindPart(this, _model);
+                Init();
+            }
+        }
+
+        private void Init (){
+            BeLongPart beLong = GetFeatureComponent<BeLongPart>();
+            if (beLong != null) {
+                beLong.SetMaster(gameObject);
             }
         }
 

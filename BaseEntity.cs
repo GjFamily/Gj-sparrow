@@ -21,14 +21,32 @@ namespace Gj
 
         public bool AllowAttack(GameObject obj1, GameObject obj2)
         {
-            RelationPart relationPart = obj1.GetComponent<RelationPart>();
-            if (relationPart != null)
+            RelationPart relation1 = GetRelationPart(obj1);
+            RelationPart relation2 = GetRelationPart(obj2);
+            if (relation1 != null && relation2 != null)
             {
-                return relationPart.IsEnemy(obj2);
+                return relation1.IsEnemy(relation2);
             }
             else
             {
+                Debug.Log(obj1.name);
+                Debug.Log(obj2.name);
                 return false;
+            }
+        }
+
+        public RelationPart GetRelationPart(GameObject obj)
+        {
+            return GetMaster(obj).GetComponent<RelationPart>();
+        }
+
+        public GameObject GetMaster(GameObject obj)
+        {
+            if (obj.GetComponent<BeLongPart>() != null)
+            {
+                return obj.GetComponent<BeLongPart>().GetMaster();
+            } else {
+                return obj;
             }
         }
     }

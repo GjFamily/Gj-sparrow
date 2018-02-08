@@ -51,7 +51,7 @@ namespace Gj
             {
                 if (rightRochkerTouch)
                 {
-                    RightROckerExit();
+                    RightRockerExit();
                     rightRochkerTouch = false;
                 }
             }
@@ -87,6 +87,6 @@ namespace Gj
 
         protected virtual void RightRocker(float angle, float h, float v) { }
 
-        protected virtual void RightROckerExit() { }
+        protected virtual void RightRockerExit() { }
     }
 }
