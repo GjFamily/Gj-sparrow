@@ -41,7 +41,7 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (speed > 0 && !Vector3.zero.Equals(end))
+            if (moving && !Vector3.zero.Equals(end))
             {
                 if (transform.position.Equals(end)) {
                     Cancel();
@@ -49,7 +49,7 @@ namespace Gj
                     transform.position = Vector3.Lerp(transform.position, end, Time.deltaTime * speed);
                 }
             }
-            else if (speed > 0 && !Vector3.zero.Equals(direction))
+            else if (moving && !Vector3.zero.Equals(direction))
             {
                 transform.Translate(direction * Time.deltaTime * speed, Space.World);
             }
