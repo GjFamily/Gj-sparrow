@@ -165,7 +165,7 @@ namespace Gj
 
         public static void BindPart(Component c, GameObject t)
         {
-            foreach (object attributes in c.GetType().GetCustomAttributes(typeof(RequirePart), false))
+            foreach (object attributes in c.GetType().GetCustomAttributes(typeof(RequirePart), true))
             {
                 RequirePart requirePart = attributes as RequirePart;
                 if (null != requirePart)
@@ -191,8 +191,14 @@ namespace Gj
                         {
                             if (t.GetComponent(addFeature.feature) == null)
                             {
+                                Debug.Log(t);
+                                Debug.Log(addFeature.feature);
+                                Debug.Log(fieldInfo.GetValue(c));
                                 BaseFeature baseSub = t.AddComponent(addFeature.feature) as BaseFeature;
-                                baseSub.Model = fieldInfo.GetValue(c) as GameObject;
+                                GameObject obj = fieldInfo.GetValue(c) as GameObject;
+                                if (obj != null) {
+                                    baseSub.Model = obj;
+                                }
                             }
                         }
                     }
