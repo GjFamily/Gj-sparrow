@@ -29,7 +29,8 @@ namespace Gj
             }
         }
 
-        protected bool IsSelf(GameObject obj) {
+        protected bool IsSelf(GameObject obj)
+        {
             if (GetMaster(obj) == GetMaster(gameObject))
             {
                 return true;
@@ -42,7 +43,8 @@ namespace Gj
 
         protected bool IsSkill(GameObject obj)
         {
-            if (obj.GetComponent<SkillEntity>() != null)
+            RelationPart relation = GetMaster(obj).GetComponent<RelationPart>();
+            if (relation != null && relation.IsSkill())
             {
                 return true;
             }
@@ -54,7 +56,8 @@ namespace Gj
 
         protected bool IsTarget(GameObject obj)
         {
-            if (obj.GetComponent<TargetEntity>() != null || obj.GetComponent<BeLongPart>() != null)
+            RelationPart relation = GetMaster(obj).GetComponent<RelationPart>();
+            if (relation != null && relation.IsTarget())
             {
                 return true;
             }

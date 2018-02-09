@@ -5,6 +5,7 @@ using System.Reflection;
 
 namespace Gj
 {
+    [RequirePart(typeof(RelationPart))]
     public class BaseEntity : MonoBehaviour
     {
 
@@ -29,8 +30,6 @@ namespace Gj
             }
             else
             {
-                Debug.Log(obj1.name);
-                Debug.Log(obj2.name);
                 return false;
             }
         }

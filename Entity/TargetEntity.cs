@@ -3,7 +3,6 @@ using System.Collections;
 
 namespace Gj
 {
-    [RequirePart(typeof(RelationPart))]
     [RequirePart(typeof(AttackPart))]
     [RequirePart(typeof(DefensePart))]
     public class TargetEntity : BaseEntity
