@@ -27,47 +27,66 @@ namespace Gj
 
         public bool IsTarget()
         {
-            return IsTarget(this);
-        }
-
-        public bool IsTarget(RelationPart relation)
-        {
-
-            if (relation.GetIdentity() != Identity.Skill && relation.GetIdentity() != Identity.Empty)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return GetIdentity() != Identity.Skill && GetIdentity() != Identity.Empty;
         }
 
         public bool IsSkill()
         {
-            return IsSkill(this);
+            return GetIdentity() == Identity.Skill;
         }
 
-        public bool IsSkill(RelationPart relation)
-        {
-            if (relation.GetIdentity() == Identity.Skill)
-            {
-                return true;
-            }
-            else
-            {
+        public bool IsPartner(GameObject obj) {
+            RelationPart relation = obj.GetComponent<RelationPart>();
+            if (relation != null) {
+                return IsPartner(relation);
+            } else {
                 return false;
             }
         }
 
         public bool IsPartner(RelationPart relation)
         {
-            return true;
+            if (GetIdentity() == Identity.Monster)
+            {
+                return relation.GetIdentity() == Identity.Monster;
+            }
+            else if (GetIdentity() == Identity.Partner || GetIdentity() == Identity.Player)
+            {
+                return relation.GetIdentity() == Identity.Partner || relation.GetIdentity() == Identity.Player;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsEnemy(GameObject obj)
+        {
+            RelationPart relation = obj.GetComponent<RelationPart>();
+            if (relation != null)
+            {
+                return IsEnemy(relation);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public bool IsEnemy(RelationPart relation)
         {
-            return true;
+            if (GetIdentity() == Identity.Monster)
+            {
+                return relation.GetIdentity() == Identity.Partner || relation.GetIdentity() == Identity.Player;
+            }
+            else if (GetIdentity() == Identity.Partner || GetIdentity() == Identity.Player)
+            {
+                return relation.GetIdentity() == Identity.Monster;
+            }
+            else
+            {
+                return false;
+            }
         }
 
 

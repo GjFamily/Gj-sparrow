@@ -6,6 +6,7 @@ namespace Gj
 {
     public class MovePart : BasePart
     {
+        private GameObject target;
         private Vector3 end = Vector3.zero;
         private Vector3 direction = Vector3.zero;
         private float speed = 0;
@@ -14,6 +15,12 @@ namespace Gj
         void Start()
         {
 
+        }
+
+        public void SetTarget(GameObject target, float speed) {
+            moving = true;
+            this.target = target;
+            this.speed = speed;
         }
 
         public void SetEnd(Vector3 end, float speed)
@@ -32,6 +39,7 @@ namespace Gj
 
         public void Cancel()
         {
+            this.target = null;
             this.direction = Vector3.zero;
             this.end = Vector3.zero;
             this.speed = 0;
@@ -41,7 +49,9 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (moving && !Vector3.zero.Equals(end))
+            if (moving && target != null) {
+                transform.position = Vector3.Lerp(transform.position, target.transform.position, Time.deltaTime * speed);
+            }else if (moving && !Vector3.zero.Equals(end))
             {
                 if (transform.position.Equals(end)) {
                     Cancel();

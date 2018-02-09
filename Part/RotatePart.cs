@@ -5,6 +5,7 @@ namespace Gj
 {
     public class RotatePart : BasePart
     {
+        private GameObject target;
         private float angle = 0;
         private float speed = 0;
         private bool rotating = false;
@@ -12,6 +13,10 @@ namespace Gj
         void Start()
         {
 
+        }
+
+        public void SetTarget (GameObject target) {
+            this.target = target;
         }
 
         public void SetAngle(float angle)
@@ -27,6 +32,7 @@ namespace Gj
 
         public void Cancel()
         {
+            this.target = null;
             this.angle = 0;
             this.speed = 0;
             this.rotating = false;
@@ -35,7 +41,9 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (speed > 0)
+            if (target != null) {
+                transform.LookAt(target.transform);
+            } else if (speed > 0)
             {
                 if (transform.rotation.eulerAngles.y == angle)
                 {
