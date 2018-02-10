@@ -9,6 +9,7 @@ namespace Gj
     {
         private Action<GameObject> FindPartner;
         private Action<GameObject> FindEnemy;
+        private GameObject[] targetList;
 
         void Start()
         {
