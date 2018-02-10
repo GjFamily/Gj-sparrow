@@ -32,6 +32,7 @@ namespace Gj
 
         public void SetTarget(GameObject target, float speed)
         {
+            Cancel();
             moving = true;
             this.target = target;
             this.speed = speed;
@@ -39,6 +40,7 @@ namespace Gj
 
         public void SetEnd(Vector3 end, float speed)
         {
+            Cancel();
             moving = true;
             this.end = end;
             this.speed = speed;
@@ -46,6 +48,7 @@ namespace Gj
 
         public void SetDirection(Vector3 direction, float speed)
         {
+            Cancel();
             moving = true;
             this.direction = direction;
             this.speed = speed;
