@@ -13,14 +13,14 @@ namespace Gj
             FindTarget = action;
         }
 
-        public void SetLoseTargetNotci (Action<GameObject> action) {
+        public void SetLoseTargetNotic (Action<GameObject> action) {
             LoseTarget = action;
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            RelationPart relation = other.gameObject.GetComponent<RelationPart>();
-            if (relation != null && relation.IsTarget() && FindTarget != null) {
+            InfoPart info = other.gameObject.GetComponent<InfoPart>();
+            if (info != null && info.IsTarget() && FindTarget != null) {
                 FindTarget(other.gameObject);
             }
         }
@@ -32,8 +32,8 @@ namespace Gj
 
         private void OnTriggerExit(Collider other)
         {
-            RelationPart relation = other.gameObject.GetComponent<RelationPart>();
-            if (relation != null && relation.IsTarget() && FindTarget != null)
+            InfoPart info = other.gameObject.GetComponent<InfoPart>();
+            if (info != null && info.IsTarget() && FindTarget != null)
             {
                 LoseTarget(other.gameObject);
             }

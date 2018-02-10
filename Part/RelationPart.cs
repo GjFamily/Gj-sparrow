@@ -5,14 +5,13 @@ namespace Gj
 {
     public class RelationPart : BasePart
     {
-        private Identity identity;
+        private Identity identity = Identity.Empty;
         public enum Identity
         {
             Partner,
             Monster,
             Player,
-            Empty,
-            Skill
+            Empty
         }
 
         public void SetIdentity(Identity i)
@@ -25,21 +24,15 @@ namespace Gj
             return identity;
         }
 
-        public bool IsTarget()
+        public bool IsPartner(GameObject obj)
         {
-            return GetIdentity() != Identity.Skill && GetIdentity() != Identity.Empty;
-        }
-
-        public bool IsSkill()
-        {
-            return GetIdentity() == Identity.Skill;
-        }
-
-        public bool IsPartner(GameObject obj) {
             RelationPart relation = obj.GetComponent<RelationPart>();
-            if (relation != null) {
+            if (relation != null)
+            {
                 return IsPartner(relation);
-            } else {
+            }
+            else
+            {
                 return false;
             }
         }

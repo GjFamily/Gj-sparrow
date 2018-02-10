@@ -6,22 +6,15 @@ namespace Gj
     public class BeLongPart : BasePart
     {
         private GameObject master;
-        private bool ignore = false;
 
-        public void SetMaster(GameObject obj, bool ignore = false)
+        public void SetMaster(GameObject obj)
         {
-            this.master = obj;
-            this.ignore = ignore;
+            master = obj;
         }
 
-        public GameObject GetMaster(bool notIgnore = false)
+        public GameObject GetMaster()
         {
-            if (!notIgnore && ignore)
-            {
-                return gameObject;
-            } else {
-                return this.master;
-            }
+            return master;
         }
     }
 }

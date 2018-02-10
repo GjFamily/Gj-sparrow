@@ -4,6 +4,7 @@ using System;
 namespace Gj
 {
     [RequirePart(typeof(BeLongPart))]
+    [RequirePart(typeof(InfoPart))]
     public class BaseFeature : MonoBehaviour
     {
         private GameObject _model;
@@ -17,17 +18,8 @@ namespace Gj
             {
                 _model = value;
                 Tools.BindPart(this, _model);
-                Init();
+                GetFeatureComponent<BeLongPart>().SetMaster(gameObject);
             }
-        }
-        protected bool ignoreMaster = false;
-
-        protected virtual void Init (){
-            GetFeatureComponent<BeLongPart>().SetMaster(gameObject, ignoreMaster);
-        }
-
-        protected GameObject GetMaster () {
-            return GetFeatureComponent<BeLongPart>().GetMaster(true);
         }
 
         protected T GetFeatureComponent<T>() {

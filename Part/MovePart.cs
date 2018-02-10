@@ -11,13 +11,27 @@ namespace Gj
         private Vector3 direction = Vector3.zero;
         private float speed = 0;
         private bool moving = false;
+        private bool needHit = false;
+        private float hitDirection = 0;
         // Use this for initialization
         void Start()
         {
 
         }
 
-        public void SetTarget(GameObject target, float speed) {
+        public void NeedHit(float direction)
+        {
+            needHit = true;
+            hitDirection = direction;
+        }
+
+        public void NotNeedHit()
+        {
+            needHit = false;
+        }
+
+        public void SetTarget(GameObject target, float speed)
+        {
             moving = true;
             this.target = target;
             this.speed = speed;
@@ -49,20 +63,47 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (moving && target != null) {
-                transform.position = Vector3.Lerp(transform.position, target.transform.position, Time.deltaTime * speed);
-            }else if (moving && !Vector3.zero.Equals(end))
+            if (moving && !IsHit())
             {
-                if (transform.position.Equals(end)) {
-                    Cancel();
-                } else {
-                    transform.position = Vector3.Lerp(transform.position, end, Time.deltaTime * speed);
+                if (target != null)
+                {
+                    transform.position = Vector3.MoveTowards(transform.position, target.transform.position, Time.deltaTime * speed);
+                }
+                else if (!Vector3.zero.Equals(end))
+                {
+                    if (transform.position.Equals(end))
+                    {
+                        Cancel();
+                    }
+                    else
+                    {
+                        transform.position = Vector3.MoveTowards(transform.position, end, Time.deltaTime * speed);
+                    }
+                }
+                else if (!Vector3.zero.Equals(direction))
+                {
+                    transform.Translate(direction * Time.deltaTime * speed, Space.World);
                 }
             }
-            else if (moving && !Vector3.zero.Equals(direction))
+        }
+
+        bool IsHit()
+        {
+            if (!needHit) return false;
+            RaycastHit hit;
+
+            if (Physics.Raycast(transform.position, transform.forward, out hit, hitDirection))
             {
-                transform.Translate(direction * Time.deltaTime * speed, Space.World);
+                InfoPart info = hit.transform.gameObject.GetComponent<InfoPart>();
+                if (info != null)
+                {
+                    if (info.IsBuild())
+                    {
+                        return true;
+                    }
+                }
             }
+            return false;
         }
     }
 }

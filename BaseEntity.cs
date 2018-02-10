@@ -6,6 +6,7 @@ using System.Reflection;
 namespace Gj
 {
     [RequirePart(typeof(RelationPart))]
+    [RequirePart(typeof(InfoPart))]
     public class BaseEntity : MonoBehaviour
     {
 
@@ -17,13 +18,8 @@ namespace Gj
 
         public bool AllowAttack(GameObject obj)
         {
-            return AllowAttack(gameObject, obj);
-        }
-
-        public bool AllowAttack(GameObject obj1, GameObject obj2)
-        {
-            RelationPart relation1 = GetRelationPart(obj1);
-            RelationPart relation2 = GetRelationPart(obj2);
+            RelationPart relation1 = GetMaster(obj).GetComponent<RelationPart>();
+            RelationPart relation2 = GetMaster(obj).GetComponent<RelationPart>();
             if (relation1 != null && relation2 != null)
             {
                 return relation1.IsEnemy(relation2);
@@ -32,11 +28,6 @@ namespace Gj
             {
                 return false;
             }
-        }
-
-        public RelationPart GetRelationPart(GameObject obj)
-        {
-            return GetMaster(obj).GetComponent<RelationPart>();
         }
 
         public GameObject GetMaster(GameObject obj)

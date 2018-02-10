@@ -6,6 +6,7 @@ namespace Gj
     public class RotatePart : BasePart
     {
         private GameObject target;
+        private Vector3 targetPosition;
         private float angle = 0;
         private float speed = 0;
         private bool rotating = false;
@@ -13,6 +14,11 @@ namespace Gj
         void Start()
         {
 
+        }
+
+        public void SetTarget(Vector3 target)
+        {
+            this.targetPosition = target;
         }
 
         public void SetTarget (GameObject target) {
@@ -42,7 +48,9 @@ namespace Gj
         void Update()
         {
             if (target != null) {
-                transform.LookAt(target.transform);
+                transform.LookAt(target.transform.position);
+            }else if (!targetPosition.Equals(Vector3.zero)) {
+                transform.LookAt(targetPosition);
             } else if (speed > 0)
             {
                 if (transform.rotation.eulerAngles.y == angle)

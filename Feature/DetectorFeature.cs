@@ -7,16 +7,14 @@ namespace Gj
     [RequirePart(typeof(RadarPart))]
     public class DetectorFeature : BaseFeature
     {
-        protected new bool ignoreMaster = true;
         private Action<GameObject> FindPartner;
         private Action<GameObject> FindEnemy;
 
-        protected override void Init()
+        void Start()
         {
-            base.Init();
             RadarPart radar = GetFeatureComponent<RadarPart>();
             radar.SetFindTargetNotic(FindTarget);
-            radar.SetLoseTargetNotci(LoseTarget);
+            radar.SetLoseTargetNotic(LoseTarget);
         }
 
         public void SetFindPartnerNotic(Action<GameObject> action)
@@ -31,7 +29,7 @@ namespace Gj
 
         private void FindTarget(GameObject obj)
         {
-            RelationPart relation = GetMaster().GetComponent<RelationPart>();
+            RelationPart relation = GetComponent<RelationPart>();
             if (relation != null)
             {
                 if (FindPartner != null && relation.IsPartner(obj))

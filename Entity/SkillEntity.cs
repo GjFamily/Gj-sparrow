@@ -40,31 +40,5 @@ namespace Gj
                 return false;
             }
         }
-
-        protected bool IsSkill(GameObject obj)
-        {
-            RelationPart relation = GetMaster(obj).GetComponent<RelationPart>();
-            if (relation != null && relation.IsSkill())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        protected bool IsTarget(GameObject obj)
-        {
-            RelationPart relation = GetMaster(obj).GetComponent<RelationPart>();
-            if (relation != null && relation.IsTarget())
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
     }
 }
