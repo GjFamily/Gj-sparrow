@@ -6,6 +6,7 @@ namespace Gj
     public class InfoPart : BasePart
     {
         private Category category = Category.Empty;
+        public float radio = 0;
         public enum Category
         {
             Build,
@@ -19,11 +20,6 @@ namespace Gj
         public void SetCategory(Category i)
         {
             category = i;
-        }
-
-        public Category GetCategory()
-        {
-            return category;
         }
 
         public bool IsEmpty()

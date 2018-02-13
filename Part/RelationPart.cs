@@ -19,14 +19,9 @@ namespace Gj
             identity = i;
         }
 
-        public Identity GetIdentity()
-        {
-            return identity;
-        }
-
         public bool IsPartner(GameObject obj)
         {
-            RelationPart relation = obj.GetComponent<RelationPart>();
+            RelationPart relation = Tools.GetMaster(obj).GetComponent<RelationPart>();
             if (relation != null)
             {
                 return IsPartner(relation);
@@ -39,13 +34,13 @@ namespace Gj
 
         public bool IsPartner(RelationPart relation)
         {
-            if (GetIdentity() == Identity.Monster)
+            if (identity == Identity.Monster)
             {
-                return relation.GetIdentity() == Identity.Monster;
+                return relation.identity == Identity.Monster;
             }
-            else if (GetIdentity() == Identity.Partner || GetIdentity() == Identity.Player)
+            else if (identity == Identity.Partner || identity == Identity.Player)
             {
-                return relation.GetIdentity() == Identity.Partner || relation.GetIdentity() == Identity.Player;
+                return relation.identity == Identity.Partner || relation.identity == Identity.Player;
             }
             else
             {
@@ -55,7 +50,7 @@ namespace Gj
 
         public bool IsEnemy(GameObject obj)
         {
-            RelationPart relation = obj.GetComponent<RelationPart>();
+            RelationPart relation = Tools.GetMaster(obj).GetComponent<RelationPart>();
             if (relation != null)
             {
                 return IsEnemy(relation);
@@ -68,13 +63,13 @@ namespace Gj
 
         public bool IsEnemy(RelationPart relation)
         {
-            if (GetIdentity() == Identity.Monster)
+            if (identity == Identity.Monster)
             {
-                return relation.GetIdentity() == Identity.Partner || relation.GetIdentity() == Identity.Player;
+                return relation.identity == Identity.Partner || relation.identity == Identity.Player;
             }
-            else if (GetIdentity() == Identity.Partner || GetIdentity() == Identity.Player)
+            else if (identity == Identity.Partner || identity == Identity.Player)
             {
-                return relation.GetIdentity() == Identity.Monster;
+                return relation.identity == Identity.Monster;
             }
             else
             {

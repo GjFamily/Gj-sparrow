@@ -161,7 +161,17 @@ namespace Gj
             return y * ratio;
         }
 
-
+        public static GameObject GetMaster(GameObject obj)
+        {
+            if (obj.GetComponent<BeLongPart>() != null)
+            {
+                return obj.GetComponent<BeLongPart>().GetMaster();
+            }
+            else
+            {
+                return obj;
+            }
+        }
 
         public static void BindPart(Component c, GameObject t)
         {

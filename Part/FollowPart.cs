@@ -15,7 +15,8 @@ namespace Gj
             offsetPosition = Vector3.zero - transform.position;
         }
 
-        public void Cancel(){
+        public void Cancel()
+        {
             this.speed = 0;
             this.target = null;
         }
@@ -29,7 +30,8 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (target && speed > 0) {
+            if (target && speed > 0)
+            {
                 transform.position = Vector3.Lerp(transform.position, target.transform.position - offsetPosition, Time.deltaTime * speed);
             }
         }

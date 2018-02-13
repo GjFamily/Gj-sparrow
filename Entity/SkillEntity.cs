@@ -20,6 +20,16 @@ namespace Gj
 
         }
 
+        public virtual void Cast(Vector3 from, Vector3 to)
+        {
+
+        }
+
+        public virtual void Cast(Vector3 position, float radius)
+        {
+
+        }
+
         protected void AttackTarget(GameObject target)
         {
             DefensePart defensePart = target.GetComponent<DefensePart>();
@@ -31,9 +41,22 @@ namespace Gj
 
         protected bool IsSelf(GameObject obj)
         {
-            if (GetMaster(obj) == GetMaster(gameObject))
+            if (Tools.GetMaster(obj) == Tools.GetMaster(gameObject))
             {
                 return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        protected bool AllowAttack(GameObject obj)
+        {
+            RelationPart relation = Tools.GetMaster(gameObject).GetComponent<RelationPart>();
+            if (relation != null)
+            {
+                return relation.IsEnemy(obj);
             }
             else
             {
