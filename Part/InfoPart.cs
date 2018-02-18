@@ -7,6 +7,7 @@ namespace Gj
     {
         private Category category = Category.Empty;
         public float radio = 0;
+        public bool player = false;
         public enum Category
         {
             Build,

@@ -13,6 +13,6 @@ namespace Gj
             GetComponent<DefensePart>().SetNotic(Damaged);
         }
 
-        protected virtual void Damaged(float power) { }
+        protected virtual void Damaged(float power, GameObject obj) { }
     }
 }

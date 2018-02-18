@@ -21,6 +21,11 @@ namespace Gj
             this.target = null;
         }
 
+        public void FollowTarget(GameObject target)
+        {
+            this.target = target;
+        }
+
         public void FollowTarget(GameObject target, float speed)
         {
             this.speed = speed;
@@ -30,9 +35,11 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (target && speed > 0)
+            if (target != null && speed > 0)
             {
                 transform.position = Vector3.Lerp(transform.position, target.transform.position - offsetPosition, Time.deltaTime * speed);
+            } else {
+                transform.position = target.transform.position - offsetPosition;
             }
         }
     }

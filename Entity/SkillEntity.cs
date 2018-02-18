@@ -35,7 +35,7 @@ namespace Gj
             DefensePart defensePart = target.GetComponent<DefensePart>();
             if (defensePart != null)
             {
-                defensePart.BeAttacked(power);
+                defensePart.BeAttacked(power, Tools.GetMaster(gameObject));
             }
         }
 

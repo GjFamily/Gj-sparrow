@@ -75,8 +75,6 @@ namespace Gj
             return Mathf.Atan2(h, v) * Mathf.Rad2Deg;
         }
 
-        protected virtual void UIClick(string key) { }
-
         protected virtual void LeftRockerEnter() { }
 
         protected virtual void LeftRocker(float angle, float h, float v) { }

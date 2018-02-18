@@ -4,7 +4,6 @@ using System;
 namespace Gj
 {
     [RequirePart(typeof(BeLongPart))]
-    [RequirePart(typeof(InfoPart))]
     public class BaseFeature : MonoBehaviour
     {
         private GameObject _model;

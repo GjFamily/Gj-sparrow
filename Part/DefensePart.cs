@@ -6,7 +6,7 @@ namespace Gj
 {
     public class DefensePart : BasePart
     {
-        private Action<float> notic;
+        private Action<float, GameObject> notic;
         // Use this for initialization
         void Start()
         {
@@ -19,13 +19,13 @@ namespace Gj
 
         }
 
-        public void SetNotic(Action<float> notic) {
+        public void SetNotic(Action<float, GameObject> notic) {
             this.notic = notic;
         }
 
-        public void BeAttacked(float power) {
+        public void BeAttacked(float power, GameObject target) {
             if (notic != null) {
-                notic(power);
+                notic(power, target);
             }
         }
     }

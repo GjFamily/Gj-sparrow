@@ -9,7 +9,7 @@ namespace Gj
     [RequirePart(typeof(InfoPart))]
     public class BaseEntity : MonoBehaviour
     {
-
+        public bool update = false;
         protected virtual void Awake()
         {
             Tools.BindPart(this, gameObject);

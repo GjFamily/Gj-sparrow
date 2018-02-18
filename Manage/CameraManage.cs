@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Gj
 {
-    public class CameraManage : BaseManage
+    public class CameraManage
     {
         public Camera[] cameraList;
         private Dictionary<string, Camera> cameraMap = new Dictionary<string, Camera>();
