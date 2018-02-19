@@ -53,7 +53,8 @@ namespace Gj
             Vector3 p = new Vector3(start.transform.position.x, 0, start.transform.position.z) + start.transform.forward * distance;
             SkillEntity skillEntity = skill.GetComponent<SkillEntity>();
             if (skillEntity!=null) {
-                skillEntity.SetMaster(gameObject, power).Cast(start.transform.position, p, speed);
+                skillEntity.SetMaster(gameObject);
+                skillEntity.Cast(start.transform.position, p, speed);
             }
         }
 
@@ -62,7 +63,8 @@ namespace Gj
             SkillEntity skillEntity = skill.GetComponent<SkillEntity>();
             if (skillEntity != null)
             {
-                skillEntity.SetMaster(gameObject, power).Cast(p, distance);
+                skillEntity.SetMaster(gameObject);
+                skillEntity.Cast(p, distance);
             }
         }
     }

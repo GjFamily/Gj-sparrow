@@ -4,28 +4,34 @@ using System.Collections;
 namespace Gj
 {
     [RequirePart(typeof(BeLongPart))]
+    [RequirePart(typeof(SkillInfoPart))]
     public class SkillEntity : BaseEntity
     {
-        protected float power;
-
-        public SkillEntity SetMaster(GameObject obj, float power)
+        public SkillInfoPart SkillInfo {
+            get {
+                return GetComponent<SkillInfoPart>();
+            }
+        }
+        public void SetMaster(GameObject obj)
         {
             GetComponent<BeLongPart>().SetMaster(obj);
-            this.power = power;
-            return this;
         }
 
-        public virtual void Cast(Vector3 from, Vector3 to, float speed)
+        public GameObject GetMaster () {
+            return GetComponent<BeLongPart>().GetMaster();
+        }
+
+        public virtual void Cast()
         {
 
         }
 
-        public virtual void Cast(Vector3 from, Vector3 to)
+        public virtual void Cast(GameObject target)
         {
 
         }
 
-        public virtual void Cast(Vector3 position, float radius)
+        public virtual void Cast(Vector3 position)
         {
 
         }
@@ -35,7 +41,7 @@ namespace Gj
             DefensePart defensePart = target.GetComponent<DefensePart>();
             if (defensePart != null)
             {
-                defensePart.BeAttacked(power, Tools.GetMaster(gameObject));
+                defensePart.BeAttacked(SkillInfo, Tools.GetMaster(gameObject));
             }
         }
 
