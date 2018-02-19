@@ -44,30 +44,5 @@ namespace Gj
                 defensePart.BeAttacked(SkillInfo, Tools.GetMaster(gameObject));
             }
         }
-
-        protected bool IsSelf(GameObject obj)
-        {
-            if (Tools.GetMaster(obj) == Tools.GetMaster(gameObject))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        protected bool AllowAttack(GameObject obj)
-        {
-            RelationPart relation = Tools.GetMaster(gameObject).GetComponent<RelationPart>();
-            if (relation != null)
-            {
-                return relation.IsEnemy(obj);
-            }
-            else
-            {
-                return false;
-            }
-        }
     }
 }

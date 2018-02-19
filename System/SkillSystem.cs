@@ -8,7 +8,40 @@ namespace Gj
     public class SkillSystem : BaseSystem
     {
         public GameObject content;
-        private Dictionary<string, GameObject> skillMap;
+        private Dictionary<string, GameObject> skillMap = new Dictionary<string, GameObject>();
+
+        public bool AllowTarget(SkillInfoPart skillInfo, GameObject master, GameObject target)
+        {
+            RelationPart relation = master.GetComponent<RelationPart>();
+            if (relation == null) return false;
+            if (skillInfo.relation == SkillInfoPart.Relation.Partner)
+            {
+                return relation.IsPartner(target);
+            }
+            else if (skillInfo.relation == SkillInfoPart.Relation.Enemy)
+            {
+                return relation.IsEnemy(target);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsEnough(SkillInfoPart skillInfo, float num)
+        {
+            return num > skillInfo.need;
+        }
+
+        public bool IsOutRange(SkillInfoPart skillInfo, GameObject master, GameObject target)
+        {
+            return IsOutRange(skillInfo, master, target.transform.position);
+        }
+
+        public bool IsOutRange(SkillInfoPart skillInfo, GameObject master, Vector3 position)
+        {
+            return Vector3.Distance(master.transform.position, position) > skillInfo.range;
+        }
 
         public GameObject GetSkill(string skillName)
         {

@@ -5,10 +5,20 @@ namespace Gj
 {
     public class SkillInfoPart : BasePart
     {
+        public string skillName;
         public float power;
         public float need;
+        public NeedType needType;
+        public enum NeedType
+        {
+            Number,
+            Energy,
+            Magic,
+            Empty
+        }
         public float range;
         public Relation relation;
+        public float waitTime;
         public enum Relation
         {
             Self,
@@ -31,34 +41,7 @@ namespace Gj
         public SkillType skillType;
         public enum SkillType
         {
-            
-        }
 
-        public bool IsEnough(float num)
-        {
-            return num > need;
-        }
-
-        public bool IsOutRange(GameObject master, GameObject target)
-        {
-            return IsOutRange(master, target.transform.position);
-        }
-
-        public bool IsOutRange(GameObject master, Vector3 position)
-        {
-            return Vector3.Distance(master.transform.position, position) > range;
-        }
-
-        public bool TargetRelationOk (GameObject master, GameObject target) {
-            RelationPart relationPart = master.GetComponent<RelationPart>();
-            if (relationPart == null) return false;
-            if (relation == Relation.Partner) {
-                return relationPart.IsPartner(target);
-            } else if (relation == Relation.Enemy) {
-                return relationPart.IsEnemy(target);
-            } else {
-                return false;
-            }
         }
     }
 }

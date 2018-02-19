@@ -10,8 +10,11 @@ namespace Gj
         private Action enterAttackNotic;
         private Action exitAttackNotic;
         private Action attackNotic;
+        private Action<SkillInfoPart> notic;
         private float attackDistance;
         private bool attacking = false;
+
+        private SkillSystem skillSystem;
         // Use this for initialization
         void Start()
         {
@@ -40,32 +43,37 @@ namespace Gj
             }
         }
 
+        public void SetSkillSystem (SkillSystem system) {
+            skillSystem = system;
+        }
+
         public void SetAttackTarget (GameObject obj, Action enterAction, Action exitAction) {
             target = obj;
             attackDistance = gameObject.GetComponent<InfoPart>().radio + target.GetComponent<InfoPart>().radio;
-
-            Debug.LogFormat("{0}, {1}", target.name, attackDistance);
             enterAttackNotic = enterAction;
             exitAttackNotic = exitAction;
         }
 
-        public void Launch(GameObject skill, GameObject start, float power, float distance, float speed) {
-            Vector3 p = new Vector3(start.transform.position.x, 0, start.transform.position.z) + start.transform.forward * distance;
-            SkillEntity skillEntity = skill.GetComponent<SkillEntity>();
-            if (skillEntity!=null) {
-                skillEntity.SetMaster(gameObject);
-                skillEntity.Cast(start.transform.position, p, speed);
-            }
+        public void SetNotic(Action<SkillInfoPart> notic)
+        {
+            this.notic = notic;
         }
 
-        public void Simple (GameObject skill, GameObject start, float power, float distance) {
-            Vector3 p = new Vector3(start.transform.position.x, 0, start.transform.position.z) + start.transform.forward * distance;
-            SkillEntity skillEntity = skill.GetComponent<SkillEntity>();
-            if (skillEntity != null)
-            {
-                skillEntity.SetMaster(gameObject);
-                skillEntity.Cast(p, distance);
-            }
+        public void Cast(SkillInfoPart skillInfo) {
+            skillSystem.Cast(skillInfo.skillName, gameObject);
+            notic(skillInfo);
+        }
+
+        public void Cast(SkillInfoPart skillInfo, GameObject target)
+        {
+            skillSystem.Cast(skillInfo.skillName, gameObject, target);
+            notic(skillInfo);
+        }
+
+        public void Cast(SkillInfoPart skillInfo, Vector3 position)
+        {
+            skillSystem.Cast(skillInfo.skillName, gameObject, position);
+            notic(skillInfo);
         }
     }
 }

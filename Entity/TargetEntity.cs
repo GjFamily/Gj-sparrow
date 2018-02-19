@@ -7,18 +7,24 @@ namespace Gj
     [RequirePart(typeof(DefensePart))]
     public class TargetEntity : BaseEntity
     {
-        protected SkillSystem skillSystem;
         // Use this for initialization
         protected virtual void Start()
         {
             GetComponent<DefensePart>().SetNotic(Damaged);
+            GetComponent<AttackPart>().SetNotic(Consume);
         }
 
         public void SetSkillSystem(SkillSystem system)
         {
-            skillSystem = system;
+            GetComponent<AttackPart>().SetSkillSystem(system);
         }
 
+        protected virtual void Die () {}
+
         protected virtual void Damaged(SkillInfoPart skillInfo, GameObject obj) { }
+
+        protected virtual bool IsEnoughConsume(SkillInfoPart skillInfo) { return true; }
+
+        protected virtual void Consume(SkillInfoPart skillInfo) { }
     }
 }
