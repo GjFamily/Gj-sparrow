@@ -31,7 +31,7 @@ namespace Gj
 
         }
 
-        public virtual void Cast(Vector3 position)
+        public virtual void Cast(Transform transform)
         {
 
         }

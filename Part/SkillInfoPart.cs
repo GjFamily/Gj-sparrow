@@ -17,9 +17,9 @@ namespace Gj
             Empty
         }
         public float range;
-        public Relation relation;
+        public RargetRelation targetRelation;
         public float waitTime;
-        public enum Relation
+        public enum RargetRelation
         {
             Self,
             Partner,
@@ -42,6 +42,34 @@ namespace Gj
         public enum SkillType
         {
 
+        }
+
+        public bool AllowTarget(GameObject master, GameObject target)
+        {
+            RelationPart relation = master.GetComponent<RelationPart>();
+            if (relation == null) return false;
+            if (targetRelation == RargetRelation.Partner)
+            {
+                return relation.IsPartner(target);
+            }
+            else if (targetRelation == RargetRelation.Enemy)
+            {
+                return relation.IsEnemy(target);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsOutRange(GameObject master, GameObject target)
+        {
+            return IsOutRange(master, target.transform);
+        }
+
+        public bool IsOutRange(GameObject master, Transform transform)
+        {
+            return Vector3.Distance(master.transform.position, transform.position) > range;
         }
     }
 }

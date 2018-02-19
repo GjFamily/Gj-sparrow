@@ -19,6 +19,32 @@ namespace Gj
             GetComponent<AttackPart>().SetSkillSystem(system);
         }
 
+        protected SkillInfoPart GetSkillInfo(string skillName) {
+            return GetComponent<AttackPart>().GetSkillInfo(skillName);
+        }
+
+        protected virtual void Attack(SkillInfoPart skillInfo) {
+            if(IsEnoughConsume(skillInfo)){
+                GetComponent<AttackPart>().Cast(skillInfo);
+            }
+        }
+
+        protected virtual void Attack(SkillInfoPart skillInfo, GameObject target)
+        {
+            if (IsEnoughConsume(skillInfo))
+            {
+                GetComponent<AttackPart>().Cast(skillInfo, target);
+            }
+        }
+
+        protected virtual void Attack(SkillInfoPart skillInfo, Transform transform)
+        {
+            if (IsEnoughConsume(skillInfo))
+            {
+                GetComponent<AttackPart>().Cast(skillInfo, transform);
+            }
+        }
+
         protected virtual void Die () {}
 
         protected virtual void Damaged(SkillInfoPart skillInfo, GameObject obj) { }

@@ -43,6 +43,10 @@ namespace Gj
             }
         }
 
+        public SkillInfoPart GetSkillInfo (string skillName) {
+            return skillSystem.GetSkillInfo(skillName);
+        }
+
         public void SetSkillSystem (SkillSystem system) {
             skillSystem = system;
         }
@@ -66,14 +70,18 @@ namespace Gj
 
         public void Cast(SkillInfoPart skillInfo, GameObject target)
         {
+            if(skillInfo.AllowTarget(gameObject, target) && skillInfo.IsOutRange(gameObject, target)){
             skillSystem.Cast(skillInfo.skillName, gameObject, target);
-            notic(skillInfo);
+                notic(skillInfo);
+            }
         }
 
-        public void Cast(SkillInfoPart skillInfo, Vector3 position)
+        public void Cast(SkillInfoPart skillInfo, Transform transform)
         {
-            skillSystem.Cast(skillInfo.skillName, gameObject, position);
-            notic(skillInfo);
+            if(skillInfo.IsOutRange(gameObject, transform)){
+                skillSystem.Cast(skillInfo.skillName, gameObject, transform);
+                notic(skillInfo);
+            }
         }
     }
 }

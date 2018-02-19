@@ -8,39 +8,21 @@ namespace Gj
     public class SkillSystem : BaseSystem
     {
         public GameObject content;
+        public GameObject[] skills;
         private Dictionary<string, GameObject> skillMap = new Dictionary<string, GameObject>();
 
-        public bool AllowTarget(SkillInfoPart skillInfo, GameObject master, GameObject target)
+        protected override void Awake()
         {
-            RelationPart relation = master.GetComponent<RelationPart>();
-            if (relation == null) return false;
-            if (skillInfo.relation == SkillInfoPart.Relation.Partner)
+            base.Awake();
+            foreach (GameObject skill in skills)
             {
-                return relation.IsPartner(target);
+                SkillInfoPart skillInfo = skill.GetComponent<SkillInfoPart>();
+                Debug.Log(skillInfo);
+                if (skillInfo != null)
+                {
+                    skillMap.Add(skillInfo.skillName, skill);
+                }
             }
-            else if (skillInfo.relation == SkillInfoPart.Relation.Enemy)
-            {
-                return relation.IsEnemy(target);
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public bool IsEnough(SkillInfoPart skillInfo, float num)
-        {
-            return num > skillInfo.need;
-        }
-
-        public bool IsOutRange(SkillInfoPart skillInfo, GameObject master, GameObject target)
-        {
-            return IsOutRange(skillInfo, master, target.transform.position);
-        }
-
-        public bool IsOutRange(SkillInfoPart skillInfo, GameObject master, Vector3 position)
-        {
-            return Vector3.Distance(master.transform.position, position) > skillInfo.range;
         }
 
         public GameObject GetSkill(string skillName)
@@ -128,12 +110,12 @@ namespace Gj
             }
         }
 
-        public void Cast(string skillName, GameObject master, Vector3 position)
+        public void Cast(string skillName, GameObject master, Transform transform)
         {
             SkillEntity skill = InitSkill(skillName, master);
             if (skill != null)
             {
-                skill.Cast(position);
+                skill.Cast(transform);
             }
         }
     }
