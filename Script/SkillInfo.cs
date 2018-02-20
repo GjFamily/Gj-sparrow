@@ -3,7 +3,7 @@ using System.Collections;
 
 namespace Gj
 {
-    public class SkillInfoPart : BasePart
+    public class SkillInfo : MonoBehaviour
     {
         public string skillName;
         public float power;

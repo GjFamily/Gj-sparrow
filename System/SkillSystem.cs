@@ -16,8 +16,7 @@ namespace Gj
             base.Awake();
             foreach (GameObject skill in skills)
             {
-                SkillInfoPart skillInfo = skill.GetComponent<SkillInfoPart>();
-                Debug.Log(skillInfo);
+                SkillInfo skillInfo = skill.GetComponent<SkillInfo>();
                 if (skillInfo != null)
                 {
                     skillMap.Add(skillInfo.skillName, skill);
@@ -37,12 +36,12 @@ namespace Gj
             }
         }
 
-        public SkillInfoPart GetSkillInfo(string skillName)
+        public SkillInfo GetSkillInfo(string skillName)
         {
             GameObject skillObj = GetSkill(skillName);
             if (skillObj != null)
             {
-                return skillObj.GetComponent<SkillInfoPart>();
+                return skillObj.GetComponent<SkillInfo>();
             }
             else
             {

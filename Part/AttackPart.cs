@@ -10,7 +10,7 @@ namespace Gj
         private Action enterAttackNotic;
         private Action exitAttackNotic;
         private Action attackNotic;
-        private Action<SkillInfoPart> notic;
+        private Action<SkillInfo> notic;
         private float attackDistance;
         private bool attacking = false;
 
@@ -43,7 +43,7 @@ namespace Gj
             }
         }
 
-        public SkillInfoPart GetSkillInfo (string skillName) {
+        public SkillInfo GetSkillInfo (string skillName) {
             return skillSystem.GetSkillInfo(skillName);
         }
 
@@ -58,17 +58,17 @@ namespace Gj
             exitAttackNotic = exitAction;
         }
 
-        public void SetNotic(Action<SkillInfoPart> notic)
+        public void SetNotic(Action<SkillInfo> notic)
         {
             this.notic = notic;
         }
 
-        public void Cast(SkillInfoPart skillInfo) {
+        public void Cast(SkillInfo skillInfo) {
             skillSystem.Cast(skillInfo.skillName, gameObject);
             notic(skillInfo);
         }
 
-        public void Cast(SkillInfoPart skillInfo, GameObject target)
+        public void Cast(SkillInfo skillInfo, GameObject target)
         {
             if(skillInfo.AllowTarget(gameObject, target) && skillInfo.IsOutRange(gameObject, target)){
             skillSystem.Cast(skillInfo.skillName, gameObject, target);
@@ -76,7 +76,7 @@ namespace Gj
             }
         }
 
-        public void Cast(SkillInfoPart skillInfo, Transform transform)
+        public void Cast(SkillInfo skillInfo, Transform transform)
         {
             if(skillInfo.IsOutRange(gameObject, transform)){
                 skillSystem.Cast(skillInfo.skillName, gameObject, transform);

@@ -19,17 +19,17 @@ namespace Gj
             GetComponent<AttackPart>().SetSkillSystem(system);
         }
 
-        protected SkillInfoPart GetSkillInfo(string skillName) {
+        protected SkillInfo GetSkillInfo(string skillName) {
             return GetComponent<AttackPart>().GetSkillInfo(skillName);
         }
 
-        protected virtual void Attack(SkillInfoPart skillInfo) {
+        protected virtual void Attack(SkillInfo skillInfo) {
             if(IsEnoughConsume(skillInfo)){
                 GetComponent<AttackPart>().Cast(skillInfo);
             }
         }
 
-        protected virtual void Attack(SkillInfoPart skillInfo, GameObject target)
+        protected virtual void Attack(SkillInfo skillInfo, GameObject target)
         {
             if (IsEnoughConsume(skillInfo))
             {
@@ -37,7 +37,7 @@ namespace Gj
             }
         }
 
-        protected virtual void Attack(SkillInfoPart skillInfo, Transform transform)
+        protected virtual void Attack(SkillInfo skillInfo, Transform transform)
         {
             if (IsEnoughConsume(skillInfo))
             {
@@ -47,10 +47,10 @@ namespace Gj
 
         protected virtual void Die () {}
 
-        protected virtual void Damaged(SkillInfoPart skillInfo, GameObject obj) { }
+        protected virtual void Damaged(SkillInfo skillInfo, GameObject obj) { }
 
-        protected virtual bool IsEnoughConsume(SkillInfoPart skillInfo) { return true; }
+        protected virtual bool IsEnoughConsume(SkillInfo skillInfo) { return true; }
 
-        protected virtual void Consume(SkillInfoPart skillInfo) { }
+        protected virtual void Consume(SkillInfo skillInfo) { }
     }
 }

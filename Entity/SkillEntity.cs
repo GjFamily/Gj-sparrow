@@ -4,12 +4,11 @@ using System.Collections;
 namespace Gj
 {
     [RequirePart(typeof(BeLongPart))]
-    [RequirePart(typeof(SkillInfoPart))]
     public class SkillEntity : BaseEntity
     {
-        public SkillInfoPart SkillInfo {
+        public SkillInfo SkillInfo {
             get {
-                return GetComponent<SkillInfoPart>();
+                return GetComponent<SkillInfo>();
             }
         }
         public void SetMaster(GameObject obj)
