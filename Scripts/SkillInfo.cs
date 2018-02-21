@@ -8,17 +8,9 @@ namespace Gj
         public string skillName;
         public float power;
         public float need;
-        public NeedType needType;
-        public enum NeedType
-        {
-            Number,
-            Energy,
-            Magic,
-            Empty
-        }
         public float range;
-        public RargetRelation targetRelation;
         public float waitTime;
+        public RargetRelation targetRelation;
         public enum RargetRelation
         {
             Self,

@@ -5,12 +5,14 @@ namespace Gj
 {
     [RequirePart(typeof(AttackPart))]
     [RequirePart(typeof(DefensePart))]
+    [RequirePart(typeof(StatusPart))]
     public class TargetEntity : BaseEntity
     {
         // Use this for initialization
         protected virtual void Start()
         {
-            GetComponent<DefensePart>().SetNotic(Damaged);
+            GetComponent<DefensePart>().SetNotic(SkillDamaged);
+            GetComponent<DefensePart>().SetNotic(ExtraDamaged);
             GetComponent<AttackPart>().SetNotic(Consume);
         }
 
@@ -47,7 +49,11 @@ namespace Gj
 
         protected virtual void Die () {}
 
-        protected virtual void Damaged(SkillInfo skillInfo, GameObject obj) { }
+        protected virtual void SkillDamaged(SkillInfo skillInfo, GameObject obj) { }
+
+        protected virtual void ExtraDamaged(ExtraInfo extraInfo, GameObject obj) { }
+
+        protected virtual void Damaged(float power, GameObject obj) { }
 
         protected virtual bool IsEnoughConsume(SkillInfo skillInfo) { return true; }
 
