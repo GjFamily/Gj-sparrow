@@ -11,8 +11,10 @@ namespace Gj
         // Use this for initialization
         protected virtual void Start()
         {
-            GetComponent<DefensePart>().SetNotic(SkillDamaged);
-            GetComponent<DefensePart>().SetNotic(ExtraDamaged);
+            GetComponent<DefensePart>().SetNotic(SkillEffect);
+            GetComponent<DefensePart>().SetNotic(ExtraEffect);
+            GetComponent<StatusPart>().SetAddNotic(AddExtraAttribute);
+            GetComponent<StatusPart>().SetCancelNotic(CancelExtraAttribute);
             GetComponent<AttackPart>().SetNotic(Consume);
         }
 
@@ -49,11 +51,15 @@ namespace Gj
 
         protected virtual void Die () {}
 
-        protected virtual void SkillDamaged(SkillInfo skillInfo, GameObject obj) { }
+        protected virtual void AddExtraAttribute(ExtraInfo extraInfo) { }
 
-        protected virtual void ExtraDamaged(ExtraInfo extraInfo, GameObject obj) { }
+        protected virtual void CancelExtraAttribute(ExtraInfo extraInfo) { }
 
-        protected virtual void Damaged(float power, GameObject obj) { }
+        protected virtual void SkillEffect(SkillInfo skillInfo) { }
+
+        protected virtual void ExtraEffect(ExtraInfo extraInfo) { }
+
+        protected virtual void Effect(float value) { }
 
         protected virtual bool IsEnoughConsume(SkillInfo skillInfo) { return true; }
 

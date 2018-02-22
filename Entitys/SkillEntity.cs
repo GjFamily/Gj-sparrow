@@ -40,30 +40,31 @@ namespace Gj
 
         }
 
-        protected void AttackTarget(GameObject target)
+        protected void CastTarget(GameObject target)
         {
             DefensePart defensePart = target.GetComponent<DefensePart>();
-            if (defensePart != null)
+            if (defensePart != null && SkillInfo != null)
             {
-                defensePart.BeAttacked(SkillInfo, Tools.GetMaster(gameObject));
+                defensePart.BeCast(SkillInfo);
             }
+            AddExtraTarget(target);
         }
 
         protected void AddExtraTarget(GameObject target)
         {
             StatusPart statusPart = target.GetComponent<StatusPart>();
-            if (statusPart != null)
+            if (statusPart != null && ExtraInfo != null)
             {
-                statusPart.AddExtra(ExtraInfo, Tools.GetMaster(gameObject));
+                statusPart.AddExtra(ExtraInfo);
             }
         }
 
         protected void CancelExtraTarget(GameObject target)
         {
             StatusPart statusPart = target.GetComponent<StatusPart>();
-            if (statusPart != null)
+            if (statusPart != null && ExtraInfo != null)
             {
-                statusPart.CancelExtra(ExtraInfo, Tools.GetMaster(gameObject));
+                statusPart.CancelExtra(ExtraInfo);
             }
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,54 +7,78 @@ namespace Gj
 {
     public class StatusPart : BasePart
     {
-        private Dictionary<ExtraInfo.ExtraType, List<ExtraInfo>> extraInfoMap = new Dictionary<ExtraInfo.ExtraType, List<ExtraInfo>>();
+        private List<ExtraInfo> extraInfoList = new List<ExtraInfo>();
+        private Action<ExtraInfo> AddAttributeNotic;
+        private Action<ExtraInfo> CancelAttributeNotic;
 
-        public void AddExtra (ExtraInfo extraInfo, GameObject obj) {
-            if (!extraInfoMap.ContainsKey(extraInfo.extraType)) {
-                extraInfoMap.Add(extraInfo.extraType, new List<ExtraInfo>());
-            }
-            extraInfoMap[extraInfo.extraType].Add(extraInfo);
-            switch (extraInfo.extraType) {
-                case ExtraInfo.ExtraType.Damage:
-                    break;
-                case ExtraInfo.ExtraType.Attribute:
-                    break;
-                case ExtraInfo.ExtraType.Special:
-                    break;
-            }
+        private void Start()
+        {
+            InvokeRepeating("Check", 0, 1);
         }
 
-        public void CancelExtra (ExtraInfo extraInfo, GameObject obj) {
+        private void OnDestroy()
+        {
+            CancelInvoke("Check");
+        }
+
+        public void SetAddNotic(Action<ExtraInfo> action) {
+            AddAttributeNotic = action;
+        }
+
+        public void SetCancelNotic(Action<ExtraInfo> action)
+        {
+            CancelAttributeNotic = action;
+        }
+
+        public void AddExtra(ExtraInfo extraInfo)
+        {
             switch (extraInfo.extraType)
             {
-                case ExtraInfo.ExtraType.Damage:
+                case ExtraInfo.ExtraType.Cast:
                     break;
                 case ExtraInfo.ExtraType.Attribute:
+                    AddAttributeNotic(extraInfo);
                     break;
                 case ExtraInfo.ExtraType.Special:
                     break;
             }
-            extraInfoMap[extraInfo.extraType].Remove(extraInfo);
+            extraInfo.Ready();
+            extraInfoList.Add(extraInfo);
         }
 
-        private void CheckDamage () {
-            
-        }
-
-        private void HandleAttribute () {
-            
-        }
-
-        private void RecoveryAttribute()
+        public void CancelExtra(ExtraInfo extraInfo)
         {
-
+            switch (extraInfo.extraType)
+            {
+                case ExtraInfo.ExtraType.Cast:
+                    break;
+                case ExtraInfo.ExtraType.Attribute:
+                    CancelAttributeNotic(extraInfo);
+                    break;
+                case ExtraInfo.ExtraType.Special:
+                    break;
+            }
+            extraInfoList.Remove(extraInfo);
         }
 
-        private void Damaged (ExtraInfo extraInfo, GameObject obj) {
+        private void Check()
+        {
+            foreach(ExtraInfo extraInfo in extraInfoList) {
+                if (extraInfo.NeedCast()) {
+                    Cast(extraInfo);
+                }
+                if (extraInfo.Over()) {
+                    CancelExtra(extraInfo);
+                }
+            }
+        }
+
+        private void Cast(ExtraInfo extraInfo)
+        {
             DefensePart defensePart = gameObject.GetComponent<DefensePart>();
             if (defensePart != null)
             {
-                defensePart.BeAttacked(extraInfo, obj);
+                defensePart.BeCast(extraInfo);
             }
         }
     }

@@ -6,8 +6,8 @@ namespace Gj
 {
     public class DefensePart : BasePart
     {
-        private Action<SkillInfo, GameObject> skillNotic;
-        private Action<ExtraInfo, GameObject> extraNotic;
+        private Action<SkillInfo> skillNotic;
+        private Action<ExtraInfo> extraNotic;
         // Use this for initialization
         void Start()
         {
@@ -20,26 +20,29 @@ namespace Gj
 
         }
 
-        public void SetNotic(Action<SkillInfo, GameObject> notic) {
+        public void SetNotic(Action<SkillInfo> notic)
+        {
             this.skillNotic = notic;
         }
 
-        public void SetNotic(Action<ExtraInfo, GameObject> notic)
+        public void SetNotic(Action<ExtraInfo> notic)
         {
             this.extraNotic = notic;
         }
 
-        public void BeAttacked(SkillInfo skillInfo, GameObject target) {
-            if (skillNotic != null) {
-                skillNotic(skillInfo, target);
+        public void BeCast(SkillInfo skillInfo)
+        {
+            if (skillNotic != null)
+            {
+                skillNotic(skillInfo);
             }
         }
 
-        public void BeAttacked(ExtraInfo extraInfo, GameObject target)
+        public void BeCast(ExtraInfo extraInfo)
         {
             if (extraNotic != null)
             {
-                extraNotic(extraInfo, target);
+                extraNotic(extraInfo);
             }
         }
     }

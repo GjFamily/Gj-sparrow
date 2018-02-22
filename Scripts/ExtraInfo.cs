@@ -18,12 +18,12 @@ namespace Gj
         public ExtraType extraType;
         public enum ExtraType
         {
-            Damage,
+            Cast,
             Attribute,
             Special
         }
         public float value;
-        public TargetInfo.Type attributeType;
+        public TargetInfo.Attr attribute;
         public HandleType handleType;
         public enum HandleType
         {
@@ -31,6 +31,28 @@ namespace Gj
             Subtract,
             Multiply,
             Divide
+        }
+        private float startTime;
+        private float lastTime;
+        public GameObject master;
+
+        public void Ready(){
+            startTime = Time.time;
+        }
+
+        public bool Over(){
+            return Time.time - startTime > time;
+        }
+
+        public bool NeedCast() {
+            if (extraType == ExtraInfo.ExtraType.Cast) {
+                float _t = Time.time - lastTime;
+                if (_t > intervalTime) {
+                    lastTime = _t;
+                    return true;
+                }
+            }
+            return false;
         }
 
         public float HandleAttribute(float attribute)
