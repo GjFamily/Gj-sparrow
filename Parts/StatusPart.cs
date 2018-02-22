@@ -7,7 +7,7 @@ namespace Gj
 {
     public class StatusPart : BasePart
     {
-        private List<ExtraInfo> extraInfoList = new List<ExtraInfo>();
+        private Dictionary<string, List<ExtraInfo>> extraInfoMap = new Dictionary<string, List<ExtraInfo>>();
         private Action<ExtraInfo> AddAttributeNotic;
         private Action<ExtraInfo> CancelAttributeNotic;
 
@@ -21,7 +21,8 @@ namespace Gj
             CancelInvoke("Check");
         }
 
-        public void SetAddNotic(Action<ExtraInfo> action) {
+        public void SetAddNotic(Action<ExtraInfo> action)
+        {
             AddAttributeNotic = action;
         }
 
@@ -32,6 +33,10 @@ namespace Gj
 
         public void AddExtra(ExtraInfo extraInfo)
         {
+            if (!extraInfoMap.ContainsKey(extraInfo.skillName))
+            {
+                extraInfoMap.Add(extraInfo.skillName, new List<ExtraInfo>());
+            }
             switch (extraInfo.extraType)
             {
                 case ExtraInfo.ExtraType.Cast:
@@ -43,7 +48,53 @@ namespace Gj
                     break;
             }
             extraInfo.Ready();
-            extraInfoList.Add(extraInfo);
+            Merge(extraInfo);
+        }
+
+        public void Merge(ExtraInfo extraInfo)
+        {
+            List<ExtraInfo> list = extraInfoMap[extraInfo.skillName];
+            switch (extraInfo.numType)
+            {
+                case ExtraInfo.NumType.Only:
+                    if (list.Count > 0)
+                    {
+                        list[0].Refresh();
+                    }
+                    else
+                    {
+                        list.Add(extraInfo);
+                    }
+                    break;
+                case ExtraInfo.NumType.TargetOnly:
+                    if (list.Count > 0)
+                    {
+                        ExtraInfo target = null;
+                        foreach (ExtraInfo e in list)
+                        {
+                            if (e.master == extraInfo.master)
+                            {
+                                target = e;
+                            }
+                        }
+                        if (target != null)
+                        {
+                            target.Refresh();
+                        }
+                        else
+                        {
+                            list.Add(extraInfo);
+                        }
+                    }
+                    else
+                    {
+                        list.Add(extraInfo);
+                    }
+                    break;
+                case ExtraInfo.NumType.None:
+                    list.Add(extraInfo);
+                    break;
+            }
         }
 
         public void CancelExtra(ExtraInfo extraInfo)
@@ -58,17 +109,23 @@ namespace Gj
                 case ExtraInfo.ExtraType.Special:
                     break;
             }
-            extraInfoList.Remove(extraInfo);
+            extraInfoMap[extraInfo.skillName].Remove(extraInfo);
         }
 
         private void Check()
         {
-            foreach(ExtraInfo extraInfo in extraInfoList) {
-                if (extraInfo.NeedCast()) {
-                    Cast(extraInfo);
-                }
-                if (extraInfo.Over()) {
-                    CancelExtra(extraInfo);
+            foreach (string key in extraInfoMap.Keys)
+            {
+                foreach (ExtraInfo extraInfo in extraInfoMap[key])
+                {
+                    if (extraInfo.NeedCast())
+                    {
+                        Cast(extraInfo);
+                    }
+                    if (extraInfo.Over())
+                    {
+                        CancelExtra(extraInfo);
+                    }
                 }
             }
         }

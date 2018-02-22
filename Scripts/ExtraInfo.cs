@@ -5,6 +5,7 @@ namespace Gj
 {
     public class ExtraInfo : MonoBehaviour
     {
+        [HideInInspector]
         public string skillName;
         public float time;
         public float intervalTime;
@@ -23,7 +24,6 @@ namespace Gj
             Special
         }
         public float value;
-        public TargetInfo.Attr attribute;
         public HandleType handleType;
         public enum HandleType
         {
@@ -32,22 +32,41 @@ namespace Gj
             Multiply,
             Divide
         }
+        public NumType numType;
+        public enum NumType
+        {
+            Only,
+            TargetOnly,
+            None
+        }
         private float startTime;
         private float lastTime;
+
+        [HideInInspector]
         public GameObject master;
 
-        public void Ready(){
+        public void Ready()
+        {
             startTime = Time.time;
         }
 
-        public bool Over(){
+        public void Refresh()
+        {
+
+        }
+
+        public bool Over()
+        {
             return Time.time - startTime > time;
         }
 
-        public bool NeedCast() {
-            if (extraType == ExtraInfo.ExtraType.Cast) {
+        public bool NeedCast()
+        {
+            if (extraType == ExtraInfo.ExtraType.Cast)
+            {
                 float _t = Time.time - lastTime;
-                if (_t > intervalTime) {
+                if (_t > intervalTime)
+                {
                     lastTime = _t;
                     return true;
                 }

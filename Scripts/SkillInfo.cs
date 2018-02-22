@@ -5,6 +5,7 @@ namespace Gj
 {
     public class SkillInfo : MonoBehaviour
     {
+        [HideInInspector]
         public string skillName;
         public float power;
         public float need;
@@ -35,6 +36,9 @@ namespace Gj
         {
 
         }
+
+        [HideInInspector]
+        public GameObject master;
 
         public bool AllowTarget(GameObject master, GameObject target)
         {

@@ -6,6 +6,7 @@ namespace Gj
     [RequirePart(typeof(BeLongPart))]
     public class SkillEntity : BaseEntity
     {
+        public string skillName;
         public SkillInfo SkillInfo {
             get {
                 return GetComponent<SkillInfo>();
@@ -19,6 +20,14 @@ namespace Gj
         public void SetMaster(GameObject obj)
         {
             GetComponent<BeLongPart>().SetMaster(obj);
+            if (SkillInfo != null) {
+                SkillInfo.master = obj;
+                SkillInfo.skillName = skillName;
+            }
+            if (ExtraInfo != null) {
+                ExtraInfo.master = obj;
+                ExtraInfo.skillName = skillName;
+            }
         }
 
         public GameObject GetMaster () {
@@ -42,12 +51,16 @@ namespace Gj
 
         protected void CastTarget(GameObject target)
         {
+            BeCastTarget(target);
+            AddExtraTarget(target);
+        }
+
+        protected void BeCastTarget(GameObject target) {
             DefensePart defensePart = target.GetComponent<DefensePart>();
             if (defensePart != null && SkillInfo != null)
             {
                 defensePart.BeCast(SkillInfo);
             }
-            AddExtraTarget(target);
         }
 
         protected void AddExtraTarget(GameObject target)

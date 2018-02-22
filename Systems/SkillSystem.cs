@@ -16,10 +16,10 @@ namespace Gj
             base.Awake();
             foreach (GameObject skill in skills)
             {
-                SkillInfo skillInfo = skill.GetComponent<SkillInfo>();
-                if (skillInfo != null)
+                SkillEntity skillEntity = skill.GetComponent<SkillEntity>();
+                if (skillEntity != null)
                 {
-                    skillMap.Add(skillInfo.skillName, skill);
+                    skillMap.Add(skillEntity.skillName, skill);
                 }
             }
         }
