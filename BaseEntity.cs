@@ -30,6 +30,8 @@ namespace Gj
         {
             Tools.BindPart(this, gameObject);
             Tools.AddSub(this, gameObject);
+            Tools.AllowSync(this, gameObject);
+            Tools.InfoSync(this, gameObject);
         }
 
         protected Info GetInfo (GameObject obj) {
