@@ -1,14 +1,14 @@
 ﻿using System;
 
 namespace Gj.Galaxy.Logic{
-    internal enum NamespaceId
+    public enum NamespaceId
     {
         Auth = 0,
         Scene = 1,
         Chat = 2
     }
 
-    internal enum SceneRoom
+    public enum SceneRoom
     {
         Game = 1,
         Team = 2
