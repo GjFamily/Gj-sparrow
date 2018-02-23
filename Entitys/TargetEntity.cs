@@ -13,8 +13,6 @@ namespace Gj
         {
             GetComponent<DefensePart>().SetNotic(SkillEffect);
             GetComponent<DefensePart>().SetNotic(ExtraEffect);
-            GetComponent<StatusPart>().SetAddNotic(AddAttribute);
-            GetComponent<StatusPart>().SetCancelNotic(CancelAttribute);
             GetComponent<AttackPart>().SetNotic(Consume);
         }
 
@@ -50,10 +48,6 @@ namespace Gj
         }
 
         protected virtual void Die () {}
-
-        protected virtual void AddAttribute(ExtraInfo extraInfo) { }
-
-        protected virtual void CancelAttribute(ExtraInfo extraInfo) { }
 
         protected virtual void SkillEffect(SkillInfo skillInfo) { }
 

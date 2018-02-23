@@ -53,7 +53,7 @@ namespace Gj
 
         public void SetAttackTarget (GameObject obj, Action enterAction, Action exitAction) {
             target = obj;
-            attackDistance = gameObject.GetComponent<InfoPart>().radio + target.GetComponent<InfoPart>().radio;
+            attackDistance = GetAttribute("radio") + GetAttribute(obj, "radio");
             enterAttackNotic = enterAction;
             exitAttackNotic = exitAction;
         }

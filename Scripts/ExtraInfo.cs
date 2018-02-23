@@ -24,6 +24,7 @@ namespace Gj
             Special
         }
         public float value;
+        public string attrubute;
         public HandleType handleType;
         public enum HandleType
         {

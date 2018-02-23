@@ -19,7 +19,7 @@ namespace Gj
 
         private void OnTriggerEnter(Collider other)
         {
-            InfoPart info = other.gameObject.GetComponent<InfoPart>();
+            Info info = GetInfo(other.gameObject);
             if (info != null && info.IsTarget() && FindTarget != null) {
                 FindTarget(other.gameObject);
             }
@@ -32,7 +32,7 @@ namespace Gj
 
         private void OnTriggerExit(Collider other)
         {
-            InfoPart info = other.gameObject.GetComponent<InfoPart>();
+            Info info = GetInfo(other.gameObject);
             if (info != null && info.IsTarget() && FindTarget != null)
             {
                 LoseTarget(other.gameObject);

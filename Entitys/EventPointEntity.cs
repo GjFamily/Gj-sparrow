@@ -25,7 +25,7 @@ namespace Gj
 
         private bool IsPlayer(GameObject obj)
         {
-            InfoPart info = obj.GetComponent<InfoPart>();
+            Info info = obj.GetComponent<Info>();
             if (info != null)
             {
                 return info.player;

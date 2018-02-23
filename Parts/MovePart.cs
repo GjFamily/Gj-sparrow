@@ -9,20 +9,17 @@ namespace Gj
         private GameObject target;
         private Vector3 end = Vector3.zero;
         private Vector3 direction = Vector3.zero;
-        private float speed = 0;
         private bool moving = false;
         private bool needHit = false;
-        private float hitDirection = 0;
         // Use this for initialization
         void Start()
         {
 
         }
 
-        public void NeedHit(float direction)
+        public void NeedHit()
         {
             needHit = true;
-            hitDirection = direction;
         }
 
         public void NotNeedHit()
@@ -30,28 +27,25 @@ namespace Gj
             needHit = false;
         }
 
-        public void SetTarget(GameObject target, float speed)
+        public void SetTarget(GameObject obj)
         {
             Cancel();
             moving = true;
-            this.target = target;
-            this.speed = speed;
+            target = obj;
         }
 
-        public void SetEnd(Vector3 end, float speed)
+        public void SetEnd(Vector3 position)
         {
             Cancel();
             moving = true;
-            this.end = end;
-            this.speed = speed;
+            end = position;
         }
 
-        public void SetDirection(Vector3 direction, float speed)
+        public void SetDirection(Vector3 direction)
         {
             Cancel();
             moving = true;
             this.direction = direction;
-            this.speed = speed;
         }
 
         public void Cancel()
@@ -59,7 +53,6 @@ namespace Gj
             this.target = null;
             this.direction = Vector3.zero;
             this.end = Vector3.zero;
-            this.speed = 0;
             this.moving = false;
         }
 
@@ -68,6 +61,7 @@ namespace Gj
         {
             if (moving && !IsHit())
             {
+                float speed = GetAttribute("moveSpeed");
                 if (target != null)
                 {
                     transform.position = Vector3.MoveTowards(transform.position, target.transform.position, Time.deltaTime * speed);
@@ -95,9 +89,9 @@ namespace Gj
             if (!needHit) return false;
             RaycastHit hit;
 
-            if (Physics.Raycast(transform.position, transform.forward, out hit, hitDirection))
+            if (Physics.Raycast(transform.position, transform.forward, out hit, GetAttribute("radio")))
             {
-                InfoPart info = hit.transform.gameObject.GetComponent<InfoPart>();
+                Info info = GetInfo(hit.transform.gameObject);
                 if (info != null)
                 {
                     if (info.IsBuild())

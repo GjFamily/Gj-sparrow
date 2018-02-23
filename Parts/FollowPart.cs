@@ -5,7 +5,6 @@ namespace Gj
 {
     public class FollowPart : BasePart
     {
-        private float speed = 0;
         private GameObject target;
         private Vector3 offsetPosition;
 
@@ -17,7 +16,6 @@ namespace Gj
 
         public void Cancel()
         {
-            this.speed = 0;
             this.target = null;
         }
 
@@ -26,15 +24,10 @@ namespace Gj
             this.target = target;
         }
 
-        public void FollowTarget(GameObject target, float speed)
-        {
-            this.speed = speed;
-            this.target = target;
-        }
-
         // Update is called once per frame
         void Update()
         {
+            float speed = GetAttribute("moveSpeed");
             if (target != null && speed > 0)
             {
                 transform.position = Vector3.Lerp(transform.position, target.transform.position - offsetPosition, Time.deltaTime * speed);

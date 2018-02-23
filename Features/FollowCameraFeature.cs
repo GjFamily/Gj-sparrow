@@ -18,8 +18,8 @@ namespace Gj
 
         }
 
-        public void StartFollow(GameObject target, float speed) {
-            GetFeatureComponent<FollowPart>().FollowTarget(target, speed);
+        public void StartFollow(GameObject target) {
+            GetFeatureComponent<FollowPart>().FollowTarget(target);
         }
 
         public void StopFollow()

@@ -8,8 +8,6 @@ namespace Gj
     public class StatusPart : BasePart
     {
         private Dictionary<string, List<ExtraInfo>> extraInfoMap = new Dictionary<string, List<ExtraInfo>>();
-        private Action<ExtraInfo> AddAttributeNotic;
-        private Action<ExtraInfo> CancelAttributeNotic;
 
         private void Start()
         {
@@ -19,16 +17,6 @@ namespace Gj
         private void OnDestroy()
         {
             CancelInvoke("Check");
-        }
-
-        public void SetAddNotic(Action<ExtraInfo> action)
-        {
-            AddAttributeNotic = action;
-        }
-
-        public void SetCancelNotic(Action<ExtraInfo> action)
-        {
-            CancelAttributeNotic = action;
         }
 
         public void AddExtra(ExtraInfo extraInfo)
@@ -42,13 +30,38 @@ namespace Gj
                 case ExtraInfo.ExtraType.Cast:
                     break;
                 case ExtraInfo.ExtraType.Attribute:
-                    AddAttributeNotic(extraInfo);
+                    AddAttribute(extraInfo);
                     break;
                 case ExtraInfo.ExtraType.Special:
                     break;
             }
             extraInfo.Ready();
             Merge(extraInfo);
+        }
+
+        public void CancelExtra(ExtraInfo extraInfo)
+        {
+            switch (extraInfo.extraType)
+            {
+                case ExtraInfo.ExtraType.Cast:
+                    break;
+                case ExtraInfo.ExtraType.Attribute:
+                    CancelAttribute(extraInfo);
+                    break;
+                case ExtraInfo.ExtraType.Special:
+                    break;
+            }
+            extraInfoMap[extraInfo.skillName].Remove(extraInfo);
+        }
+
+        private void AddAttribute(ExtraInfo extraInfo)
+        {
+            SetAttribute(extraInfo.attrubute, extraInfo.HandleAttribute(GetAttribute(extraInfo.attrubute)));
+        }
+
+        private void CancelAttribute(ExtraInfo extraInfo)
+        {
+            SetAttribute(extraInfo.attrubute, extraInfo.RecoveryAttribute(GetAttribute(extraInfo.attrubute)));
         }
 
         public void Merge(ExtraInfo extraInfo)
@@ -97,27 +110,13 @@ namespace Gj
             }
         }
 
-        public void CancelExtra(ExtraInfo extraInfo)
-        {
-            switch (extraInfo.extraType)
-            {
-                case ExtraInfo.ExtraType.Cast:
-                    break;
-                case ExtraInfo.ExtraType.Attribute:
-                    CancelAttributeNotic(extraInfo);
-                    break;
-                case ExtraInfo.ExtraType.Special:
-                    break;
-            }
-            extraInfoMap[extraInfo.skillName].Remove(extraInfo);
-        }
-
         private void Check()
         {
             foreach (string key in extraInfoMap.Keys)
             {
-                foreach (ExtraInfo extraInfo in extraInfoMap[key])
+                for (int i = 0; i < extraInfoMap[key].Count; i++)
                 {
+                    ExtraInfo extraInfo = extraInfoMap[key][i];
                     if (extraInfo.NeedCast())
                     {
                         Cast(extraInfo);
@@ -125,6 +124,7 @@ namespace Gj
                     if (extraInfo.Over())
                     {
                         CancelExtra(extraInfo);
+                        i--;
                     }
                 }
             }

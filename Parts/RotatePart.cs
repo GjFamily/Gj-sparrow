@@ -8,7 +8,6 @@ namespace Gj
         private GameObject target;
         private Vector3 targetPosition;
         private float angle = 0;
-        private float speed = 0;
         private bool around = false;
         private bool rotating = false;
         // Use this for initialization
@@ -17,10 +16,9 @@ namespace Gj
 
         }
 
-        public void TurnAround(float speed)
+        public void TurnAround()
         {
             Cancel();
-            this.speed = speed;
             this.rotating = true;
             this.around = true;
         }
@@ -43,19 +41,17 @@ namespace Gj
             transform.rotation = Quaternion.Euler(0, angle, 0);
         }
 
-        public void SetAngle(float angle, float speed)
+        public void SetRotateAngle(float angle)
         {
             Cancel();
             rotating = true;
             this.angle = angle;
-            this.speed = speed;
         }
 
         public void Cancel()
         {
             this.target = null;
             this.angle = 0;
-            this.speed = 0;
             this.rotating = false;
             this.around = false;
         }
@@ -63,6 +59,7 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
+            float speed = GetAttribute("rotateSpeed");
             if (target != null)
             {
                 transform.LookAt(target.transform.position);
