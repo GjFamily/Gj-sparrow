@@ -1,11 +1,12 @@
 using UnityEngine;
 using System.Collections;
 using Gj.Galaxy.Network;
+using System;
 
 namespace Gj.Galaxy.Logic{
     internal class AuthEvent
     {
-
+        public const byte Auth = 1;
     }
     public interface AuthDelegate
     {
@@ -23,6 +24,10 @@ namespace Gj.Galaxy.Logic{
             n = PeerClient.Of(NamespaceId.Auth);
             listener = new AuthConnect();
             n.listener = listener;
+        }
+
+        public static void Auth(string userName, string password, Action<object> callback){
+            n.Emit(AuthEvent.Auth, new object[] { userName, password },(object[] obj) => callback(obj[0]));
         }
 
         //private bool CallAuthenticate()

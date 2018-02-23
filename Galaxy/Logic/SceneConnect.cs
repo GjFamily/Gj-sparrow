@@ -13,9 +13,8 @@ namespace Gj.Galaxy.Logic{
         public const byte TeamCreate = 4;
     }
     public interface SceneDelegate{
-        void OnReady();
-        void OnJoinedGame();
-        void OnInvitedTeam();
+        void OnJoinedGame(string token);
+        void OnInvitedTeam(string teamId);
     }
     public class LobbyType{
         public const string PVE = "pve";
