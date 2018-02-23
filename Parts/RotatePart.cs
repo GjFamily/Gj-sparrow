@@ -19,20 +19,20 @@ namespace Gj
         public void TurnAround()
         {
             Cancel();
-            this.rotating = true;
-            this.around = true;
+            rotating = true;
+            around = true;
         }
 
-        public void SetTarget(Vector3 target)
+        public void SetTarget(Vector3 position)
         {
             Cancel();
-            this.targetPosition = target;
+            targetPosition = position;
         }
 
-        public void SetTarget(GameObject target)
+        public void SetTarget(GameObject obj)
         {
             Cancel();
-            this.target = target;
+            target = obj;
         }
 
         public void SetAngle(float angle)
@@ -50,10 +50,10 @@ namespace Gj
 
         public void Cancel()
         {
-            this.target = null;
-            this.angle = 0;
-            this.rotating = false;
-            this.around = false;
+            target = null;
+            angle = 0;
+            rotating = false;
+            around = false;
         }
 
         // Update is called once per frame

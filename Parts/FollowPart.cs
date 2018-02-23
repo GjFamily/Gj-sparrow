@@ -16,12 +16,12 @@ namespace Gj
 
         public void Cancel()
         {
-            this.target = null;
+            target = null;
         }
 
-        public void FollowTarget(GameObject target)
+        public void FollowTarget(GameObject obj)
         {
-            this.target = target;
+            target = obj;
         }
 
         // Update is called once per frame

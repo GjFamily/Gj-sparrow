@@ -19,6 +19,18 @@ namespace Gj
                 return _info;
             }
         }
+        private Info _featureInfo;
+        protected Info FeatureInfo
+        {
+            get
+            {
+                if (_featureInfo == null)
+                {
+                    _featureInfo = GetFeatureComponent<Info>();
+                }
+                return _featureInfo;
+            }
+        }
         private GameObject _model;
         public GameObject Model
         {
@@ -65,6 +77,16 @@ namespace Gj
             {
                 Info.SetAttribute(key, value);
             }
+        }
+
+        protected float GetFeatureAttribute(string key)
+        {
+            return FeatureInfo.GetAttribute(key);
+        }
+
+        protected void SetFeatureAttribute(string key, float value)
+        {
+            FeatureInfo.SetAttribute(key, value);
         }
 
         protected float GetAttribute(string key)

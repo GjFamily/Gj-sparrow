@@ -9,7 +9,7 @@ namespace Gj
         // Use this for initialization
         void Start()
         {
-            
+            SetFeatureAttribute("moveSpeed", 5);
         }
 
         // Update is called once per frame
