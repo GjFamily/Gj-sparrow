@@ -63,6 +63,11 @@ namespace Gj
             Info.SetAttribute(key, value);
         }
 
+        protected virtual void Appear () {
+            show = true;
+            gameObject.SetActive(true);
+        }
+
         protected virtual void Disappear () {
             show = false;
             gameObject.SetActive(false);

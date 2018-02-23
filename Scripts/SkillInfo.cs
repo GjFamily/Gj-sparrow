@@ -6,7 +6,7 @@ namespace Gj
     public class SkillInfo : MonoBehaviour
     {
         [HideInInspector]
-        public string skillName;
+        public string name;
         public float power;
         public float need;
         public float range;

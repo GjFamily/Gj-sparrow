@@ -76,7 +76,7 @@ namespace Gj
 
         public void Cast(SkillInfo skillInfo)
         {
-            gameSystem.Cast(skillInfo.skillName, gameObject);
+            gameSystem.Cast(skillInfo.name, gameObject);
             notic(skillInfo);
         }
 
@@ -84,7 +84,7 @@ namespace Gj
         {
             if (skillInfo.AllowTarget(gameObject, target) && skillInfo.IsOutRange(gameObject, target))
             {
-                gameSystem.Cast(skillInfo.skillName, gameObject, target);
+                gameSystem.Cast(skillInfo.name, gameObject, target);
                 notic(skillInfo);
             }
         }
@@ -93,7 +93,7 @@ namespace Gj
         {
             if (skillInfo.IsOutRange(gameObject, transform))
             {
-                gameSystem.Cast(skillInfo.skillName, gameObject, transform);
+                gameSystem.Cast(skillInfo.name, gameObject, transform);
                 notic(skillInfo);
             }
         }

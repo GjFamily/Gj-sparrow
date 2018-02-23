@@ -5,13 +5,11 @@ namespace Gj
 {
     public class EventPointEntity : BaseEntity
     {
-        public string eventKey;
-
         private void OnTriggerEnter(Collider other)
         {
             if (IsPlayer(other.gameObject))
             {
-                EventManage.single.Emit(eventKey+"-enter");
+                EventManage.single.Emit(objName+"-enter");
             }
         }
 
@@ -19,7 +17,7 @@ namespace Gj
         {
             if (IsPlayer(other.gameObject))
             {
-                EventManage.single.Emit(eventKey + "-exit");
+                EventManage.single.Emit(objName + "-exit");
             }
         }
 

@@ -21,9 +21,9 @@ namespace Gj
 
         public void AddExtra(ExtraInfo extraInfo)
         {
-            if (!extraInfoMap.ContainsKey(extraInfo.skillName))
+            if (!extraInfoMap.ContainsKey(extraInfo.name))
             {
-                extraInfoMap.Add(extraInfo.skillName, new List<ExtraInfo>());
+                extraInfoMap.Add(extraInfo.name, new List<ExtraInfo>());
             }
             switch (extraInfo.extraType)
             {
@@ -51,7 +51,7 @@ namespace Gj
                 case ExtraInfo.ExtraType.Special:
                     break;
             }
-            extraInfoMap[extraInfo.skillName].Remove(extraInfo);
+            extraInfoMap[extraInfo.name].Remove(extraInfo);
         }
 
         private void AddAttribute(ExtraInfo extraInfo)
@@ -66,7 +66,7 @@ namespace Gj
 
         public void Merge(ExtraInfo extraInfo)
         {
-            List<ExtraInfo> list = extraInfoMap[extraInfo.skillName];
+            List<ExtraInfo> list = extraInfoMap[extraInfo.name];
             switch (extraInfo.numType)
             {
                 case ExtraInfo.NumType.Only:

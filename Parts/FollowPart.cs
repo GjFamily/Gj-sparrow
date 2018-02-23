@@ -31,7 +31,7 @@ namespace Gj
             if (target != null && speed > 0)
             {
                 transform.position = Vector3.Lerp(transform.position, target.transform.position - offsetPosition, Time.deltaTime * speed);
-            } else {
+            } else if (target != null) {
                 transform.position = target.transform.position - offsetPosition;
             }
         }

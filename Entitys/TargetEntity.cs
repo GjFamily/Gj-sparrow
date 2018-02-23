@@ -8,7 +8,6 @@ namespace Gj
     [RequirePart(typeof(StatusPart))]
     public class TargetEntity : BaseEntity
     {
-        public string targetName;
         // Use this for initialization
         protected virtual void Start()
         {

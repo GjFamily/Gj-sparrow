@@ -6,7 +6,6 @@ namespace Gj
     [RequirePart(typeof(BeLongPart))]
     public class SkillEntity : BaseEntity
     {
-        public string skillName;
         public SkillInfo SkillInfo {
             get {
                 return GetComponent<SkillInfo>();
@@ -22,11 +21,11 @@ namespace Gj
             GetComponent<BeLongPart>().SetMaster(obj);
             if (SkillInfo != null) {
                 SkillInfo.master = obj;
-                SkillInfo.skillName = skillName;
+                SkillInfo.name = objName;
             }
             if (ExtraInfo != null) {
                 ExtraInfo.master = obj;
-                ExtraInfo.skillName = skillName;
+                ExtraInfo.name = objName;
             }
         }
 
