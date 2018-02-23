@@ -3,12 +3,18 @@ using System;
 
 namespace Gj
 {
-    [RequirePart(typeof(Info))]
     public class BasePart : MonoBehaviour
     {
-        protected Info Info {
-            get {
-                return GetComponent<Info>();
+        private Info _info;
+        protected Info Info
+        {
+            get
+            {
+                if (_info == null)
+                {
+                    _info = GetComponent<Info>();
+                }
+                return _info;
             }
         }
         protected virtual void Awake()

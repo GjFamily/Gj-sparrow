@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Gj
 {
-    public class MobileGameSystem : BaseSystem
+    public class MobileUISystem : BaseSystem
     {
         public bool leftRocker = false;
         public bool rightRocker = false;

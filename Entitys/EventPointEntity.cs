@@ -25,10 +25,10 @@ namespace Gj
 
         private bool IsPlayer(GameObject obj)
         {
-            Info info = obj.GetComponent<Info>();
-            if (info != null)
+            BaseEntity entity = obj.GetComponent<BaseEntity>();
+            if (entity != null)
             {
-                return info.player;
+                return entity.player;
             }
             else
             {

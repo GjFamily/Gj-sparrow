@@ -7,11 +7,16 @@ namespace Gj
     [RequirePart(typeof(Info))]
     public class BaseFeature : MonoBehaviour
     {
+        private Info _info;
         protected Info Info
         {
             get
             {
-                return GetComponent<Info>();
+                if (_info == null)
+                {
+                    _info = GetComponent<Info>();
+                }
+                return _info;
             }
         }
         private GameObject _model;

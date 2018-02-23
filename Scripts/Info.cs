@@ -9,8 +9,6 @@ namespace Gj
     public class Info : MonoBehaviour
     {
         public Category category = Category.Empty;
-        [HideInInspector]
-        public bool player = false;
         [Serializable]
         public struct Attribute
         {

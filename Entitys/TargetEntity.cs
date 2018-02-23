@@ -8,6 +8,7 @@ namespace Gj
     [RequirePart(typeof(StatusPart))]
     public class TargetEntity : BaseEntity
     {
+        public string targetName;
         // Use this for initialization
         protected virtual void Start()
         {
@@ -16,9 +17,15 @@ namespace Gj
             GetComponent<AttackPart>().SetNotic(Consume);
         }
 
-        public void SetSkillSystem(SkillSystem system)
+        public virtual void Init()
         {
-            GetComponent<AttackPart>().SetSkillSystem(system);
+            show = true;
+            gameObject.SetActive(true);
+        }
+
+        public void SetGameSystem(GameSystem system)
+        {
+            GetComponent<AttackPart>().SetGameSystem(system);
         }
 
         protected SkillInfo GetSkillInfo(string skillName) {
@@ -47,7 +54,9 @@ namespace Gj
             }
         }
 
-        protected virtual void Die () {}
+        protected virtual void Die () {
+            Disappear();
+        }
 
         protected virtual void SkillEffect(SkillInfo skillInfo) { }
 

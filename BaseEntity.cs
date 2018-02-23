@@ -9,15 +9,23 @@ namespace Gj
     [RequirePart(typeof(Info))]
     public class BaseEntity : MonoBehaviour
     {
+        private Info _info;
         protected Info Info
         {
             get
             {
-                return GetComponent<Info>();
+                if (_info == null) {
+                    _info = GetComponent<Info>();
+                }
+                return _info;
             }
         }
+        public string objName;
         [HideInInspector]
-        public bool update = false;
+        public bool player = false;
+        [HideInInspector]
+        public bool show = false;
+
         protected virtual void Awake()
         {
             Tools.BindPart(this, gameObject);
@@ -51,6 +59,12 @@ namespace Gj
 
         protected void SetAttribute (string key, float value) {
             Info.SetAttribute(key, value);
+        }
+
+        protected virtual void Disappear () {
+            show = false;
+            gameObject.SetActive(false);
+            CacheManage.single.SetCache(objName, gameObject);
         }
     }
 }

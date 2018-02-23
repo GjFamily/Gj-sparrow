@@ -14,7 +14,7 @@ namespace Gj
         private float attackDistance;
         private bool attacking = false;
 
-        private SkillSystem skillSystem;
+        private GameSystem gameSystem;
         // Use this for initialization
         void Start()
         {
@@ -24,17 +24,25 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            if (target != null) {
-                if (Vector3.Distance(target.transform.position, gameObject.transform.position) < attackDistance) {
-                    if (!attacking) {
-                        if (enterAttackNotic != null) {
+            if (target != null)
+            {
+                if (Vector3.Distance(target.transform.position, gameObject.transform.position) < attackDistance)
+                {
+                    if (!attacking)
+                    {
+                        if (enterAttackNotic != null)
+                        {
                             enterAttackNotic();
                         }
                         attacking = true;
                     }
-                } else {
-                    if (attacking) {
-                        if (exitAttackNotic != null) {
+                }
+                else
+                {
+                    if (attacking)
+                    {
+                        if (exitAttackNotic != null)
+                        {
                             exitAttackNotic();
                         }
                         attacking = false;
@@ -43,15 +51,18 @@ namespace Gj
             }
         }
 
-        public SkillInfo GetSkillInfo (string skillName) {
-            return skillSystem.GetSkillInfo(skillName);
+        public SkillInfo GetSkillInfo(string skillName)
+        {
+            return gameSystem.GetSkillInfo(skillName);
         }
 
-        public void SetSkillSystem (SkillSystem system) {
-            skillSystem = system;
+        public void SetGameSystem(GameSystem system)
+        {
+            gameSystem = system;
         }
 
-        public void SetAttackTarget (GameObject obj, Action enterAction, Action exitAction) {
+        public void SetAttackTarget(GameObject obj, Action enterAction, Action exitAction)
+        {
             target = obj;
             attackDistance = GetAttribute("radio") + GetAttribute(obj, "radio");
             enterAttackNotic = enterAction;
@@ -63,23 +74,26 @@ namespace Gj
             this.notic = notic;
         }
 
-        public void Cast(SkillInfo skillInfo) {
-            skillSystem.Cast(skillInfo.skillName, gameObject);
+        public void Cast(SkillInfo skillInfo)
+        {
+            gameSystem.Cast(skillInfo.skillName, gameObject);
             notic(skillInfo);
         }
 
         public void Cast(SkillInfo skillInfo, GameObject target)
         {
-            if(skillInfo.AllowTarget(gameObject, target) && skillInfo.IsOutRange(gameObject, target)){
-            skillSystem.Cast(skillInfo.skillName, gameObject, target);
+            if (skillInfo.AllowTarget(gameObject, target) && skillInfo.IsOutRange(gameObject, target))
+            {
+                gameSystem.Cast(skillInfo.skillName, gameObject, target);
                 notic(skillInfo);
             }
         }
 
         public void Cast(SkillInfo skillInfo, Transform transform)
         {
-            if(skillInfo.IsOutRange(gameObject, transform)){
-                skillSystem.Cast(skillInfo.skillName, gameObject, transform);
+            if (skillInfo.IsOutRange(gameObject, transform))
+            {
+                gameSystem.Cast(skillInfo.skillName, gameObject, transform);
                 notic(skillInfo);
             }
         }
