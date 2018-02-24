@@ -5,12 +5,6 @@ using UnityEngine;
 using Gj.Galaxy.Utils;
 
 namespace Gj.Galaxy.Logic{
-    public class PlayerProperties
-    {
-        public const byte UserId = 0;
-        public const byte Name = 1;
-        public const byte Avatar = 2;
-    }
     public class NetworkPlayer : IComparable<NetworkPlayer>, IComparable<int>, IEquatable<NetworkPlayer>, IEquatable<int>
     {
         public int Id
@@ -27,6 +21,10 @@ namespace Gj.Galaxy.Logic{
             get
             {
                 return this.nameField;
+            }
+            set
+            {
+                this.nameField = value;
             }
         }
 
@@ -54,11 +52,12 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public NetworkPlayer(bool isLocal, int actorId, string name)
+        public NetworkPlayer(bool isLocal, int actorId, string userId, string name)
         {
             this.CustomProperties = new Hashtable();
             this.IsLocal = isLocal;
             this.actorId = actorId;
+            this.UserId = userId;
             this.nameField = name;
         }
 
@@ -103,15 +102,6 @@ namespace Gj.Galaxy.Logic{
                 return;
             }
 
-            if (properties.ContainsKey(PlayerProperties.Name))
-            {
-                this.nameField = (string)properties[PlayerProperties.Name];
-            }
-            if (properties.ContainsKey(PlayerProperties.UserId))
-            {
-                this.UserId = (string)properties[PlayerProperties.UserId];
-            }
-
             this.CustomProperties.MergeStringKeys(properties);
             this.CustomProperties.StripKeysWithNullValues();
         }
@@ -129,7 +119,7 @@ namespace Gj.Galaxy.Logic{
 
             if (inOnline)
             {
-                GameConnect.EmitPlayer(this.actorId, customProps);
+                SceneConnect.emitPlayerProp(customProps);
             }
             else
             {

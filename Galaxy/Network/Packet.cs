@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.IO;
 using MsgPack.Serialization;
+using MessagePack;
 
 namespace Gj.Galaxy.Network
 {
@@ -36,6 +37,7 @@ namespace Gj.Galaxy.Network
         Snappy
     }
 
+    [MessagePackObject(keyAsPropertyName: true)]
     internal class AppPacket:DataPacket{
         public string appId;
         public string version;
@@ -61,6 +63,7 @@ namespace Gj.Galaxy.Network
         }
     }
 
+    [MessagePackObject(keyAsPropertyName: true)]
     internal class NsData{
         public DataType type;
         public int id;

@@ -5,7 +5,7 @@ using Gj.Galaxy.Network;
 namespace Gj.Galaxy.Logic{
     internal class ChatEvent
     {
-
+        public const byte Message = 1;
     }
     public interface ChatDelegate
     {

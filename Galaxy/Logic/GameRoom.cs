@@ -187,12 +187,12 @@ namespace Gj.Galaxy.Logic{
             this.CheckMasterClient(actorId);
         }
 
-        internal void OnJoin(int actorId, Hashtable props)
+        internal void OnJoin(int actorId, string userId, string name, Hashtable props)
         {
             NetworkPlayer target;
             bool exist = false;
 
-            var newName = (string)props[PlayerProperties.Name];
+            //var newName = (string)props[PlayerProperties.Name];
             //var userId = (string)props[PlayerProperties.UserId];
             //if(userId == localPlayer.UserId){
                 
@@ -200,7 +200,7 @@ namespace Gj.Galaxy.Logic{
             target = GetPlayerWithId(actorId);
             if (target == null)
             {
-                target = new NetworkPlayer(false, actorId, newName);
+                target = new NetworkPlayer(false, actorId, userId, name);
                 AddNewPlayer(actorId, target);
             }else{
                 exist = true;
@@ -378,7 +378,7 @@ namespace Gj.Galaxy.Logic{
                 int actorNrToCheck = actorsInRoom[i];
                 if (SceneConnect.player.Id != actorNrToCheck && !this.mActors.ContainsKey(actorNrToCheck))
                 {
-                    this.AddNewPlayer(actorNrToCheck, new NetworkPlayer(false, actorNrToCheck, string.Empty));
+                    this.AddNewPlayer(actorNrToCheck, new NetworkPlayer(false, actorNrToCheck, string.Empty, string.Empty));
                 }
             }
         }
