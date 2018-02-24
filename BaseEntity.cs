@@ -5,12 +5,11 @@ using System.Reflection;
 
 namespace Gj
 {
-    [RequirePart(typeof(RelationPart))]
     [RequirePart(typeof(Info))]
     public class BaseEntity : MonoBehaviour
     {
         private Info _info;
-        protected Info Info
+        public Info Info
         {
             get
             {

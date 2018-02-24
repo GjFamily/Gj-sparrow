@@ -6,6 +6,7 @@ namespace Gj
     [RequirePart(typeof(AttackPart))]
     [RequirePart(typeof(DefensePart))]
     [RequirePart(typeof(StatusPart))]
+    [RequirePart(typeof(RelationPart))]
     public class TargetEntity : BaseEntity
     {
         // Use this for initialization
