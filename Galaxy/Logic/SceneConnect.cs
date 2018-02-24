@@ -11,10 +11,14 @@ namespace Gj.Galaxy.Logic{
         public const byte LobbyLeave = 2;
         public const byte LobbyExist = 3;
         public const byte TeamCreate = 4;
+        public const byte PropChanged = 5;
+        public const byte TeamInvite = 255;
+        public const byte GameConnect = 254;
+        public const byte Prop = 253;
     }
     public interface SceneDelegate{
         void OnJoinedGame(string token);
-        void OnInvitedTeam(string teamId);
+        void OnInvitedTeam(string userId, string teamId);
     }
     public class LobbyType{
         public const string PVE = "pve";
@@ -35,7 +39,6 @@ namespace Gj.Galaxy.Logic{
             n = PeerClient.Of(NamespaceId.Scene);
             lisenter = new SceneConnect();
             n.listener = lisenter;
-            player = new NetworkPlayer(true, -1, "");
         }
 
         public static Namespace Of(SceneRoom ns){
@@ -59,8 +62,9 @@ namespace Gj.Galaxy.Logic{
             n.Emit(SceneEvent.LobbyJoin, new object[] { lobby, options });
         }
 
-        public static void CreateTeam(int people){
-            
+        public static void CreateTeam(int people, Action<string> callback)
+        {
+            n.Emit(SceneEvent.TeamCreate, new object[] { people }, (obj) => callback((string)obj[0]));
         }
 
         public static void LeaveLobby()
@@ -68,8 +72,13 @@ namespace Gj.Galaxy.Logic{
             n.Emit(SceneEvent.LobbyLeave, new object[]{});
         }
 
+        public static void ExistLobby(Action<bool> callback)
+        {
+            n.Emit(SceneEvent.LobbyExist, new object[] { }, (obj) => callback((bool)obj[0]));
+        }
 
-        public static void SetPlayerCustomProperties(Hashtable customProperties)
+
+        public static void SetCustomProperties(Hashtable customProperties)
         {
             if (customProperties == null)
             {
@@ -81,7 +90,7 @@ namespace Gj.Galaxy.Logic{
             }
             player.SetCustomProperties(customProperties);
         }
-        public static void RemovePlayerCustomProperties(string[] customPropertiesToDelete)
+        public static void RemoveCustomProperties(string[] customPropertiesToDelete)
         {
             var props = player.CustomProperties;
             for (int i = 0; i < customPropertiesToDelete.Length; i++)
@@ -94,6 +103,10 @@ namespace Gj.Galaxy.Logic{
             }
             player.CustomProperties = new Hashtable();
             player.SetCustomProperties(props);
+        }
+
+        internal static void emitPlayerProp(Hashtable prop){
+            n.Emit(SceneEvent.PropChanged, new object[] { });
         }
 
         public void OnConnect(bool success)
@@ -251,7 +264,21 @@ namespace Gj.Galaxy.Logic{
 
         public object[] OnEvent(byte eb, object[] param)
         {
-            throw new NotImplementedException();
+            switch (eb)
+            {
+                case SceneEvent.TeamInvite:
+                    Delegate.OnInvitedTeam((string)param[0], (string)param[1]);
+                    break;
+                case SceneEvent.GameConnect:
+                    Delegate.OnJoinedGame((string)param[1]);
+                    break;
+                case SceneEvent.Prop:
+                    player = new NetworkPlayer(true, -1, (string)param[0], (string)param[1]);
+                    player.InternalProperties((Hashtable)param[0]);
+                    break;
+                    
+            }
+            return null;
         }
     }
 }

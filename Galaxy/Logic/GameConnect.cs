@@ -309,7 +309,7 @@ namespace Gj.Galaxy.Logic
                     Delegate.OnFinish(false, (Dictionary<string, object>)param[0]);
                     break;
                 case GameEvent.Join:
-                    Room.OnJoin((int)param[0], (Hashtable)param[1]);
+                    Room.OnJoin((int)param[0], (string)param[1], (string)param[2], (Hashtable)param[3]);
                     break;
                 case GameEvent.Leave:
                     Room.OnLeave((int)param[0]);

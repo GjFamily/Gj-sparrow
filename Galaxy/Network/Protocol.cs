@@ -46,10 +46,12 @@ namespace Gj.Galaxy.Network
         }
 
         public static byte[] GetBytes(this string s){
+            if (s == null) return null;
             return System.Text.Encoding.Default.GetBytes(s);
         }
 
         public static string GetString(this byte[] b){
+            if (b == null) return null;
             return System.Text.Encoding.Default.GetString(b);
         }
     }

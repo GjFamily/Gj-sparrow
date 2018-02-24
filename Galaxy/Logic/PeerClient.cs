@@ -342,7 +342,7 @@ namespace Gj.Galaxy.Logic{
             GO.name = "GalaxyBack";
             GO.hideFlags = HideFlags.HideInHierarchy;
 
-            client = new Client(GetServerAddress());
+            client = new Client();
             //client.QuickResendAttempts = 2;
             //client.SentCountAllowance = 7;
 
@@ -373,6 +373,7 @@ namespace Gj.Galaxy.Logic{
         /// <returns>NameServer Address (with prefix and port).</returns>
         private static string GetServerAddress()
         {
+            if (ServerSettings == null) return "";
             string protocolPrefix = string.Empty;
             string result = string.Format("wss://{0}", ServerSettings.ServerAddress);
 
@@ -419,7 +420,7 @@ namespace Gj.Galaxy.Logic{
 
             offlineMode = false;
             client.listener = listener;
-            return client.Connect();
+            return client.Connect(GetServerAddress());
         }
 
         //public static bool Reconnect()
@@ -463,8 +464,8 @@ namespace Gj.Galaxy.Logic{
             {
                 return; // Surpress error when quitting playmode in the editor
             }
-
-            client.Disconnect();
+            if(client.IsConnect)
+                client.Disconnect();
         }
 
         public static int GetPing()
@@ -477,16 +478,24 @@ namespace Gj.Galaxy.Logic{
         }
 
         public static bool DispatchIncomingCommands(){
-            return client.ReadQueue(10);
+            if (client.IsConnect)
+                return client.ReadQueue(10);
+            else
+                return false;
         }
 
         public static bool SendOutgoingCommands(){
-            return client.WriteQueue(10);
+
+            if (client.IsConnect)
+                return client.WriteQueue(10);
+            else
+                return false;
         }
 
         public static void Ping()
         {
-            client.Ping();
+            if(client.IsConnect)
+                client.Ping();
         }
 
         public static HashSet<GameObject> FindGameObjectsWithComponent(Type type)

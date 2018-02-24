@@ -7,6 +7,7 @@ namespace Gj.Galaxy.Logic{
     internal class AuthEvent
     {
         public const byte Auth = 1;
+        public const byte Version = 2;
     }
     public interface AuthDelegate
     {

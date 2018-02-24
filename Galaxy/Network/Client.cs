@@ -46,7 +46,7 @@ namespace Gj.Galaxy.Network{
     public class Client
     {
         public ClientListener listener;
-        public ConnectionState State;
+        public ConnectionState State = ConnectionState.Disconnected;
         protected string sid;
         private AppPacket app;
         protected Namespace root;
@@ -79,7 +79,7 @@ namespace Gj.Galaxy.Network{
                 switch (State)
                 {
                     case ConnectionState.Connected:
-                    case ConnectionState.Connecting:
+                        //Debug.Log(true);
                         return true;
                     default:
                         return false;
@@ -95,16 +95,14 @@ namespace Gj.Galaxy.Network{
 
         public LogLevel logLevel = LogLevel.Error;
 
-        public Client(string url)
+        public Client()
         {
             root = new Namespace(this, null);
-            mWebSocket = url;
         }
 
         public void SetApp(string appId, string version, string secret)
         {
             app = new AppPacket(appId, version, secret);
-            Send(MessageType.Application, ProtocolType.Default, CompressType.None, app);
         }
 
         public void SetCrypto()
@@ -112,22 +110,27 @@ namespace Gj.Galaxy.Network{
 
         }
 
-        public bool Connect()
+        public bool Connect(string url)
         {
             if (app == null)
                 throw new Exception("Please set app info");
             if (IsConnect) return true;
-            return webSocket(mWebSocket);
+            var result = WebSocket(url);
+            if (result){
+                Send(MessageType.Application, ProtocolType.Default, CompressType.None, app);
+            }
+            return result;
         }
 
         public void Disconnect()
         {
+            if(IsConnect){
+                SendByte(MessageType.Close, ProtocolType.Default, CompressType.None, null);
+
+                destroy("forced client close");
+            }
             State = ConnectionState.Disconnecting;
             exitStatus = ExitStatus.Client;
-
-            SendByte(MessageType.Close, ProtocolType.Default, CompressType.None, null);
-
-            destroy("forced client close");
         }
 
         public bool Reconnect()
@@ -140,6 +143,7 @@ namespace Gj.Galaxy.Network{
             {
                 return true;
             }
+            State = ConnectionState.Reconnecting;
             return webSocket(mWebSocket);
         }
 
@@ -148,26 +152,28 @@ namespace Gj.Galaxy.Network{
             Disconnect();
         }
 
-        protected void WebSocket(string url)
+        public bool WebSocket(string url)
         {
             var result = webSocket(url);
             if (result) mWebSocket = url;
+            return result;
         }
 
         protected bool webSocket(string url)
         {
-            Uri uri = new Uri(url);
+            Uri uri = new Uri(url + "/galaxy.socket");
             var conn = new WebSocket(uri);
             return Accept(ProtocolType.Safe, conn);
         }
 
-        protected void Tcp(string host, int port)
+        protected bool Tcp(string host, int port)
         {
             IPAddress address;
             IPAddress.TryParse(host, out address);
             var t = new IPEndPoint(address, port);
             var result = tcp(t);
             if (result) mTcp = t;
+            return result;
         }
 
         protected bool tcp(IPEndPoint point)
@@ -177,13 +183,14 @@ namespace Gj.Galaxy.Network{
             return true;
         }
 
-        protected void Udp(string host, int port)
+        protected bool Udp(string host, int port)
         {
             IPAddress address;
             IPAddress.TryParse(host, out address);
             var t = new IPEndPoint(address, port);
             var result = udp(t);
             if (result) mTcp = t;
+            return result;
         }
 
         protected bool udp(IPEndPoint point)
@@ -203,6 +210,9 @@ namespace Gj.Galaxy.Network{
             allowConn[protocolType] = conn;
 
             SendByte(MessageType.Open, ProtocolType.Default, CompressType.None, sid.GetBytes());
+            //Debug.Log(conn);
+            //Debug.Log("accept");
+            State = ConnectionState.Connecting;
             return true;
         }
 
@@ -256,13 +266,16 @@ namespace Gj.Galaxy.Network{
             var t = 0;
             var length = 0;
             var multiplier = 1;
+            Debug.Log("Read");
             while (enumerator.MoveNext())
             {
+                Debug.Log("Read Connect");
                 var conn = enumerator.Current;
                 while(true)
                 {
                     t++;
                     if (t > times) return true;
+                    Debug.Log("Read Connect message");
                     var b = conn.Read(9, out h);
                     if(b == null){
                         return false;
@@ -325,6 +338,9 @@ namespace Gj.Galaxy.Network{
                 }
                 header[i] = (byte)(b & 0xff);
             }
+            //Debug.Log(conn);
+            //Debug.Log(header);
+            //Debug.Log(buffer);
 
             return conn.Write(header, buffer);
         }
@@ -370,6 +386,7 @@ namespace Gj.Galaxy.Network{
                 while (enumerator.MoveNext())
                 {
                     var _conn = enumerator.Current;
+                    conn = _conn.Value;
                     Protocol(_conn.Key, protocolType);
                 }
             }
@@ -394,7 +411,10 @@ namespace Gj.Galaxy.Network{
             var conn = SelectConn(protocolType);
             Write(messageType, conn, compressType, (writer) =>
             {
-                writer.Write(data, 0, data.Length);
+                //Debug.Log(writer);
+                //Debug.Log(data);
+                if(data != null)
+                    writer.Write(data, 0, data.Length);
             });
         }
 
@@ -435,6 +455,14 @@ namespace Gj.Galaxy.Network{
 
         private void OnPong(string sid)
         {
+            if (State == ConnectionState.Connecting){
+                State = ConnectionState.Connected;
+                listener.OnConnect(true);
+            }else if(State == ConnectionState.Reconnecting){
+                State = ConnectionState.Connected;
+                listener.OnReconnect(true);
+            }
+                
             this.sid = sid;
         }
 

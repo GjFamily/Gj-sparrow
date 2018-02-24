@@ -34,7 +34,7 @@ namespace Gj.Galaxy.Network
 
         public Namespace(Client client, byte[] nsp)
         {
-            this.nsp = nsp;
+            this.nsp = nsp == null ? new byte[] { } : nsp;
             this.client = client;
         }
 
@@ -122,6 +122,14 @@ namespace Gj.Galaxy.Network
             this.compress = type;
         }
 
+        internal void ack(int id, object[] result){
+            var data = new NsData();
+            data.type = DataType.Ack;
+            data.id = id;
+            data.data = result;
+            packet(data);
+        }
+
         internal void dispatch(NsData data){
             try{
                 switch (data.type)
@@ -160,7 +168,10 @@ namespace Gj.Galaxy.Network
                             var e = l[0];
                             var ll = new List<object>(l);
                             ll.RemoveAt(0);
-                            this.listener.OnEvent((byte)l[0], ll.ToArray());
+                            var r = this.listener.OnEvent((byte)l[0], ll.ToArray());
+                            if (data.id > 0){
+                                ack(data.id, r);
+                            }
                         }
                         break;
                     case DataType.Ack:
