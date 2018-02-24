@@ -6,7 +6,7 @@ namespace Gj
     public class ExtraInfo : MonoBehaviour
     {
         [HideInInspector]
-        public string name;
+        public new string name;
         public float time;
         public float intervalTime;
         public RargetRelation targetRelation;

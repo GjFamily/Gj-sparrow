@@ -6,11 +6,12 @@ namespace Gj
     public class SkillInfo : MonoBehaviour
     {
         [HideInInspector]
-        public string name;
+        public new string name;
         public float power;
         public float need;
         public float range;
         public float waitTime;
+        public float intervalTime;
         public RargetRelation targetRelation;
         public enum RargetRelation
         {
