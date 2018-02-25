@@ -32,6 +32,14 @@ namespace Gj
             return GetComponent<AttackPart>().GetSkillInfo(skillName);
         }
 
+        protected virtual void GetPower(SkillInfo skillInfo)
+        {
+            if (IsEnoughConsume(skillInfo))
+            {
+                GetComponent<AttackPart>().Cast(skillInfo, gameObject);
+            }
+        }
+
         protected virtual void Attack(SkillInfo skillInfo) {
             if(IsEnoughConsume(skillInfo)){
                 GetComponent<AttackPart>().Cast(skillInfo);
