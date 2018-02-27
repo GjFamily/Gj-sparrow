@@ -399,7 +399,7 @@ namespace Gj.Galaxy.Network{
                     {
                         buffer = readerHandle[compressType](buffer);
                     }
-                    Debug.Log(length);
+                    //Debug.Log(length);
                     var b = new byte[length];
                     buffer.Read(b, 0, length);
 

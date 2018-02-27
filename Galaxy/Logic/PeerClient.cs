@@ -326,27 +326,15 @@ namespace Gj.Galaxy.Logic{
                 Debug.Log(string.Format("Not playing {0} {1}", UnityEditor.EditorApplication.isPlaying, UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode));
                 return;
             }
+            Debug.Log("PeerClient");
 
-            // This can happen when you recompile a script IN play made
-            // This helps to surpress some errors, but will not fix breaking
-            Handler[] Handlers = GameObject.FindObjectsOfType(typeof(Handler)) as Handler[];
-            if (Handlers != null && Handlers.Length > 0)
-            {
-                UnityEngine.Debug.LogWarning("Unity recompiled. Connection gets closed and replaced. You can connect as 'new' client.");
-                foreach (Handler Handler in Handlers)
-                {
-                    //Debug.Log("Handler: " + photonHandler + " photonHandler.gameObject: " + photonHandler.gameObject);
-                    Handler.gameObject.hideFlags = 0;
-                    GameObject.DestroyImmediate(Handler.gameObject);
-                    Component.DestroyImmediate(Handler);
-                }
-            }
+            InternalCleanPhotonMonoFromSceneIfStuck();
 #endif
 
-            if (ServerSettings != null)
-            {
-                Application.runInBackground = ServerSettings.RunInBackground;
-            }
+            //if (ServerSettings != null)
+            //{
+            //    Application.runInBackground = ServerSettings.RunInBackground;
+            //}
 
             // Set up a MonoBehaviour to run Photon, and hide it
             GameObject GO = new GameObject();
@@ -432,6 +420,7 @@ namespace Gj.Galaxy.Logic{
             offlineMode = false;
             client.listener = listener;
             return client.Connect(GetServerAddress());
+            return true;
         }
         public static void Close(){
             if (client.IsRuning)
@@ -575,5 +564,26 @@ namespace Gj.Galaxy.Logic{
         }
 #endif
 
+#if UNITY_EDITOR
+
+        public static void InternalCleanPhotonMonoFromSceneIfStuck()
+        {
+            Handler[] Handlers = GameObject.FindObjectsOfType(typeof(Handler)) as Handler[];
+            if (Handlers != null && Handlers.Length > 0)
+            {
+                foreach (Handler Handler in Handlers)
+                {
+                    Handler.gameObject.hideFlags = 0;
+
+                    if (Handler.gameObject != null && Handler.gameObject.name == "GalaxyBack")
+                    {
+                        GameObject.DestroyImmediate(Handler.gameObject);
+                    }
+
+                    Component.DestroyImmediate(Handler);
+                }
+            }
+        }
+#endif
     }
 }

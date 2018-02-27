@@ -41,7 +41,7 @@ public class EntityHandler : EditorWindow
         {
             CheckSceneForStuckHandlers = false;
         }
-        GameConnect.InternalCleanPhotonMonoFromSceneIfStuck();
+        PeerClient.Close();
 
 
         HashSet<NetworkEntity> pvInstances = new HashSet<NetworkEntity>();

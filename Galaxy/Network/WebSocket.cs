@@ -92,6 +92,7 @@ namespace Gj.Galaxy.Network
 
         public void Close()
         {
+            m_IsConnected = false;
             SocketClose(m_NativeRef);
         }
 
@@ -102,6 +103,7 @@ namespace Gj.Galaxy.Network
 
         public string Error()
         {
+            if(!m_IsConnected) return "";
             const int bufsize = 1024;
             byte[] buffer = new byte[bufsize];
             int result = SocketError (m_NativeRef, buffer, bufsize);
@@ -135,8 +137,10 @@ namespace Gj.Galaxy.Network
             };
             m_Socket.OnError += (sender, e) =>
             {
-                error(new Exception(e.Message));
-                m_Error = e.Message + (e.Exception == null ? "" : " / " + e.Exception);
+                if(m_IsConnected){
+                    error(new Exception(e.Message));
+                    m_Error = e.Message + (e.Exception == null ? "" : " / " + e.Exception);
+                }
             };
             m_Socket.OnClose += (sender, e) =>
             {
@@ -169,6 +173,7 @@ namespace Gj.Galaxy.Network
         public void Close()
         {
             Debug.Log("Websocket close");
+            m_IsConnected = false;
             if(m_Socket != null)
                 m_Socket.Close();
         }

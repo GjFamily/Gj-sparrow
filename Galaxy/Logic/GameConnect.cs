@@ -2181,27 +2181,5 @@ namespace Gj.Galaxy.Logic
 
             return true;
         }
-#if UNITY_EDITOR
-
-        public static void InternalCleanPhotonMonoFromSceneIfStuck()
-        {
-            Handler[] Handlers = GameObject.FindObjectsOfType(typeof(Handler)) as Handler[];
-            if (Handlers != null && Handlers.Length > 0)
-            {
-                foreach (Handler Handler in Handlers)
-                {
-                    Handler.gameObject.hideFlags = 0;
-
-                    if (Handler.gameObject != null && Handler.gameObject.name == "GalaxyBack")
-                    {
-                        GameObject.DestroyImmediate(Handler.gameObject);
-                    }
-
-                    Component.DestroyImmediate(Handler);
-                }
-            }
-            PeerClient.Close();
-        }
-#endif
     }
 }
