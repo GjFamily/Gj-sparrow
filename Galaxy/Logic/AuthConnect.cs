@@ -20,11 +20,18 @@ namespace Gj.Galaxy.Logic{
         public static AuthDelegate Delegate;
         private static AuthConnect listener;
 
+        private Action<bool> OnConnectAction;
+
         static AuthConnect()
         {
             n = PeerClient.Of(NamespaceId.Auth);
             listener = new AuthConnect();
             n.listener = listener;
+        }
+
+        public static void App(Action<bool> a){
+            listener.OnConnectAction = a;
+            n.Connect();
         }
 
         public static void Auth(string userName, string password, Action<object> callback){
@@ -218,7 +225,9 @@ namespace Gj.Galaxy.Logic{
 
         public void OnConnect(bool success)
         {
-            throw new System.NotImplementedException();
+            if(OnConnectAction != null){
+                OnConnectAction(success);
+            }
         }
 
         public void OnReconnect(bool success)
@@ -233,7 +242,7 @@ namespace Gj.Galaxy.Logic{
 
         public object[] OnEvent(byte eb, object[] param)
         {
-            throw new System.NotImplementedException();
+            return null;
         }
     }
 }

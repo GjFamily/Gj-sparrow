@@ -52,7 +52,7 @@ namespace Gj.Galaxy.Logic
         void OnStart();
         void OnLeaveGame();
         void OnOwnership(NetworkEntity entity, NetworkPlayer oldPlayer);
-        GameObject OnInstance(string prefabName);
+        GameObject OnInstance(string prefabName, NetworkPlayer player);
     }
     public interface GameRoomDelegate
     {
@@ -176,7 +176,7 @@ namespace Gj.Galaxy.Logic
             listener.ResetEntityOnSerialize();
             listener.LoadLevel();
             //会触发场景初始化及玩家初始化，以及开始游戏
-            //PeerClient.isMessageQueueRunning = true;
+            PeerClient.isMessageQueueRunning = true;
             stage = GameStage.InitScene;
             if (Room.isMasterClient)
             {
@@ -248,6 +248,7 @@ namespace Gj.Galaxy.Logic
         {
             ClearRoom();
             stage = GameStage.None;
+            PeerClient.isMessageQueueRunning = false;
         }
 
         public void OnReconnect(bool success)
@@ -386,7 +387,7 @@ namespace Gj.Galaxy.Logic
         {
             if (!inRoom)
             {
-                Debug.LogError("Failed to Instantiate prefab: " + prefabName + ". Client should be in a room. Current connectionStateDetailed: " + PeerClient.client.State);
+                Debug.LogError("Failed to Instantiate prefab: " + prefabName + ". Client should be in a room. Current connectionStateDetailed: " + PeerClient.connected);
                 return null;
             }
 
@@ -399,7 +400,7 @@ namespace Gj.Galaxy.Logic
             //        PrefabCache.Add(prefabName, prefabGo);
             //    }
             //}
-            prefabGo = Delegate.OnInstance(prefabName);
+            prefabGo = Delegate.OnInstance(prefabName, Room.localPlayer);
 
             if (prefabGo == null)
             {
@@ -451,7 +452,7 @@ namespace Gj.Galaxy.Logic
             //        PrefabCache.Add(prefabName, prefabGo);
             //    }
             //}
-            prefabGo = Delegate.OnInstance(prefabName);
+            prefabGo = Delegate.OnInstance(prefabName, null);
 
             if (prefabGo == null)
             {
@@ -500,8 +501,17 @@ namespace Gj.Galaxy.Logic
                 return ;
             }
             int playerId = 0;
-            if (stage != GameStage.InitScene){
+            if (stage == GameStage.InitScene)
+            {
+                playerId = 0;
+            }
+            else if (stage == GameStage.InitPlayer)
+            {
                 playerId = Room.localPlayer.Id;
+            }
+            else
+            {
+                
             }
             Hashtable instantiateEvent = listener.EmitInstantiate(playerId, prefabName, prefabGo.transform.position, prefabGo.transform.rotation, group, entityIds, data, true);
             listener.OnInstance(playerId, instantiateEvent, prefabGo);
@@ -1070,6 +1080,7 @@ namespace Gj.Galaxy.Logic
             string prefabName = (string)evData[(byte)0];
             //int serverTime = (int)evData[(byte)6];
             int instantiationId = (int)evData[(byte)6];
+            var player = Room.GetPlayerWithId(playerId);
 
             Vector3 position;
             if (evData.ContainsKey((byte)1))
@@ -1137,11 +1148,11 @@ namespace Gj.Galaxy.Logic
                 //        PrefabCache.Add(prefabName, resourceGameObject);
                 //    }
                 //}
-                resourceGameObject = Delegate.OnInstance(prefabName);
+                resourceGameObject = Delegate.OnInstance(prefabName, player);
 
                 if (resourceGameObject == null)
                 {
-                    Debug.LogError("PhotonNetwork error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
+                    Debug.LogError("error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
                     return null;
                 }
             }
@@ -1150,7 +1161,7 @@ namespace Gj.Galaxy.Logic
             NetworkEntity[] resourcePVs = resourceGameObject.GetEntitysInChildren();
             if (resourcePVs.Length != viewsIDs.Length)
             {
-                throw new Exception("Error in Instantiation! The resource's PhotonView count is not the same as in incoming data.");
+                throw new Exception("Error in Instantiation! The resource's Entity count is not the same as in incoming data.");
             }
 
             for (int i = 0; i < viewsIDs.Length; i++)
@@ -1541,7 +1552,7 @@ namespace Gj.Galaxy.Logic
 
         private void UpdateEntity()
         {
-            if (!PeerClient.connected || PeerClient.offlineMode || Room.mActors == null)
+            if (PeerClient.offlineMode || stage == GameStage.Start)
             {
                 return;
             }
@@ -1823,7 +1834,7 @@ namespace Gj.Galaxy.Logic
             NetworkEntity entity = GetEntity(entityId);
             if (entity == null)
             {
-                Debug.LogWarning("Received OnSerialization for view ID " + entity + ". We have no such NetworkEntity! Ignored this if you're leaving a room. State: " + PeerClient.client.State);
+                Debug.LogWarning("Received OnSerialization for view ID " + entity + ". We have no such NetworkEntity! Ignored this if you're leaving a room. State: " + PeerClient.connected);
                 return;
             }
 
@@ -2189,6 +2200,7 @@ namespace Gj.Galaxy.Logic
                     Component.DestroyImmediate(Handler);
                 }
             }
+            PeerClient.Close();
         }
 #endif
     }

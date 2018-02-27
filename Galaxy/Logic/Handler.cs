@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Diagnostics;
 using UnityEngine;
-using Gj.Galaxy.Logic;
 
 using UnityEngine.Profiling;
 
@@ -88,22 +87,17 @@ namespace Gj.Galaxy.Logic{
 
         protected void Update()
         {
-            if (PeerClient.client == null)
-            {
-                UnityEngine.Debug.LogError("NetworkPeer broke!");
-                return;
-            }
-
             if (!PeerClient.connected)
             {
+                //PeerClient.Wait();
                 return;
             }
 
             // the messageQueue might be paused. in that case a thread will send acknowledgements only. nothing else to do here.
-            if (PeerClient.isMessageQueueRunning)
-            {
-                return;
-            }
+            //if (PeerClient.isMessageQueueRunning)
+            //{
+            //    return;
+            //}
 
             bool doDispatch = true;
             while (PeerClient.isMessageQueueRunning && doDispatch)
@@ -115,7 +109,7 @@ namespace Gj.Galaxy.Logic{
             }
 
             int currentMsSinceStart = (int)(Time.realtimeSinceStartup * 1000);  // avoiding Environment.TickCount, which could be negative on long-running platforms
-            if (!PeerClient.isMessageQueueRunning && currentMsSinceStart > this.nextSendTickCountOnSerialize)
+            if (PeerClient.isMessageQueueRunning && currentMsSinceStart > this.nextSendTickCountOnSerialize)
             {
                 PeerClient.Update();
                 this.nextSendTickCountOnSerialize = currentMsSinceStart + this.updateIntervalOnSerialize;
@@ -126,7 +120,7 @@ namespace Gj.Galaxy.Logic{
             if (currentMsSinceStart > this.nextSendTickCount)
             {
                 bool doSend = true;
-                while (!PeerClient.isMessageQueueRunning && doSend)
+                while (PeerClient.isMessageQueueRunning && doSend)
                 {
                     // Send all outgoing commands
                     Profiler.BeginSample("SendOutgoingCommands");
@@ -162,7 +156,7 @@ namespace Gj.Galaxy.Logic{
 
             while (true)
             {
-                yield return new WaitForSecondsRealtime(0.1f);
+                yield return new WaitForSecondsRealtime(1f);
                 if(!FallbackSendAckThread()){
                     break;
                 }
@@ -190,8 +184,10 @@ namespace Gj.Galaxy.Logic{
                     }
                 }
 
-                if (PeerClient.isMessageQueueRunning || PeerClient.LocalTimestamp - PeerClient.ServerTimestamp > 200)
+                if (PeerClient.isMessageQueueRunning || (PeerClient.LocalTimestamp - PeerClient.LastTimestamp) > 10 * 1000)
                 {
+                    //UnityEngine.Debug.Log(PeerClient.LocalTimestamp);
+                    //UnityEngine.Debug.Log(PeerClient.LastTimestamp);
                     PeerClient.Ping();
                 }
             }

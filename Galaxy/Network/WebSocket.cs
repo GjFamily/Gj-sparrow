@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.IO;
+using UnityEngine;
 
 #if UNITY_WEBGL && !UNITY_EDITOR
 using System.Runtime.InteropServices;
@@ -25,6 +26,10 @@ namespace Gj.Galaxy.Network
                 throw new ArgumentException("Unsupported protocol: " + protocol);
         }
 
+        ~WebSocket(){
+            Close();
+        }
+
         public void SendString(string str)
         {
             Send(Encoding.UTF8.GetBytes (str));
@@ -38,7 +43,7 @@ namespace Gj.Galaxy.Network
             return Encoding.UTF8.GetString (retval);
         }
 
-    #if UNITY_WEBGL && !UNITY_EDITOR
+#if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")]
         private static extern int SocketCreate (string url);
 
@@ -80,7 +85,7 @@ namespace Gj.Galaxy.Network
         public void Connect()
         {
             m_NativeRef = SocketCreate (mUrl.ToString());
-
+        Debug.Log(m_NativeRef);
             //while (SocketState(m_NativeRef) == 0)
             //    yield return 0;
         }
@@ -90,41 +95,63 @@ namespace Gj.Galaxy.Network
             SocketClose(m_NativeRef);
         }
 
-        public bool Connected
+        public bool Connected()
         {
-            get { return SocketState(m_NativeRef) != 0; }
+            return SocketState(m_NativeRef) != 0;
         }
 
-        public string Error
+        public string Error()
         {
-            get {
-                const int bufsize = 1024;
-                byte[] buffer = new byte[bufsize];
-                int result = SocketError (m_NativeRef, buffer, bufsize);
+            const int bufsize = 1024;
+            byte[] buffer = new byte[bufsize];
+            int result = SocketError (m_NativeRef, buffer, bufsize);
 
-                if (result == 0)
-                    return null;
+            if (result == 0)
+                return null;
 
-                return Encoding.UTF8.GetString (buffer);
-            }
+            return Encoding.UTF8.GetString (buffer);
         }
-    #else
+#else
         WebSocketSharp.WebSocket m_Socket;
         Queue<byte[]> m_Messages = new Queue<byte[]>();
         bool m_IsConnected = false;
         string m_Error = null;
 
-        public void Connect()
+        public void Connect(Action open, Action close, Action message, Action<Exception> error)
         {
-            m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString(), new string[] { "GpBinaryV16" });// modified by TS
-            m_Socket.SslConfiguration.EnabledSslProtocols = m_Socket.SslConfiguration.EnabledSslProtocols | (SslProtocols)(3072| 768);
-            m_Socket.OnMessage += (sender, e) => m_Messages.Enqueue(e.RawData);
-            m_Socket.OnOpen += (sender, e) => m_IsConnected = true;
-            m_Socket.OnError += (sender, e) => m_Error = e.Message + (e.Exception == null ? "" : " / " + e.Exception);
-            m_Socket.ConnectAsync();
+            //Debug.Log(mUrl);
+            m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());// modified by TS
+            m_Socket.EnableRedirection = true;
+            //m_Socket.SslConfiguration.EnabledSslProtocols = m_Socket.SslConfiguration.EnabledSslProtocols | (SslProtocols)(3072| 768);
+            m_Socket.OnMessage += (sender, e) =>
+            {
+                m_Messages.Enqueue(e.RawData);
+                message();
+            };
+            m_Socket.OnOpen += (sender, e) =>
+            {
+                m_IsConnected = true;
+                open();
+            };
+            m_Socket.OnError += (sender, e) =>
+            {
+                error(new Exception(e.Message));
+                m_Error = e.Message + (e.Exception == null ? "" : " / " + e.Exception);
+            };
+            m_Socket.OnClose += (sender, e) =>
+            {
+                m_IsConnected = false;
+                close();
+            };
+            m_Socket.Connect();
+            //var b = new byte[] { 0,1,2,3,4,5};
+            //m_Socket.Send(b);
+            //Debug.Log("Websocket connect");
         }
 
-        public bool Connected { get { return m_IsConnected; } }// added by TS
+        public bool Connected(){
+            return m_IsConnected;
+        }
 
 
         public void Send(byte[] buffer)
@@ -141,15 +168,16 @@ namespace Gj.Galaxy.Network
 
         public void Close()
         {
-            m_Socket.Close();
+            Debug.Log("Websocket close");
+            if(m_Socket != null)
+                m_Socket.Close();
         }
 
-        public string Error
+        public string Error()
         {
-            get
-            {
-                return m_Error;
-            }
+            var result =  m_Error;
+            m_Error = null;
+            return result;
         }
         #endif
 
@@ -160,20 +188,31 @@ namespace Gj.Galaxy.Network
                 headB = null;
                 return null;
             }
-            var s = new MemoryStream(b);
+            var s = new MemoryStream(b, head, b.Length - head, false);
             headB = new byte[head];
-            s.Read(headB, 0, head);
+            for (var i = 0; i < head; i++){
+                headB[i] = b[i];
+            }
             return s;
         }
 
         public bool Write(byte[] head, Stream reader)
         {
-            if (!Connected) return false;
+            if (!Connected()) return false;
             int rl = Convert.ToInt32(reader.Length);
             int length = head.Length + rl;
             byte[] sum = new byte[length];
             head.CopyTo(sum, 0);
-            reader.Read(sum, head.Length, rl);
+            //Debug.Log(new StreamReader(reader).ReadToEnd());
+            int result = reader.Read(sum, head.Length, rl);
+            //Debug.Log(length);
+            //Debug.Log(head[0]);
+            //Debug.Log(result);
+            //if(rl > 0){
+            //    Debug.Log(sum[9]);
+            //    Debug.Log(sum[10]);
+            //    Debug.Log(sum[11]);
+            //}
             Send(sum);
             return true;
         }

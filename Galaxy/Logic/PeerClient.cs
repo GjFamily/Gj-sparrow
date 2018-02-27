@@ -18,7 +18,7 @@ namespace Gj.Galaxy.Logic{
 
         internal static readonly Handler back;
 
-        internal static Client client;
+        private static Client client = new Client();
 
         internal const string serverSettingsAssetFile = "GalaxySettings";
 
@@ -26,7 +26,7 @@ namespace Gj.Galaxy.Logic{
 
         public static string ServerAddress { get { return (client != null) ? GetServerAddress() : "<not connected>"; } }
 
-        public static bool InstantiateInRoomOnly = true;
+        //public static bool InstantiateInRoomOnly = true;
         public static bool UseRpcMonoBehaviourCache = false;
 
         public static LogLevel logLevel = LogLevel.Error;
@@ -48,6 +48,7 @@ namespace Gj.Galaxy.Logic{
         public static bool StartRpcsAsCoroutine = true;
 
         private static bool isOfflineMode = false;
+        private static bool isConnect = false;
 
         private static int sendInterval = 50; // in miliseconds.
 
@@ -67,7 +68,7 @@ namespace Gj.Galaxy.Logic{
                     return false;
                 }
 
-                return client.IsConnect;
+                return client.IsConnected;
             }
         }
 
@@ -145,6 +146,9 @@ namespace Gj.Galaxy.Logic{
                 }
             }
         }
+
+        // 有队列namespace在运行：game同步
+        // 用来触发game.update,发送队列消息，获取队列消息
         public static bool isMessageQueueRunning
         {
             get
@@ -159,7 +163,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        private static bool m_isMessageQueueRunning = true;
+        private static bool m_isMessageQueueRunning = false;
 
         //public static int unreliableCommandsLimit
         //{
@@ -179,7 +183,7 @@ namespace Gj.Galaxy.Logic{
         //    get { return client.ResentReliableCommands; }
         //}
 
-        private static bool UsePreciseTimer = false;
+        private static bool UsePreciseTimer = true;
         static Stopwatch startupStopwatch;
 
         public static float BackgroundTimeout = 60.0f;
@@ -216,6 +220,14 @@ namespace Gj.Galaxy.Logic{
             get
             {
                 return client.LocalTimestamp();
+            }
+        }
+
+        public static long LastTimestamp
+        {
+            get
+            {
+                return client.LastTimestamp;
             }
         }
 
@@ -342,8 +354,7 @@ namespace Gj.Galaxy.Logic{
             GO.name = "GalaxyBack";
             GO.hideFlags = HideFlags.HideInHierarchy;
 
-            client = new Client();
-            //client.QuickResendAttempts = 2;
+            client.ReconnectTimes = 5;
             //client.SentCountAllowance = 7;
 
 
@@ -355,16 +366,16 @@ namespace Gj.Galaxy.Logic{
             {
                 startupStopwatch = new Stopwatch();
                 startupStopwatch.Start();
-                client.LocalTimestamp = () => (int)startupStopwatch.ElapsedMilliseconds;
+                client.LocalTimestamp = () => (long)startupStopwatch.ElapsedMilliseconds;
             }
         }
 
         public static Namespace Of(byte ns){
-            return client.Of(ns);
+            return PeerClient.client.Of(ns);
         }
 
         public static Namespace Of(NamespaceId ns){
-            return client.Of((byte)ns);
+            return PeerClient.client.Of((byte)ns);
         }
 
         /// <summary>
@@ -375,7 +386,7 @@ namespace Gj.Galaxy.Logic{
         {
             if (ServerSettings == null) return "";
             string protocolPrefix = string.Empty;
-            string result = string.Format("wss://{0}", ServerSettings.ServerAddress);
+            string result = string.Format("ws://{0}", ServerSettings.ServerAddress);
 
             return result;
         }
@@ -394,7 +405,7 @@ namespace Gj.Galaxy.Logic{
             }
             if (ServerSettings.HostType == ServerSettings.HostingOption.NotSet)
             {
-                Debug.LogError("You did not select a Hosting Type in your PhotonServerSettings. Please set it up or don't use ConnectUsingSettings().");
+                Debug.LogError("You did not select a Hosting Type in your ServerSettings. Please set it up or don't use ConnectUsingSettings().");
                 return false;
             }
 
@@ -421,6 +432,10 @@ namespace Gj.Galaxy.Logic{
             offlineMode = false;
             client.listener = listener;
             return client.Connect(GetServerAddress());
+        }
+        public static void Close(){
+            if (client.IsRuning)
+                client.Close();
         }
 
         //public static bool Reconnect()
@@ -464,7 +479,7 @@ namespace Gj.Galaxy.Logic{
             {
                 return; // Surpress error when quitting playmode in the editor
             }
-            if(client.IsConnect)
+            if(client.IsRuning)
                 client.Disconnect();
         }
 
@@ -474,28 +489,29 @@ namespace Gj.Galaxy.Logic{
         }
 
         public static void Update(){
+            Debug.Log("update");
             GameConnect.Update();
         }
 
+        //public static void Wait(){
+        //    if (client.IsRuning)
+        //        client.WaitConnect();
+        //}
+
         public static bool DispatchIncomingCommands(){
-            if (client.IsConnect)
-                return client.ReadQueue(10);
-            else
-                return false;
+            return client.ReadQueue(10);
         }
 
         public static bool SendOutgoingCommands(){
-
-            if (client.IsConnect)
-                return client.WriteQueue(10);
-            else
-                return false;
+            return client.WriteQueue(10);
         }
 
         public static void Ping()
         {
-            if(client.IsConnect)
+            if (client.IsConnected)
                 client.Ping();
+            else if(client.IsRuning)
+                client.Reconnect();
         }
 
         public static HashSet<GameObject> FindGameObjectsWithComponent(Type type)

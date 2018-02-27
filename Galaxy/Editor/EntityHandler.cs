@@ -40,8 +40,9 @@ public class EntityHandler : EditorWindow
         if (CheckSceneForStuckHandlers)
         {
             CheckSceneForStuckHandlers = false;
-            GameConnect.InternalCleanPhotonMonoFromSceneIfStuck();
         }
+        GameConnect.InternalCleanPhotonMonoFromSceneIfStuck();
+
 
         HashSet<NetworkEntity> pvInstances = new HashSet<NetworkEntity>();
         HashSet<int> usedInstanceViewNumbers = new HashSet<int>();

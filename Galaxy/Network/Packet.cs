@@ -18,7 +18,7 @@ namespace Gj.Galaxy.Network
     }
     internal class Message{
         internal MessageType type;
-        internal long time;
+        internal int time;
         internal Stream reader;
     }
     internal enum DataType:byte{
@@ -37,10 +37,16 @@ namespace Gj.Galaxy.Network
         Snappy
     }
 
-    [MessagePackObject(keyAsPropertyName: true)]
+    [MessagePackObject]
     internal class AppPacket:DataPacket{
+        //[Key("id")]
+        [Key(0)]
         public string appId;
+        //[Key("version")]
+        [Key(1)]
         public string version;
+        //[Key("secret")]
+        [Key(2)]
         public string secret;
         public AppPacket(string appId, string version, string secret){
             this.appId = appId;
@@ -63,12 +69,20 @@ namespace Gj.Galaxy.Network
         }
     }
 
-    [MessagePackObject(keyAsPropertyName: true)]
+    [MessagePackObject]
     internal class NsData{
+        //[Key("type")]
+        [Key(0)]
         public DataType type;
-        public int id;
-        public byte[] nsp;
-        public object data;
+        //[Key("id")]
+        [Key(1)]
+        public int id = 0;
+        //[Key("nsp")]
+        [Key(2)]
+        public byte[] nsp = null;
+        //[Key("data")]
+        [Key(3)]
+        public object data = null;
 
 
     }

@@ -33,6 +33,8 @@ namespace Gj.Galaxy.Logic{
         public static SceneDelegate Delegate;
         private static SceneConnect lisenter;
 
+        private Action<bool> OnConnectAction;
+
         public static NetworkPlayer player;
 
         static SceneConnect(){
@@ -45,8 +47,9 @@ namespace Gj.Galaxy.Logic{
             return n.Of((byte)ns);
         }
 
-        public static void Connect(Action a){
-            n.Connect("");
+        public static void Connect(Action<bool> a){
+            lisenter.OnConnectAction = a;
+            n.Connect("abc=123");
         }
 
         public static void JoinLobby(string lobby, Dictionary<string, object> options)
@@ -111,7 +114,9 @@ namespace Gj.Galaxy.Logic{
 
         public void OnConnect(bool success)
         {
-            throw new NotImplementedException();
+            if (OnConnectAction != null){
+                OnConnectAction(success);
+            }
         }
 
         public void OnReconnect(bool success)

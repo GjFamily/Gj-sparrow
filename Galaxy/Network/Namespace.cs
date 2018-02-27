@@ -50,6 +50,7 @@ namespace Gj.Galaxy.Network
             {
                 nsp.Add(this.nsp[i]);
             }
+            nsp.Add(ns);
             n = new Namespace(client, nsp.ToArray());
             nss.Add(ns, n);
             return n;
@@ -71,7 +72,7 @@ namespace Gj.Galaxy.Network
                 state = ConnectionState.Connecting;
             data.type = DataType.Connect;
             if (query != null)
-                data.data = ("/?" + query).GetBytes();
+                data.data = "/?" + query;
             packet(data);
         }
 
@@ -131,6 +132,8 @@ namespace Gj.Galaxy.Network
         }
 
         internal void dispatch(NsData data){
+
+            Debug.Log("[ SOCKET ] accept Namespace:" + data.nsp + "," + data.type);
             try{
                 switch (data.type)
                 {
@@ -194,7 +197,7 @@ namespace Gj.Galaxy.Network
                         break;
                 }
             }catch(Exception e){
-                Debug.Log(e);
+                Debug.LogException(e);
             }
         }
 
@@ -208,7 +211,7 @@ namespace Gj.Galaxy.Network
         }
 
         private void packet(NsData data){
-            if(data.nsp == null){
+            if(data.nsp == null || data.nsp.Length == 0){
                 data.nsp = nsp;
             }
             client.Packet(data, this);

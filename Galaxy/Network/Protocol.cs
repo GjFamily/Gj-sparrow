@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 using System.IO;
+using System;
 
 namespace Gj.Galaxy.Network
 {
@@ -47,17 +48,20 @@ namespace Gj.Galaxy.Network
 
         public static byte[] GetBytes(this string s){
             if (s == null) return null;
-            return System.Text.Encoding.Default.GetBytes(s);
+            return System.Text.Encoding.UTF8.GetBytes(s);
         }
 
         public static string GetString(this byte[] b){
             if (b == null) return null;
-            return System.Text.Encoding.Default.GetString(b);
+            return System.Text.Encoding.UTF8.GetString(b);
         }
     }
     public interface ProtocolConn{
+        void Connect(Action open, Action close, Action message, Action<Exception> error);
         Stream Read(int head, out byte[] headB);
         bool Write(byte[] head, Stream reader);
+        bool Connected();
+        string Error();
         void Close();
     }
 
