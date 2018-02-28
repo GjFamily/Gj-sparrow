@@ -136,7 +136,7 @@ namespace Gj.Galaxy.Network{
 
         public Client()
         {
-            root = new Namespace(this, null);
+            root = new Namespace(this);
         }
 
         public void SetApp(string appId, string version, string secret)
@@ -162,13 +162,12 @@ namespace Gj.Galaxy.Network{
 
         public void Disconnect()
         {
-            if(IsConnected){
-                SendByte(MessageType.Close, ProtocolType.Default, CompressType.None, null);
-
-                destroy("forced client close");
-            }
             State = ConnectionState.Disconnecting;
             exitStatus = ExitStatus.Client;
+            if(IsRuning){
+                SendByte(MessageType.Close, ProtocolType.Default, CompressType.None, null);
+            }
+            destroy("forced client close");
         }
 
         public bool Reconnect()
@@ -695,6 +694,7 @@ namespace Gj.Galaxy.Network{
             {
                 State = ConnectionState.Connected;
                 listener.OnReconnect(true);
+                Root().Reconnect();
             }
             Ping();
         }
@@ -762,6 +762,9 @@ namespace Gj.Galaxy.Network{
                 var _conn = enumerator.Current;
                 _conn.Close();
             }
+            allowConn.Clear();
+            acceptConn.Clear();
+            State = ConnectionState.Disconnected;
         }
     }
 }

@@ -144,8 +144,10 @@ namespace Gj.Galaxy.Network
             };
             m_Socket.OnClose += (sender, e) =>
             {
-                m_IsConnected = false;
-                close();
+                if(m_IsConnected){
+                    m_IsConnected = false;
+                    close();
+                }
             };
             m_Socket.Connect();
             //var b = new byte[] { 0,1,2,3,4,5};

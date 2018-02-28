@@ -7,11 +7,11 @@ using System;
 namespace Gj.Galaxy.Logic{
     internal class SceneEvent
     {
-        public const byte LobbyJoin = 1;
-        public const byte LobbyLeave = 2;
-        public const byte LobbyExist = 3;
-        public const byte TeamCreate = 4;
-        public const byte PropChanged = 5;
+        public const byte LobbyJoin = 0;
+        public const byte LobbyLeave = 1;
+        public const byte LobbyExist = 2;
+        public const byte TeamCreate = 3;
+        public const byte PropChanged = 4;
         public const byte TeamInvite = 255;
         public const byte GameConnect = 254;
         public const byte Prop = 253;
@@ -19,6 +19,7 @@ namespace Gj.Galaxy.Logic{
     public interface SceneDelegate{
         void OnJoinedGame(string token);
         void OnInvitedTeam(string userId, string teamId);
+        void OnPlayInit(NetworkPlayer player);
     }
     public class LobbyType{
         public const string PVE = "pve";
@@ -109,7 +110,7 @@ namespace Gj.Galaxy.Logic{
         }
 
         internal static void emitPlayerProp(Hashtable prop){
-            n.Emit(SceneEvent.PropChanged, new object[] { });
+            n.Emit(SceneEvent.PropChanged, new object[] { prop });
         }
 
         public void OnConnect(bool success)
@@ -122,139 +123,6 @@ namespace Gj.Galaxy.Logic{
         public void OnReconnect(bool success)
         {
             throw new NotImplementedException();
-        }
-
-        public void OnEvent()
-        {
-            //case OperationCode.CreateGame:
-                //    {
-                //        if (this.Server == ServerConnection.GameServer)
-                //        {
-                //            this.GameEnteredOnGameServer(operationResponse);
-                //        }
-                //        else
-                //        {
-                //            if (operationResponse.ReturnCode != 0)
-                //            {
-                //                if (PhotonNetwork.logLevel >= PhotonLogLevel.Informational)
-                //                    Debug.LogWarning(string.Format("CreateRoom failed, client stays on masterserver: {0}.", operationResponse.ToStringFull()));
-
-                //                this.State = (this.insideLobby) ? ClientState.JoinedLobby : ClientState.ConnectedToMaster;
-                //                SendMonoMessage(PhotonNetworkingMessage.OnPhotonCreateRoomFailed, operationResponse.ReturnCode, operationResponse.DebugMessage);
-                //                break;
-                //            }
-
-                //            string gameID = (string)operationResponse[ParameterCode.RoomName];
-                //            if (!string.IsNullOrEmpty(gameID))
-                //            {
-                //                // is only sent by the server's response, if it has not been
-                //                // sent with the client's request before!
-                //                this.enterRoomParamsCache.RoomName = gameID;
-                //            }
-
-                //            this.GameServerAddress = (string)operationResponse[ParameterCode.Address];
-                //            if (PhotonNetwork.UseAlternativeUdpPorts && this.TransportProtocol == ConnectionProtocol.Udp)
-                //            {
-                //                this.GameServerAddress = this.GameServerAddress.Replace("5058", "27000").Replace("5055", "27001").Replace("5056", "27002");
-                //            }
-                //            this.DisconnectToReconnect();
-                //        }
-
-                //        break;
-                //    }
-
-                //case OperationCode.JoinGame:
-                //    {
-                //        if (this.Server != ServerConnection.GameServer)
-                //        {
-                //            if (operationResponse.ReturnCode != 0)
-                //            {
-                //                if (PhotonNetwork.logLevel >= PhotonLogLevel.Informational)
-                //                    Debug.Log(string.Format("JoinRoom failed (room maybe closed by now). Client stays on masterserver: {0}. State: {1}", operationResponse.ToStringFull(), this.State));
-
-                //                SendMonoMessage(PhotonNetworkingMessage.OnPhotonJoinRoomFailed, operationResponse.ReturnCode, operationResponse.DebugMessage);
-                //                break;
-                //            }
-
-                //            this.GameServerAddress = (string)operationResponse[ParameterCode.Address];
-                //            if (PhotonNetwork.UseAlternativeUdpPorts && this.TransportProtocol == ConnectionProtocol.Udp)
-                //            {
-                //                this.GameServerAddress = this.GameServerAddress.Replace("5058", "27000").Replace("5055", "27001").Replace("5056", "27002");
-                //            }
-                //            this.DisconnectToReconnect();
-                //        }
-                //        else
-                //        {
-                //            this.GameEnteredOnGameServer(operationResponse);
-                //        }
-
-                //        break;
-                //    }
-
-                //case OperationCode.JoinRandomGame:
-                //    {
-                //        // happens only on master. on gameserver, this is a regular join (we don't need to find a random game again)
-                //        // the operation OpJoinRandom either fails (with returncode 8) or returns game-to-join information
-                //        if (operationResponse.ReturnCode != 0)
-                //        {
-                //            if (operationResponse.ReturnCode == ErrorCode.NoRandomMatchFound)
-                //            {
-                //                if (PhotonNetwork.logLevel >= PhotonLogLevel.Full)
-                //                    Debug.Log("JoinRandom failed: No open game. Calling: OnPhotonRandomJoinFailed() and staying on master server.");
-                //            }
-                //            else if (PhotonNetwork.logLevel >= PhotonLogLevel.Informational)
-                //            {
-                //                Debug.LogWarning(string.Format("JoinRandom failed: {0}.", operationResponse.ToStringFull()));
-                //            }
-
-                //            SendMonoMessage(PhotonNetworkingMessage.OnPhotonRandomJoinFailed, operationResponse.ReturnCode, operationResponse.DebugMessage);
-                //            break;
-                //        }
-
-                //        string roomName = (string)operationResponse[ParameterCode.RoomName];
-                //        this.enterRoomParamsCache.RoomName = roomName;
-                //        this.GameServerAddress = (string)operationResponse[ParameterCode.Address];
-                //        if (PhotonNetwork.UseAlternativeUdpPorts && this.TransportProtocol == ConnectionProtocol.Udp)
-                //        {
-                //            this.GameServerAddress = this.GameServerAddress.Replace("5058", "27000").Replace("5055", "27001").Replace("5056", "27002");
-                //        }
-                //        this.DisconnectToReconnect();
-                //        break;
-                //    }
-
-                //case OperationCode.JoinLobby:
-                //    this.State = ClientState.JoinedLobby;
-                //    this.insideLobby = true;
-                //    SendMonoMessage(PhotonNetworkingMessage.OnJoinedLobby);
-
-                //    // this.mListener.joinLobbyReturn();
-                //    break;
-                //case OperationCode.LeaveLobby:
-                //    this.State = ClientState.Authenticated;
-                //    this.LeftLobbyCleanup();    // will set insideLobby = false
-                //    break;
-
-                //case OperationCode.Leave:
-                //    this.DisconnectToReconnect();
-                //    break;
-
-                //case OperationCode.SetProperties:
-                //    // this.mListener.setPropertiesReturn(returnCode, debugMsg);
-                //    break;
-
-                //case OperationCode.GetProperties:
-                    //{
-                    //    Hashtable actorProperties = (Hashtable)operationResponse[ParameterCode.PlayerProperties];
-                    //    Hashtable gameProperties = (Hashtable)operationResponse[ParameterCode.GameProperties];
-                    //    this.ReadoutProperties(gameProperties, actorProperties, 0);
-
-                    //    // RemoveByteTypedPropertyKeys(actorProperties, false);
-                    //    // RemoveByteTypedPropertyKeys(gameProperties, false);
-                    //    // this.mListener.getPropertiesReturn(gameProperties, actorProperties, returnCode, debugMsg);
-                    //    break;
-                    //}
-
-                
         }
 
         public void OnError(string message)
@@ -279,7 +147,8 @@ namespace Gj.Galaxy.Logic{
                     break;
                 case SceneEvent.Prop:
                     player = new NetworkPlayer(true, -1, (string)param[0], (string)param[1]);
-                    player.InternalProperties((Hashtable)param[0]);
+                    player.InternalProperties(new Hashtable((Dictionary<object,object>)param[2]));
+                    Delegate.OnPlayInit(player);
                     break;
                     
             }

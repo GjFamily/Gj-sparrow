@@ -115,9 +115,7 @@ namespace Gj.Galaxy.Logic{
 
             Hashtable customProps = propertiesToSet;
 
-            bool inOnline = this.actorId > 0 && !PeerClient.offlineMode;
-
-            if (inOnline)
+            if (!PeerClient.offlineMode)
             {
                 SceneConnect.emitPlayerProp(customProps);
             }

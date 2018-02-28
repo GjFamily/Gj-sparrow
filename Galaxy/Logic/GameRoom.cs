@@ -67,15 +67,14 @@ namespace Gj.Galaxy.Logic{
             }
 
             Hashtable customProps = propertiesToSet;
-            bool inOnline = !PeerClient.offlineMode;
 
-            if (!inOnline)
+            if (!PeerClient.offlineMode)
             {
-                this.InternalProperties(customProps);
+                GameConnect.EmitRoom(propertiesToSet);
             }
             else
             {
-                GameConnect.EmitRoom(propertiesToSet);
+                this.InternalProperties(customProps);
             }
         }
 

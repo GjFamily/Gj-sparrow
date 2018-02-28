@@ -14,6 +14,10 @@ namespace Gj.Galaxy.Network
         void OnError(string message);
     }
 
+    public class NamespaceId{
+        public const byte Default = 0;
+    }
+
     public class Namespace
     {
         public NamespaceListener listener;
@@ -21,7 +25,9 @@ namespace Gj.Galaxy.Network
         internal CompressType compress = CompressType.None;
         internal ProtocolType protocol = ProtocolType.Default;
         internal MessageQueue messageQueue = MessageQueue.Off;
+        //internal byte ns;
         internal byte[] nsp;
+        //internal byte[] parent;
         private Client client;
         private Dictionary<byte, Namespace> nss = new Dictionary<byte, Namespace>();
 
@@ -29,29 +35,43 @@ namespace Gj.Galaxy.Network
         private Dictionary<int, Action<object[]>> callbacks = new Dictionary<int, Action<object[]>>();
 
         private string query;
-        private bool connecting;
-        internal bool needConnect;
+        internal bool needConnect = false;
+
+        public Namespace(Client client)
+        {
+            //this.parent = null;
+            this.nsp = new byte[]{};
+            //this.ns = 0;
+            this.client = client;
+            //Namespace(client, null, null);
+        }
 
         public Namespace(Client client, byte[] nsp)
         {
-            this.nsp = nsp == null ? new byte[] { } : nsp;
+            //this.parent = nsp;
+            //this.ns = ns;
+            this.nsp = nsp;
             this.client = client;
         }
 
         public Namespace Of(byte ns){
-            if (ns == 0) return this;
+            if (ns == NamespaceId.Default) return this;
             Namespace n;
             bool result = nss.TryGetValue(ns, out n);
             if (result){
                 return n;
             }
-            List<byte> nsp = new List<byte>();
-            for (int i = 0; i < this.nsp.Length; i++)
+
+            List<byte> nspArray = new List<byte>();
+            if (nsp != null)
             {
-                nsp.Add(this.nsp[i]);
+                for (int i = 0; i < nsp.Length; i++)
+                {
+                    nspArray.Add(nsp[i]);
+                }
             }
-            nsp.Add(ns);
-            n = new Namespace(client, nsp.ToArray());
+            nspArray.Add(ns);
+            n = new Namespace(client, nspArray.ToArray());
             nss.Add(ns, n);
             return n;
         }
@@ -73,11 +93,14 @@ namespace Gj.Galaxy.Network
             data.type = DataType.Connect;
             if (query != null)
                 data.data = "/?" + query;
+            needConnect = true;
             packet(data);
         }
 
         internal void Reconnect(){
             if (state == ConnectionState.Disconnected || state == ConnectionState.Disconnecting)
+                return;
+            if (!needConnect)
                 return;
             state = ConnectionState.Reconnecting;
             Connect(query);
@@ -94,6 +117,7 @@ namespace Gj.Galaxy.Network
             state = ConnectionState.Disconnecting;
             data.type = DataType.Disconnect;
             packet(data);
+            needConnect = false;
             destroy("client namespace disconnect");
         }
 
@@ -133,24 +157,26 @@ namespace Gj.Galaxy.Network
 
         internal void dispatch(NsData data){
 
-            Debug.Log("[ SOCKET ] accept Namespace:" + data.nsp + "," + data.type);
+            Debug.Log("[ SOCKET ] accept Namespace:" + BitConverter.ToString(data.nsp==null?new byte[]{} : data.nsp) + "," + data.type + "," + state);
             try{
                 switch (data.type)
                 {
                     case DataType.Connect:
                         if (state == ConnectionState.Reconnecting)
                         {
+                            state = ConnectionState.Connected;
                             this.listener.OnReconnect(true);
                         }
                         else
                         {
+                            state = ConnectionState.Connected;
                             this.listener.OnConnect(true);
                         }
-                        state = ConnectionState.Connected;
                         break;
                     case DataType.Disconnect:
-                        this.listener.OnDisconnect();
                         state = ConnectionState.Disconnected;
+                        this.listener.OnDisconnect();
+                        needConnect = false;
                         break;
                     case DataType.Error:
                         if (state == ConnectionState.Connecting)
@@ -214,6 +240,7 @@ namespace Gj.Galaxy.Network
             if(data.nsp == null || data.nsp.Length == 0){
                 data.nsp = nsp;
             }
+            Debug.Log("[ SOCKET ] send Namespace:" + BitConverter.ToString(data.nsp) + "," + data.type + "," + state);
             client.Packet(data, this);
         }
 
@@ -224,8 +251,19 @@ namespace Gj.Galaxy.Network
                 var n = enumerator.Current;
                 n.Value.Disconnect();
             }
-            connecting = false;
+            //nss = null;
+            //client.Root().With(parent).remove(ns);
         }
+
+        //private void remove(byte ns)
+        //{
+        //    Namespace n;
+        //    var result = nss.TryGetValue(ns, out n);
+        //    if (result && n != null)
+        //    {
+        //        nss.Remove(ns);
+        //    }
+        //}
     }
 }
 
