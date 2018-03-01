@@ -23,6 +23,10 @@ namespace Gj
             gameObject.SetActive(true);
         }
 
+        protected virtual void InitFeature()
+        {
+        }
+
         public void SetGameSystem(GameSystem system)
         {
             GetComponent<AttackPart>().SetGameSystem(system);

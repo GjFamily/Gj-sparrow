@@ -9,12 +9,18 @@ namespace Gj
         // Fields
         //
         public Type feature;
-
+        public bool prefab = false;
         //
         // Constructors
         //
         public AddFeature(Type feature) {
             this.feature = feature;
+        }
+
+        public AddFeature(Type feature, bool b)
+        {
+            this.feature = feature;
+            prefab = b;
         }
     }
 }

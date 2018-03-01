@@ -72,7 +72,7 @@ namespace Gj
             {
                 transform.RotateAround(transform.position, transform.up, speed);
             }
-            else if (speed > 0)
+            else if (speed > 0 && rotating)
             {
                 if (transform.rotation.eulerAngles.y == angle)
                 {

@@ -202,6 +202,9 @@ namespace Gj
                         {
                             if (t.GetComponent(addFeature.feature) == null)
                             {
+                                if (addFeature.prefab) {
+                                    obj = ModelTools.Create(obj, t);
+                                }
                                 BaseFeature baseSub = t.AddComponent(addFeature.feature) as BaseFeature;
 
                                 if (obj != null) {

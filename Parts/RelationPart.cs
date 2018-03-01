@@ -19,6 +19,16 @@ namespace Gj
             identity = i;
         }
 
+        public bool IsPartner()
+        {
+            return identity == Identity.Player || identity == Identity.Partner;
+        }
+
+        public bool IsEnemy()
+        {
+            return identity == Identity.Monster;
+        }
+
         public bool IsPartner(GameObject obj)
         {
             RelationPart relation = Tools.GetMaster(obj).GetComponent<RelationPart>();

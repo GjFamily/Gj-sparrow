@@ -7,7 +7,7 @@ namespace Gj
     {
         [HideInInspector]
         public new string name;
-        public float power;
+        public float value;
         public float need;
         public float range;
         public float waitTime;

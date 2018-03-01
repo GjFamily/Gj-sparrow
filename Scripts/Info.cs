@@ -8,7 +8,7 @@ namespace Gj
 {
     public class Info : MonoBehaviour
     {
-        public Category category = Category.Empty;
+        private Category category = Category.Empty;
         [Serializable]
         public struct Attribute
         {
@@ -58,6 +58,11 @@ namespace Gj
             {
                 attributeMap.Add(key, value);
             }
+        }
+
+        public void SetCategory(Category c)
+        {
+            category = c;
         }
 
         public bool IsEmpty()

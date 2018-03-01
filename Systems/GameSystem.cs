@@ -49,7 +49,7 @@ namespace Gj
             }
         }
 
-        private GameObject MakeObj(string objName)
+        protected GameObject MakeObj(string objName)
         {
             GameObject obj = CacheManage.single.GetCache(objName);
             if (obj == null)
