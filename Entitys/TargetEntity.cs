@@ -21,10 +21,12 @@ namespace Gj
         {
             show = true;
             gameObject.SetActive(true);
+            InitFeature();
         }
 
         protected virtual void InitFeature()
         {
+            
         }
 
         public void SetGameSystem(GameSystem system)
