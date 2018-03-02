@@ -14,21 +14,26 @@ namespace Gj.Galaxy.Logic
         public const byte Ready = 1;
         public const byte ReadyAll = 2;
         public const byte AssignPlayer = 3;
+        public const byte SwitchMaster = 4;
+        public const byte Ownership = 10;
+        public const byte Finish = 11;
+        public const byte Exit = 12;
+        public const byte Join = 13;
+        public const byte Leave = 14;
+        public const byte ChangeGroups = 17;
+        public const byte Sync = 18;
+    }
+    internal class SyncEvent
+    {
         public const byte Init = 4;
         public const byte InitAll = 5;
         public const byte RPC = 6;
         public const byte Instance = 7;
         public const byte Destory = 8;
         public const byte Serialize = 9;
-        public const byte Ownership = 10;
-        public const byte Finish = 11;
-        public const byte Exit = 12;
-        public const byte Join = 13;
-        public const byte Leave = 14;
         public const byte ChangeRoom = 15;
         public const byte ChangePlayer = 16;
-        public const byte ChangeGroups = 17;
-        public const byte Sync = 18;
+        
     }
 
     internal enum GameStage
@@ -43,9 +48,7 @@ namespace Gj.Galaxy.Logic
         Start,
         Finish
     }
-
-    public interface GameDelegate
-    {
+    public interface GameListener{
         void OnFinish(bool exit, Dictionary<string, object> result);
         void SceneInit(Action callback);
         void PlayerInit(Action callback);
@@ -54,8 +57,8 @@ namespace Gj.Galaxy.Logic
         void OnOwnership(NetworkEntity entity, NetworkPlayer oldPlayer);
         GameObject OnInstance(string prefabName, NetworkPlayer player);
     }
-    public interface GameRoomDelegate
-    {
+
+    public interface GameRoomListener{
         void OnRoom();
         void OnFail(string reason);
         void OnRoomChange(Hashtable props);
@@ -64,17 +67,136 @@ namespace Gj.Galaxy.Logic
         void OnPlayerRejoin(NetworkPlayer player);
         void OnPlayerChange(NetworkPlayer player, Hashtable props);
         void OnReadyPlayer(NetworkPlayer player);
-        //void OnInitPlayer(NetworkPlayer player, int process);
-        //void OnInitScene(int process);
         void OnReadyAll();
+    }
+
+    public class GameDelegate:GameListener
+    {
+        public delegate void OnFinishDelegate(bool exit, Dictionary<string, object> result);
+        public delegate void SceneInitDelegate(Action callback);
+        public delegate void PlayerInitDelegate(Action callback);
+        public delegate void OnStartDelegate();
+        public delegate void OnLeaveGameDelegate();
+        public delegate void OnOwnershipDelegate(NetworkEntity entity, NetworkPlayer oldPlayer);
+        public delegate GameObject OnInstanceDelegate(string prefabName, NetworkPlayer player);
+
+        public OnFinishDelegate OnFinish;
+        public SceneInitDelegate SceneInit;
+        public PlayerInitDelegate PlayerInit;
+        public OnStartDelegate OnStart;
+        public OnLeaveGameDelegate OnLeaveGame;
+        public OnOwnershipDelegate OnOwnership;
+        public OnInstanceDelegate OnInstance;
+
+        void GameListener.OnFinish(bool exit, Dictionary<string, object> result)
+        {
+            if (OnFinish != null) OnFinish(exit, result);
+        }
+
+        void GameListener.SceneInit(Action callback)
+        {
+            if (SceneInit != null) SceneInit(callback);
+        }
+
+        void GameListener.PlayerInit(Action callback)
+        {
+            if (PlayerInit != null) PlayerInit(callback);
+        }
+
+        void GameListener.OnStart()
+        {
+            if (OnStart != null) OnStart();
+        }
+
+        void GameListener.OnLeaveGame()
+        {
+            if (OnLeaveGame != null) OnLeaveGame();
+        }
+
+        void GameListener.OnOwnership(NetworkEntity entity, NetworkPlayer oldPlayer)
+        {
+            if (OnOwnership != null) OnOwnership(entity, oldPlayer);
+        }
+
+        GameObject GameListener.OnInstance(string prefabName, NetworkPlayer player)
+        {
+            if (OnInstance != null) return OnInstance(prefabName, player);
+            return null;
+        }
+    }
+    public class GameRoomDelegate:GameRoomListener
+    {
+        public delegate void OnRoomDelegate();
+        public delegate void OnFailDelegate(string reason);
+        public delegate void OnRoomChangeDelegate(Hashtable props);
+        public delegate void OnPlayerJoinDelegate(NetworkPlayer player);
+        public delegate void OnPlayerLeaveDelegate(NetworkPlayer player);
+        public delegate void OnPlayerRejoinDelegate(NetworkPlayer player);
+        public delegate void OnPlayerChangeDelegate(NetworkPlayer player, Hashtable props);
+        public delegate void OnReadyPlayerDelegate(NetworkPlayer player);
+        public delegate void OnReadyAllDelegate();
+
+        public OnRoomDelegate OnRoom;
+        public OnFailDelegate OnFail;
+        public OnRoomChangeDelegate OnRoomChange;
+        public OnPlayerJoinDelegate OnPlayerJoin;
+        public OnPlayerLeaveDelegate OnPlayerLeave;
+        public OnPlayerRejoinDelegate OnPlayerRejoin;
+        public OnPlayerChangeDelegate OnPlayerChange;
+        public OnReadyPlayerDelegate OnReadyPlayer;
+        public OnReadyAllDelegate OnReadyAll;
+
+        void GameRoomListener.OnRoom()
+        {
+            if (OnRoom != null) OnRoom();
+        }
+
+        void GameRoomListener.OnFail(string reason)
+        {
+            if (OnFail != null) OnFail(reason);
+        }
+
+        void GameRoomListener.OnRoomChange(Hashtable props)
+        {
+            if (OnRoomChange != null) OnRoomChange(props);
+        }
+
+        void GameRoomListener.OnPlayerJoin(NetworkPlayer player)
+        {
+            if (OnPlayerJoin != null) OnPlayerJoin(player);
+        }
+
+        void GameRoomListener.OnPlayerLeave(NetworkPlayer player)
+        {
+            if (OnPlayerLeave != null) OnPlayerLeave(player);
+        }
+
+        void GameRoomListener.OnPlayerRejoin(NetworkPlayer player)
+        {
+            if (OnPlayerRejoin != null) OnPlayerRejoin(player);
+        }
+
+        void GameRoomListener.OnPlayerChange(NetworkPlayer player, Hashtable props)
+        {
+            if (OnPlayerChange != null) OnPlayerChange(player, props);
+        }
+
+        void GameRoomListener.OnReadyPlayer(NetworkPlayer player)
+        {
+            if (OnReadyPlayer != null) OnReadyPlayer(player);
+        }
+
+        void GameRoomListener.OnReadyAll()
+        {
+            if (OnReadyAll != null) OnReadyAll();
+        }
     }
 
     public class GameConnect : NamespaceListener
     {
         public static readonly int MAX_ENTITY_IDS = 1000; // VIEW & PLAYER LIMIT CAN BE EASILY CHANGED, SEE DOCS
 
-        public static GameDelegate Delegate;
-        public static GameRoomDelegate RoomDelegate;
+        internal static GameListener Delegate;
         private static Namespace n;
         public static GameRoom Room;
         private static GameConnect listener;
@@ -137,17 +259,14 @@ namespace Gj.Galaxy.Logic
         }
         #region flow
         // SceneConnect收到游戏房间后，执行进入游戏
-        public static void JoinGame(string gameName, GameRoomDelegate d = null)
+        public static void JoinGame(string gameName, GameRoomListener d)
         {
             if (stage != GameStage.None)
                 throw new Exception("Game is going");
             // 需要设定玩家委托
             // 会触发游戏进入成功，开始接受相关房间事件
             // 玩家加入，玩家修改信息
-            if (RoomDelegate == null && d == null)
-                throw new Exception("need Room Delegate");
-            Room = new GameRoom();
-
+            Room = new GameRoom(d);
             n.Connect("game=" + gameName);
             stage = GameStage.Connect;
         }
@@ -165,7 +284,7 @@ namespace Gj.Galaxy.Logic
         }
 
         //开始进行场景同步，需要已经进入必要的scene中
-        public static void StartGame(GameDelegate d = null)
+        public static void StartGame(GameListener d = null)
         {
             if (Delegate == null && d == null)
                 throw new Exception("need Game Delegate");
@@ -173,6 +292,7 @@ namespace Gj.Galaxy.Logic
                 throw new Exception("local player need ready");
             if (stage != GameStage.ReadyAll)
                 throw new Exception("game stage need join");
+            Delegate = d;
             listener.ResetEntityOnSerialize();
             listener.LoadLevel();
             //会触发场景初始化及玩家初始化，以及开始游戏
@@ -181,10 +301,14 @@ namespace Gj.Galaxy.Logic
             if (Room.isMasterClient)
             {
                 Delegate.SceneInit(()=>{
-                    n.Emit(GameEvent.Init, new object[] { 0, lastUsedViewSubIdScene });
+                    Hashtable valueScene = new Hashtable();
+                    valueScene[0] = lastUsedViewSubIdScene;
+                    EmitSync(SyncEvent.Init, 0, valueScene);
                     stage = GameStage.InitPlayer;
                     Delegate.PlayerInit(()=>{
-                        n.Emit(GameEvent.Init, new object[] { Room.localPlayer.Id, lastUsedViewSubId });
+                        Hashtable value = new Hashtable();
+                        value[0] = lastUsedViewSubId;
+                        EmitSync(SyncEvent.Init, Room.localPlayer.Id, value);
                         Room.OnInit(Room.localPlayer.Id, lastUsedViewSubId);
                         stage = GameStage.Start;
                         Delegate.OnStart();
@@ -193,7 +317,9 @@ namespace Gj.Galaxy.Logic
             }else{
                 stage = GameStage.InitPlayer;
                 Delegate.PlayerInit(() => {
-                    n.Emit(GameEvent.Init, new object[] { Room.localPlayer.Id, lastUsedViewSubId });
+                    Hashtable value = new Hashtable();
+                    value[0] = lastUsedViewSubId;
+                    EmitSync(SyncEvent.Init, Room.localPlayer.Id, value);
                     Room.OnInit(Room.localPlayer.Id, lastUsedViewSubId);
                     stage = GameStage.Start;
                     Delegate.OnStart();
@@ -236,7 +362,7 @@ namespace Gj.Galaxy.Logic
             }
             if (!success)
             {
-                RoomDelegate.OnFail("connect is fail");
+                Room.OnFail("connect is fail");
             }
             else
             {
@@ -253,13 +379,9 @@ namespace Gj.Galaxy.Logic
 
         public void OnReconnect(bool success)
         {
-            if (success)
+            if (!success)
             {
-                n.Emit(GameEvent.Sync, null);
-            }
-            else
-            {
-                RoomDelegate.OnFail("reconnect is fail");
+                Room.OnFail("reconnect is fail");
             }
         }
 
@@ -287,39 +409,21 @@ namespace Gj.Galaxy.Logic
                     stage = GameStage.ReadyAll;
                     Room.OnReadyAll();
                     break;
-                case GameEvent.Init:
-                    Room.OnInit((int)param[0], (int)param[1]);
+                case GameEvent.SwitchMaster:
+                    Room.SwitchMaster((int)param[0]);
                     break;
-                case GameEvent.RPC:
-                    listener.OnRpc((int)param[0], (Hashtable)param[1]);
-                    break;
-                case GameEvent.Instance:
-                    listener.OnInstance((int)param[0], (Hashtable)param[1], null);
-                    break;
-                case GameEvent.Destory:
-                    listener.OnDestory((int)param[0], (int)param[1]);
-                    break;
-                case GameEvent.Serialize:
-                    listener.OnSerialize((int)param[0], (Hashtable)param[1]);
-                    break;
-                case GameEvent.Ownership:
-                    listener.OnOwnership((int)param[0], (int)param[1]);
+                case GameEvent.Sync:
+                    OnSync((byte)param[0], (int) param[1], (Hashtable)param[2]);
                     break;
                 case GameEvent.Finish:
                     stage = GameStage.Finish;
                     Delegate.OnFinish(false, (Dictionary<string, object>)param[0]);
                     break;
                 case GameEvent.Join:
-                    Room.OnJoin((int)param[0], (string)param[1], (string)param[2], (Hashtable)param[3]);
+                    Room.OnJoin((int)param[0], (string)param[1], (Hashtable)param[3]);
                     break;
                 case GameEvent.Leave:
                     Room.OnLeave((int)param[0]);
-                    break;
-                case GameEvent.ChangeRoom:
-                    Room.OnChangeRoom((Hashtable)param[0]);
-                    break;
-                case GameEvent.ChangePlayer:
-                    Room.OnChangePlayer((int)param[0], (Hashtable)param[1]);
                     break;
                 default:
                     Debug.Log("GameEvent is error:");
@@ -328,19 +432,61 @@ namespace Gj.Galaxy.Logic
             return null;
         }
 
-        internal static void EmitRoom(Hashtable props)
+        private static void EmitSync(byte code, int sendId, Hashtable value, int group = 0, Boolean reliable = true)
         {
-            n.Emit(GameEvent.ChangeRoom, new object[] { props });
+            n.Emit(GameEvent.Sync, new object[] { code, sendId, value, 0, group });
+        }
+        private static void EmitSync(byte code, int sendId, Hashtable value, int target, int group = 0, Boolean reliable = true)
+        {
+            n.Emit(GameEvent.Sync, new object[] { code, sendId, value, target, group });
+        }
+        private void OnSync(byte code, int sendId, Hashtable value)
+        {
+            switch (code)
+            {
+                case SyncEvent.Init:
+                    Room.OnInit(sendId, (int)value[0]);
+                    break;
+                case SyncEvent.RPC:
+                    listener.OnRpc(sendId, (Hashtable)value);
+                    break;
+                case SyncEvent.Instance:
+                    listener.OnInstance(sendId, (Hashtable)value, null);
+                    break;
+                case SyncEvent.Destory:
+                    listener.OnDestory((int)value[0], (int)value[1]);
+                    break;
+                case SyncEvent.Serialize:
+                    listener.OnSerialize(sendId, (Hashtable)value);
+                    break;
+                case SyncEvent.ChangeRoom:
+                    Room.OnChangeRoom(sendId, (Hashtable)value);
+                    break;
+                case SyncEvent.ChangePlayer:
+                    Room.OnChangePlayer(sendId, (Hashtable)value);
+                    break;
+                default:
+                    Debug.Log("GameEvent is error:");
+                    break;
+            }
+            
+        }
+        public static void EmitRoom(Hashtable props)
+        {
+            EmitSync(SyncEvent.ChangeRoom, Room.localPlayer.Id, props);
         }
 
-        internal static void EmitPlayer(int playerId, Hashtable props)
+        public static void EmitPlayer(Hashtable props)
         {
-            n.Emit(GameEvent.ChangePlayer, new object[] { playerId, props });
+            EmitSync(SyncEvent.ChangePlayer, Room.localPlayer.Id, props);
         }
 
-        public static void Ownership(int entityId, int playerId)
+        public static void Ownership(int entityId, int playerId, Action<NetworkPlayer> callback)
         {
-            n.Emit(GameEvent.Ownership, new object[] { entityId, playerId });   // All sends to all via server (including self)
+            n.Emit(GameEvent.Ownership, new object[] { entityId, playerId },(object[] obj) => {
+                listener.OnOwnership(entityId, (int)obj[0]);
+                callback(Room.GetPlayerWithId((int)obj[0]));
+            });
         }
 
         public static void RegisterEntity(NetworkEntity netEntity)
@@ -779,27 +925,36 @@ namespace Gj.Galaxy.Logic
                 instantiateEvent[(byte)7] = currentLevelPrefix;
             }
 
-            n.Emit(GameEvent.Instance, new object[] { playerId, instantiateEvent });
+            EmitSync(SyncEvent.Instance, playerId, instantiateEvent);
             return instantiateEvent;
         }
 
         private void EmitDestroyOfInstantiate(int instantiateId, int creatorId)
         {
-            n.Emit(GameEvent.Destory, new object[] { 1, instantiateId });
+            Hashtable value = new Hashtable();
+            value[0] = 1;
+            value[1] = instantiateId;
+            EmitSync(SyncEvent.Destory, creatorId, value);
         }
 
         private void EmitDestroyOfPlayer(int actorNr)
         {
-            n.Emit(GameEvent.Destory, new object[] { 2, actorNr });
+            Hashtable value = new Hashtable();
+            value[0] = 2;
+            value[1] = actorNr;
+            EmitSync(SyncEvent.Destory, 0, value);
         }
 
         private void EmitDestroyOfAll()
         {
-            n.Emit(GameEvent.Destory, new object[] { -1 });
+            Hashtable value = new Hashtable();
+            value[0] = 0;
+            value[1] = 0;
+            EmitSync(SyncEvent.Destory, 0, value);
         }
         #region OnEvent
 
-        public void OnOwnership(int requestedEntityId, int newOwnerId)
+        private void OnOwnership(int requestedEntityId, int newOwnerId)
         {
             NetworkPlayer newPlayer = Room.GetPlayerWithId(newOwnerId);
             NetworkEntity requestedEntity = GetEntity(requestedEntityId);
@@ -1198,7 +1353,7 @@ namespace Gj.Galaxy.Logic
         private void OnDestory(int t, int id)
         {
             NetworkEntity pvToDestroy = null;
-            if (id == -1)
+            if (t == 0)
             {
                 listener.DestroyAll(true);
             }
@@ -1473,7 +1628,7 @@ namespace Gj.Galaxy.Logic
                 else
                 {
                     //RaiseEventOptions options = new RaiseEventOptions() { TargetActors = new int[] { player.Id } };
-                    n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, player.Id, entity.group, false });
+                    EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, player.Id, entity.group, false);
                 }
 
                 return;
@@ -1483,7 +1638,7 @@ namespace Gj.Galaxy.Logic
             if (target == SyncTargets.All)
             {
                 //RaiseEventOptions options = new RaiseEventOptions() { InterestGroup = (byte)entity.group };
-                n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, 0, entity.group, false });
+                EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, 0, entity.group, false);
 
                 // Execute local
                 this.OnRpc(Room.localPlayer.Id, rpcEvent);
@@ -1491,12 +1646,12 @@ namespace Gj.Galaxy.Logic
             else if (target == SyncTargets.Others)
             {
                 //RaiseEventOptions options = new RaiseEventOptions() { InterestGroup = (byte)entity.group };
-                n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, 0, entity.group, false });
+                EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, 0, entity.group, false);
             }
             else if (target == SyncTargets.AllBuffered)
             {
                 //RaiseEventOptions options = new RaiseEventOptions() { CachingOption = EventCaching.AddToRoomCache };
-                n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, 0, entity.group, true });
+                EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, 0, entity.group, true);
 
                 // Execute local
                 this.OnRpc(Room.localPlayer.Id, rpcEvent);
@@ -1504,7 +1659,7 @@ namespace Gj.Galaxy.Logic
             else if (target == SyncTargets.OthersBuffered)
             {
                 //RaiseEventOptions options = new RaiseEventOptions() { CachingOption = EventCaching.AddToRoomCache };
-                n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, 0, entity.group, true });
+                EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, 0, entity.group, true);
             }
             else if (target == SyncTargets.MasterClient)
             {
@@ -1515,13 +1670,13 @@ namespace Gj.Galaxy.Logic
                 else
                 {
                     //RaiseEventOptions options = new RaiseEventOptions() { Receivers = ReceiverGroup.MasterClient };
-                    n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, Room.masterClient.Id, entity.group, false });
+                    EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, Room.masterClient.Id, entity.group, false);
                 }
             }
             else if (target == SyncTargets.AllViaServer)
             {
                 //RaiseEventOptions options = new RaiseEventOptions() { InterestGroup = (byte)entity.group, Receivers = ReceiverGroup.All };
-                n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, 0, entity.group, false });
+                EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, 0, entity.group, false);
                 if (PeerClient.offlineMode)
                 {
                     this.OnRpc(Room.localPlayer.Id, rpcEvent);
@@ -1530,7 +1685,7 @@ namespace Gj.Galaxy.Logic
             else if (target == SyncTargets.AllBufferedViaServer)
             {
                 //RaiseEventOptions options = new RaiseEventOptions() { InterestGroup = (byte)entity.group, Receivers = ReceiverGroup.All, CachingOption = EventCaching.AddToRoomCache };
-                n.Emit(GameEvent.RPC, new object[] { Room.localPlayer.Id, rpcEvent, 0, entity.group, true });
+                EmitSync(SyncEvent.RPC, Room.localPlayer.Id, rpcEvent, 0, entity.group, true);
                 if (PeerClient.offlineMode)
                 {
                     this.OnRpc(Room.localPlayer.Id, rpcEvent);
@@ -1647,8 +1802,7 @@ namespace Gj.Galaxy.Logic
                         {
                             groupHashtable[(byte)0] = currentLevelPrefix;
                         }
-
-                        n.Emit(GameEvent.Serialize, new object[] { Room.localPlayer.Id, groupHashtable, entity.group, true });
+                        EmitSync(SyncEvent.Serialize, Room.localPlayer.Id, groupHashtable, entity.group, true);
                         //Debug.Log("SendSerializeReliable (10) " + PhotonNetwork.networkingPeer.ByteCountLastOperation);
                         groupHashtable.Clear();
                     }
@@ -1678,7 +1832,7 @@ namespace Gj.Galaxy.Logic
                             groupHashtable[(byte)0] = currentLevelPrefix;
                         }
 
-                        n.Emit(GameEvent.Serialize, new object[] { Room.localPlayer.Id, groupHashtable, entity.group, false });
+                        EmitSync(SyncEvent.Serialize, Room.localPlayer.Id, groupHashtable, entity.group, false);
                         groupHashtable.Clear();
                     }
                 }
@@ -1714,7 +1868,7 @@ namespace Gj.Galaxy.Logic
                     groupHashtable[(byte)0] = currentLevelPrefix;
                 }
 
-                n.Emit(GameEvent.Serialize, new object[] { Room.localPlayer.Id, groupHashtable, groupId, true });
+                EmitSync(SyncEvent.Serialize, Room.localPlayer.Id, groupHashtable, groupId, true);
                 groupHashtable.Clear();
             }
             foreach (int groupId in this.dataPerGroupUnreliable.Keys)
@@ -1732,7 +1886,7 @@ namespace Gj.Galaxy.Logic
                     groupHashtable[(byte)0] = currentLevelPrefix;
                 }
 
-                n.Emit(GameEvent.Serialize, new object[] { Room.localPlayer.Id, groupHashtable, groupId, false });
+                EmitSync(SyncEvent.Serialize, Room.localPlayer.Id, groupHashtable, groupId, false);
                 groupHashtable.Clear();
             }
         }

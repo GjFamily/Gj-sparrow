@@ -2,23 +2,27 @@ using UnityEngine;
 using System.Collections;
 using Gj.Galaxy.Network;
 using System;
+using System.Collections.Generic;
 
 namespace Gj.Galaxy.Logic{
     internal class AuthEvent
     {
-        public const byte Auth = 1;
-        public const byte Version = 2;
-    }
-    public interface AuthDelegate
-    {
-
+        public const byte Auth = 0;
+        public const byte Version = 1;
+        public const byte User = 2;
     }
     // Auth操作
-    public class AuthConnect : NamespaceListener
+    public class AuthConnect : NetworkListener, NamespaceListener
     {
         private static Namespace n;
-        public static AuthDelegate Delegate;
         private static AuthConnect listener;
+        public static AuthConnect Listener
+        {
+            get
+            {
+                return listener;
+            }
+        }
 
         private Action<bool> OnConnectAction;
 
@@ -27,6 +31,10 @@ namespace Gj.Galaxy.Logic{
             n = PeerClient.Of(NamespaceId.Auth);
             listener = new AuthConnect();
             n.listener = listener;
+            listener.OnConnectEvent += (success) =>
+            {
+                if (listener.OnConnectAction != null) Listener.OnConnectAction(success);
+            };
         }
 
         public static void App(Action<bool> a){
@@ -36,6 +44,24 @@ namespace Gj.Galaxy.Logic{
 
         public static void Auth(string userName, string password, Action<object> callback){
             n.Emit(AuthEvent.Auth, new object[] { userName, password },(object[] obj) => callback(obj[0]));
+        }
+
+        public static void Version(Action<string> callback){
+            n.Emit(AuthEvent.Version, new object[] { }, (object[] obj) => callback((string)obj[0]));
+        }
+
+        public static void User(string userId, Action<Dictionary<string, object>> callback){
+            n.Emit(AuthEvent.User, new object[] { userId }, (object[] obj) => callback((Dictionary<string, object>) obj[0]));
+        }
+
+        public void OnError(string message)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public object[] OnEvent(byte eb, object[] param)
+        {
+            return null;
         }
 
         //private bool CallAuthenticate()
@@ -208,42 +234,6 @@ namespace Gj.Galaxy.Logic{
                     //break;
 
 
-        public void OnDisconnect()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void OnError()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void OnEvent()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void OnConnect(bool success)
-        {
-            if(OnConnectAction != null){
-                OnConnectAction(success);
-            }
-        }
-
-        public void OnReconnect(bool success)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void OnError(string message)
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public object[] OnEvent(byte eb, object[] param)
-        {
-            return null;
-        }
     }
 }
 

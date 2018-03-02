@@ -47,7 +47,13 @@ namespace Gj.Galaxy.Network{
     public class Client
     {
         public ClientListener listener;
-        public ConnectionState State = ConnectionState.Disconnected;
+        private ConnectionState state = ConnectionState.Disconnected;
+        public ConnectionState State{
+            get
+            {
+                return state;
+            }
+        }
         protected string sid;
         private AppPacket app;
         protected Namespace root;
@@ -90,7 +96,7 @@ namespace Gj.Galaxy.Network{
         {
             get
             {
-                switch (State)
+                switch (state)
                 {
                     case ConnectionState.Connected:
                         //Debug.Log(true);
@@ -105,7 +111,7 @@ namespace Gj.Galaxy.Network{
         {
             get
             {
-                switch (State)
+                switch (state)
                 {
                     case ConnectionState.Connected:
                     case ConnectionState.Connecting:
@@ -162,7 +168,7 @@ namespace Gj.Galaxy.Network{
 
         public void Disconnect()
         {
-            State = ConnectionState.Disconnecting;
+            state = ConnectionState.Disconnecting;
             exitStatus = ExitStatus.Client;
             if(IsRuning){
                 SendByte(MessageType.Close, ProtocolType.Default, CompressType.None, null);
@@ -193,8 +199,8 @@ namespace Gj.Galaxy.Network{
             // 运行后，才能确保是需要重连
             if (allowConn.Keys.Count == 0 && acceptConn.Keys.Count == 0)
             {
-                if (State != ConnectionState.Reconnecting)
-                    State = ConnectionState.WaitReconnect;
+                if (state != ConnectionState.Reconnecting)
+                    state = ConnectionState.WaitReconnect;
             }
             // 重连间隔
             if (LocalTimestamp() - ReconnectLast < ReconnectTimeout * 1000)
@@ -204,7 +210,7 @@ namespace Gj.Galaxy.Network{
             // 重连最大次数
             if (nowReconnectTimes > ReconnectTimes)
             {
-                if (State == ConnectionState.Reconnecting && allowConn.Keys.Count == 0)
+                if (state == ConnectionState.Reconnecting && allowConn.Keys.Count == 0)
                 {
                     listener.OnReconnect(false);
                 }
@@ -237,8 +243,8 @@ namespace Gj.Galaxy.Network{
             ReconnectLast = LocalTimestamp();
             nowReconnectTimes++;
             ReconnectTimeout++;
-            if (State == ConnectionState.WaitReconnect)
-                State = ConnectionState.Reconnecting;
+            if (state == ConnectionState.WaitReconnect)
+                state = ConnectionState.Reconnecting;
             // 开始重连
             switch(protocolType){
                 default:
@@ -362,7 +368,7 @@ namespace Gj.Galaxy.Network{
                 try{
                     acceptConn.Remove(protocolType);
                     allowConn.Remove(protocolType);
-                    if(State == ConnectionState.Connecting){
+                    if(state == ConnectionState.Connecting){
                         listener.OnConnect(false);
                     }
                     if(UpdateState())
@@ -422,8 +428,8 @@ namespace Gj.Galaxy.Network{
                     Debug.LogException(ee);
                 }
             });
-            if(State != ConnectionState.Connected)
-                State = ConnectionState.Connecting;
+            if(state != ConnectionState.Connected)
+                state = ConnectionState.Connecting;
             return true;
         }
 
@@ -678,21 +684,21 @@ namespace Gj.Galaxy.Network{
 
         private void OnClose()
         {
-            State = ConnectionState.Disconnected;
+            state = ConnectionState.Disconnected;
             destroy("server is close");
         }
         private void OnOpen(string sid)
         {
             this.sid = sid;
             Send(MessageType.Application, ProtocolType.Default, CompressType.None, app);
-            if (State == ConnectionState.Connecting)
+            if (state == ConnectionState.Connecting)
             {
-                State = ConnectionState.Connected;
+                state = ConnectionState.Connected;
                 listener.OnConnect(true);
             }
-            else if (State == ConnectionState.Reconnecting)
+            else if (state == ConnectionState.Reconnecting)
             {
-                State = ConnectionState.Connected;
+                state = ConnectionState.Connected;
                 listener.OnReconnect(true);
                 Root().Reconnect();
             }
@@ -764,7 +770,7 @@ namespace Gj.Galaxy.Network{
             }
             allowConn.Clear();
             acceptConn.Clear();
-            State = ConnectionState.Disconnected;
+            state = ConnectionState.Disconnected;
         }
     }
 }

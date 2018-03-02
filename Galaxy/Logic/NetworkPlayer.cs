@@ -14,20 +14,6 @@ namespace Gj.Galaxy.Logic{
 
         private int actorId = -1;
 
-        private string nameField = "";
-
-        public string NickName
-        {
-            get
-            {
-                return this.nameField;
-            }
-            set
-            {
-                this.nameField = value;
-            }
-        }
-
         public string UserId { get; internal set; }
 
         public readonly bool IsLocal = false;
@@ -52,13 +38,12 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public NetworkPlayer(bool isLocal, int actorId, string userId, string name)
+        public NetworkPlayer(bool isLocal, int actorId, string userId)
         {
             this.CustomProperties = new Hashtable();
             this.IsLocal = isLocal;
             this.actorId = actorId;
             this.UserId = userId;
-            this.nameField = name;
         }
 
         /// <summary>
@@ -168,12 +153,7 @@ namespace Gj.Galaxy.Logic{
         /// </summary>
         public override string ToString()
         {
-            if (string.IsNullOrEmpty(this.NickName))
-            {
-                return string.Format("#{0:00}{1}{2}", this.Id, this.IsInactive ? " (inactive)" : " ", GameConnect.isMasterClient ? "(master)" : "");
-            }
-
-            return string.Format("'{0}'{1}{2}", this.NickName, this.IsInactive ? " (inactive)" : " ", GameConnect.isMasterClient ? "(master)" : "");
+            return string.Format("'{0}'{1}{2}", this.actorId, this.IsInactive ? " (inactive)" : " ", GameConnect.isMasterClient ? "(master)" : "");
         }
 
         /// <summary>
@@ -185,7 +165,7 @@ namespace Gj.Galaxy.Logic{
         /// </remarks>
         public string ToStringFull()
         {
-            return string.Format("#{0:00} '{1}'{2} {3}", this.Id, this.NickName, this.IsInactive ? " (inactive)" : "", this.CustomProperties.ToStringFull());
+            return string.Format("#{0:00} '{1}'{2} {3}", this.Id, this.actorId, this.IsInactive ? " (inactive)" : "", this.CustomProperties.ToStringFull());
         }
 
     }

@@ -19,6 +19,7 @@ namespace Gj.Galaxy.Logic{
         internal static readonly Handler back;
 
         private static Client client = new Client();
+        public static NetworkListener Listener = new NetworkListener();
 
         internal const string serverSettingsAssetFile = "GalaxySettings";
 
@@ -379,7 +380,7 @@ namespace Gj.Galaxy.Logic{
             return result;
         }
 
-        public static bool Connect(ClientListener listener)
+        public static bool Connect()
         {
             if (client.State != Network.ConnectionState.Disconnected)
             {
@@ -418,9 +419,8 @@ namespace Gj.Galaxy.Logic{
             }
 
             offlineMode = false;
-            client.listener = listener;
+            client.listener = Listener;
             return client.Connect(GetServerAddress());
-            return true;
         }
         public static void Close(){
             if (client.IsRuning)

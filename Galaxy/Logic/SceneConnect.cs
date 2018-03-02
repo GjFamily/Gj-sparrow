@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System;
 
 namespace Gj.Galaxy.Logic{
+
     internal class SceneEvent
     {
         public const byte LobbyJoin = 0;
@@ -16,11 +17,6 @@ namespace Gj.Galaxy.Logic{
         public const byte GameConnect = 254;
         public const byte Prop = 253;
     }
-    public interface SceneDelegate{
-        void OnJoinedGame(string token);
-        void OnInvitedTeam(string userId, string teamId);
-        void OnPlayInit(NetworkPlayer player);
-    }
     public class LobbyType{
         public const string PVE = "pve";
         public const string PVP = "pvp";
@@ -28,11 +24,24 @@ namespace Gj.Galaxy.Logic{
     // player 信息
     // lobby 信息
     // team和game接入信息
-    public class SceneConnect : NamespaceListener
+    public class SceneConnect:NetworkListener, NamespaceListener
     {
         private static Namespace n;
-        public static SceneDelegate Delegate;
-        private static SceneConnect lisenter;
+        private static SceneConnect listener;
+        public static SceneConnect Listener{
+            get
+            {
+                return listener;
+            }
+        }
+
+        public delegate void OnJoinedGameDelegate(string token);
+        public delegate void OnInvitedTeamDelegate(string userId, string teamId);
+        public delegate void OnPlayInitDelegate(NetworkPlayer player);
+
+        public event OnJoinedGameDelegate OnJoinedGame;
+        public event OnInvitedTeamDelegate OnInvitedTeam;
+        public event OnPlayInitDelegate OnPlayInit;
 
         private Action<bool> OnConnectAction;
 
@@ -40,8 +49,12 @@ namespace Gj.Galaxy.Logic{
 
         static SceneConnect(){
             n = PeerClient.Of(NamespaceId.Scene);
-            lisenter = new SceneConnect();
-            n.listener = lisenter;
+            listener = new SceneConnect();
+            n.listener = listener;
+            listener.OnConnectEvent += (success) =>
+            {
+                if (listener.OnConnectAction != null) listener.OnConnectAction(success);
+            };
         }
 
         public static Namespace Of(SceneRoom ns){
@@ -49,7 +62,7 @@ namespace Gj.Galaxy.Logic{
         }
 
         public static void Connect(Action<bool> a){
-            lisenter.OnConnectAction = a;
+            Listener.OnConnectAction = a;
             n.Connect("abc=123");
         }
 
@@ -80,7 +93,6 @@ namespace Gj.Galaxy.Logic{
         {
             n.Emit(SceneEvent.LobbyExist, new object[] { }, (obj) => callback((bool)obj[0]));
         }
-
 
         public static void SetCustomProperties(Hashtable customProperties)
         {
@@ -113,24 +125,7 @@ namespace Gj.Galaxy.Logic{
             n.Emit(SceneEvent.PropChanged, new object[] { prop });
         }
 
-        public void OnConnect(bool success)
-        {
-            if (OnConnectAction != null){
-                OnConnectAction(success);
-            }
-        }
-
-        public void OnReconnect(bool success)
-        {
-            throw new NotImplementedException();
-        }
-
         public void OnError(string message)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void OnDisconnect()
         {
             throw new NotImplementedException();
         }
@@ -140,17 +135,20 @@ namespace Gj.Galaxy.Logic{
             switch (eb)
             {
                 case SceneEvent.TeamInvite:
-                    Delegate.OnInvitedTeam((string)param[0], (string)param[1]);
+                    if (OnInvitedTeam != null)
+                        OnInvitedTeam((string)param[0], (string)param[1]);
                     break;
                 case SceneEvent.GameConnect:
-                    Delegate.OnJoinedGame((string)param[1]);
+                    if (OnJoinedGame != null)
+                        OnJoinedGame((string)param[1]);
                     break;
                 case SceneEvent.Prop:
-                    player = new NetworkPlayer(true, -1, (string)param[0], (string)param[1]);
-                    player.InternalProperties(new Hashtable((Dictionary<object,object>)param[2]));
-                    Delegate.OnPlayInit(player);
+                    player = new NetworkPlayer(true, -1, (string)param[0]);
+                    player.InternalProperties(new Hashtable((Dictionary<object, object>)param[1]));
+                    if (OnPlayInit != null)
+                        OnPlayInit(player);
                     break;
-                    
+
             }
             return null;
         }
