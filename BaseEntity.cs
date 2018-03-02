@@ -19,7 +19,6 @@ namespace Gj
                 return _info;
             }
         }
-        public string objName;
         [HideInInspector]
         public bool player = false;
         [HideInInspector]
@@ -70,7 +69,7 @@ namespace Gj
         protected virtual void Disappear () {
             show = false;
             gameObject.SetActive(false);
-            CacheManage.single.SetCache(objName, gameObject);
+            CacheManage.single.SetCache(name, gameObject);
         }
     }
 }

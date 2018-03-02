@@ -18,14 +18,13 @@ namespace Gj
         }
         public void SetMaster(GameObject obj)
         {
+            Appear();
             GetComponent<BeLongPart>().SetMaster(obj);
             if (SkillInfo != null) {
                 SkillInfo.master = obj;
-                SkillInfo.name = objName;
             }
             if (ExtraInfo != null) {
                 ExtraInfo.master = obj;
-                ExtraInfo.name = objName;
             }
         }
 

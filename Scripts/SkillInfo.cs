@@ -5,8 +5,6 @@ namespace Gj
 {
     public class SkillInfo : MonoBehaviour
     {
-        [HideInInspector]
-        public new string name;
         public float value;
         public float need;
         public float range;
@@ -59,14 +57,14 @@ namespace Gj
             }
         }
 
-        public bool IsOutRange(GameObject master, GameObject target)
+        public bool IsAllowRange(GameObject master, GameObject target)
         {
-            return IsOutRange(master, target.transform);
+            return IsAllowRange(master, target.transform);
         }
 
-        public bool IsOutRange(GameObject master, Transform transform)
+        public bool IsAllowRange(GameObject master, Transform transform)
         {
-            return Vector3.Distance(master.transform.position, transform.position) > range;
+            return Vector3.Distance(master.transform.position, transform.position) <= range;
         }
     }
 }

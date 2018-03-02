@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Gj
 {
-    public class RockerInputHelper : BasePart, IPointerDownHandler, IPointerUpHandler, IDragHandler
+    public class RockerInputHelper : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IDragHandler
     {
         private float radius;
         public Image item;
@@ -12,10 +12,14 @@ namespace Gj
         public float offsetX;
         public float offsetY;
         public bool left;
+        public bool hide;
         // Use this for initialization
         void Start()
         {
             radius = size / 2;
+            if (hide) {
+                item.gameObject.SetActive(false);
+            }
         }
 
         // Update is called once per frame
@@ -26,6 +30,9 @@ namespace Gj
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (hide) {
+                item.gameObject.SetActive(true);
+            }
             Vector2 position = GetPosition(eventData.position.x, eventData.position.y);
             item.rectTransform.localPosition = position;
             ChangeValue(position.x / radius, position.y / radius);
@@ -35,6 +42,10 @@ namespace Gj
         {
             item.rectTransform.localPosition = new Vector2(0, 0);
             ChangeValue(0, 0);
+            if (hide)
+            {
+                item.gameObject.SetActive(false);
+            }
         }
 
         public void OnDrag(PointerEventData eventData)

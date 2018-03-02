@@ -16,7 +16,9 @@ namespace Gj
 		public static GameObject Create (GameObject prefab)
 		{
 			if (prefab != null) {
-				return GameObject.Instantiate (prefab);
+                GameObject obj = GameObject.Instantiate(prefab);
+                obj.name = prefab.name;
+                return obj;
 			} else {
 				return new GameObject ();
 			}

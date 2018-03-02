@@ -16,11 +16,7 @@ namespace Gj
             base.Awake();
             foreach (GameObject obj in objs)
             {
-                BaseEntity baseEntity = obj.GetComponent<BaseEntity>();
-                if (baseEntity != null)
-                {
-                    objMap.Add(baseEntity.objName, obj);
-                }
+                objMap.Add(obj.name, obj);
             }
         }
 
@@ -57,6 +53,20 @@ namespace Gj
                 obj = CreateObj(objName);
             }
             return obj;
+        }
+
+        public GameObject MakeTarget(string targetName)
+        {
+            GameObject targetObj = MakeObj(targetName);
+            if (targetObj != null)
+            {
+                targetObj.GetComponent<TargetEntity>().SetGameSystem(this);
+                return targetObj;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public SkillInfo GetSkillInfo(string skillName)

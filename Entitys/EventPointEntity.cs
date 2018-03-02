@@ -9,7 +9,7 @@ namespace Gj
         {
             if (IsPlayer(other.gameObject))
             {
-                EventManage.single.Emit(objName+"-enter");
+                EventManage.single.Emit(name+"-enter");
             }
         }
 
@@ -17,7 +17,7 @@ namespace Gj
         {
             if (IsPlayer(other.gameObject))
             {
-                EventManage.single.Emit(objName + "-exit");
+                EventManage.single.Emit(name + "-exit");
             }
         }
 

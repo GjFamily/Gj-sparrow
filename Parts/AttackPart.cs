@@ -82,7 +82,7 @@ namespace Gj
 
         public void Cast(SkillInfo skillInfo, GameObject target)
         {
-            if (skillInfo.AllowTarget(gameObject, target) && skillInfo.IsOutRange(gameObject, target))
+            if (skillInfo.AllowTarget(gameObject, target) && skillInfo.IsAllowRange(gameObject, target))
             {
                 gameSystem.Cast(skillInfo.name, gameObject, target);
                 notic(skillInfo);
@@ -91,7 +91,7 @@ namespace Gj
 
         public void Cast(SkillInfo skillInfo, Transform transform)
         {
-            if (skillInfo.IsOutRange(gameObject, transform))
+            if (skillInfo.IsAllowRange(gameObject, transform))
             {
                 gameSystem.Cast(skillInfo.name, gameObject, transform);
                 notic(skillInfo);

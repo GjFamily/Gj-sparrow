@@ -19,8 +19,7 @@ namespace Gj
 
         public virtual void Init()
         {
-            show = true;
-            gameObject.SetActive(true);
+            Appear();
             InitFeature();
         }
 
