@@ -32,6 +32,14 @@ namespace Gj
             return GetComponent<BeLongPart>().GetMaster();
         }
 
+        public virtual void ReadyCast () {
+            
+        }
+
+        public virtual void CancelCast () {
+            
+        }
+
         public virtual void Cast()
         {
 

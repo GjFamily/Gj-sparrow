@@ -13,11 +13,13 @@ namespace Gj
         public float offsetY;
         public bool left;
         public bool hide;
+        public string key;
         // Use this for initialization
         void Start()
         {
             radius = size / 2;
-            if (hide) {
+            if (hide)
+            {
                 item.gameObject.SetActive(false);
             }
         }
@@ -30,11 +32,13 @@ namespace Gj
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (hide) {
+            if (hide)
+            {
                 item.gameObject.SetActive(true);
             }
             Vector2 position = GetPosition(eventData.position.x, eventData.position.y);
             item.rectTransform.localPosition = position;
+            StartChange();
             ChangeValue(position.x / radius, position.y / radius);
         }
 
@@ -52,7 +56,33 @@ namespace Gj
         {
             Vector2 position = GetPosition(eventData.position.x, eventData.position.y);
             item.rectTransform.localPosition = position;
+            EndChange();
             ChangeValue(position.x / radius, position.y / radius);
+        }
+
+        private void StartChange()
+        {
+            if (left)
+            {
+                SystemInput.lk = key;
+            }
+            else
+            {
+                SystemInput.rk = key;
+            }
+        }
+
+        private void EndChange()
+        {
+
+            if (left)
+            {
+                SystemInput.lk = null;
+            }
+            else
+            {
+                SystemInput.rk = null;
+            }
         }
 
         private void ChangeValue(float x, float y)

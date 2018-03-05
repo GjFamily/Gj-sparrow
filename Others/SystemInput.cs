@@ -6,5 +6,7 @@
         public static float lv;
         public static float rh;
         public static float rv;
+        public static string lk;
+        public static string rk;
     }
 }

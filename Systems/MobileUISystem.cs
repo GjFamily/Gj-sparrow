@@ -26,7 +26,7 @@ namespace Gj
                 HandleRocker(SystemInput.lh, SystemInput.lv, true);
                 if (!leftRockerTouch)
                 {
-                    LeftRockerEnter();
+                    LeftRockerEnter(SystemInput.lk);
                     leftRockerTouch = true;
                 }
             }
@@ -44,7 +44,7 @@ namespace Gj
                 HandleRocker(SystemInput.rh, SystemInput.rv, false);
                 if (!rightRochkerTouch)
                 {
-                    RightRockerEnter();
+                    RightRockerEnter(SystemInput.rk);
                     rightRochkerTouch = true;
                 }
             }
@@ -76,13 +76,13 @@ namespace Gj
             return Mathf.Atan2(h, v) * Mathf.Rad2Deg;
         }
 
-        protected virtual void LeftRockerEnter() { }
+        protected virtual void LeftRockerEnter(string key) { }
 
         protected virtual void LeftRocker(float angle, float h, float v) { }
 
         protected virtual void LeftRockerExit() { }
 
-        protected virtual void RightRockerEnter() { }
+        protected virtual void RightRockerEnter(string key) { }
 
         protected virtual void RightRocker(float angle, float h, float v) { }
 
