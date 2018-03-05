@@ -6,10 +6,7 @@ using System.Reflection;
 
 namespace Gj.Galaxy.Network
 {
-    public interface NamespaceListener{
-        void OnConnect(bool success);
-        void OnDisconnect();
-        void OnReconnect(bool success);
+    public interface NamespaceListener:ClientListener{
         object[] OnEvent(byte eb, object[] param);
         void OnError(string message);
     }

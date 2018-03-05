@@ -6,6 +6,7 @@ using MessagePack;
 
 namespace Gj.Galaxy.Network
 {
+    
     internal enum MessageType:byte{
         Open = 0,
         Close,
