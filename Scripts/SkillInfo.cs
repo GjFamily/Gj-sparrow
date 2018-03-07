@@ -33,7 +33,20 @@ namespace Gj
         public SkillType skillType;
         public enum SkillType
         {
-
+            Attack,
+            Defense,
+            Prop,
+            Attr
+        }
+        public float readyTime;
+        public float sustainedTime;
+        public CastType castType;
+        public enum CastType
+        {
+            Now,
+            Ready,
+            Sustained,
+            ReadyAndSustained
         }
 
         [HideInInspector]

@@ -100,33 +100,6 @@ namespace Gj
             }
             return null;
         }
-
-        public void Cast(string skillName, GameObject master)
-        {
-            SkillEntity skill = InitSkill(skillName, master);
-            if (skill != null)
-            {
-                skill.Cast();
-            }
-        }
-
-        public void Cast(string skillName, GameObject master, GameObject target)
-        {
-            SkillEntity skill = InitSkill(skillName, master);
-            if (skill != null)
-            {
-                skill.Cast(target);
-            }
-        }
-
-        public void Cast(string skillName, GameObject master, Transform transform)
-        {
-            SkillEntity skill = InitSkill(skillName, master);
-            if (skill != null)
-            {
-                skill.Cast(transform);
-            }
-        }
     }
 }
 

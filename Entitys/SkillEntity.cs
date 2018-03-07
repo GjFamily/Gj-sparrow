@@ -45,12 +45,12 @@ namespace Gj
 
         }
 
-        public virtual void Cast(GameObject target)
+        public virtual void Set(GameObject target)
         {
 
         }
 
-        public virtual void Cast(Transform transform)
+        public virtual void Set(Transform transform)
         {
 
         }
