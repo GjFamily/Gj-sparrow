@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System;
 
 namespace Gj
 {
@@ -16,6 +17,16 @@ namespace Gj
                 return GetComponent<ExtraInfo>();
             }
         }
+
+        private Action beforeCast;
+        private Action afterCast;
+        private Action readyCast;
+        private Action startCast;
+        private Action endCast;
+
+        protected Transform targetTransform;
+        protected GameObject targetObj;
+
         public void SetMaster(GameObject obj)
         {
             Appear();
@@ -32,6 +43,20 @@ namespace Gj
             return GetComponent<BeLongPart>().GetMaster();
         }
 
+        public void Ready (Action before, Action after, Action start, Action end, Action ready) {
+            beforeCast = before;
+            afterCast = after;
+            startCast = start;
+            endCast = end;
+            readyCast = ready;
+            if (SkillInfo.castType == SkillInfo.CastType.Now || SkillInfo.castType == SkillInfo.CastType.Sustained) {
+                Cast();
+            } else {
+                readyCast();
+            }
+
+        }
+
         public virtual void ReadyCast () {
             
         }
@@ -45,14 +70,14 @@ namespace Gj
 
         }
 
-        public virtual void Set(GameObject target)
+        public void Set(GameObject target)
         {
-
+            TargetObj = target;
         }
 
-        public virtual void Set(Transform transform)
+        public void Set(Transform transform)
         {
-
+            TargetTransform = transform;
         }
 
         protected void CastTarget(GameObject target)

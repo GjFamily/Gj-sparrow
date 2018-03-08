@@ -20,8 +20,6 @@ namespace Gj
             }
         }
         [HideInInspector]
-        public bool player = false;
-        [HideInInspector]
         public bool show = false;
 
         protected virtual void Awake()

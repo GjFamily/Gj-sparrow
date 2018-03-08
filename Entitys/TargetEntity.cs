@@ -9,12 +9,18 @@ namespace Gj
     [RequirePart(typeof(RelationPart))]
     public class TargetEntity : BaseEntity
     {
+        GameSystem gameSystem;
+
+        [HideInInspector]
+        public bool player = false;
+
         // Use this for initialization
         protected virtual void Start()
         {
             GetComponent<DefensePart>().SetNotic(SkillEffect);
             GetComponent<DefensePart>().SetNotic(ExtraEffect);
             GetComponent<AttackPart>().SetNotic(Consume);
+            GetComponent<AttackPart>().SetSkillNotic(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast);
         }
 
         public virtual void Init()
@@ -25,16 +31,17 @@ namespace Gj
 
         protected virtual void InitFeature()
         {
-            
+
         }
 
         public void SetGameSystem(GameSystem system)
         {
-            GetComponent<AttackPart>().SetGameSystem(system);
+            gameSystem = system;
         }
 
-        protected SkillInfo GetSkillInfo(string skillName) {
-            return GetComponent<AttackPart>().GetSkillInfo(skillName);
+        protected SkillInfo GetSkillInfo(string skillName)
+        {
+            return gameSystem.GetSkillInfo(skillName);
         }
 
         protected virtual void GetPower(SkillInfo skillInfo)
@@ -45,13 +52,35 @@ namespace Gj
             }
         }
 
-        protected virtual void Attack(SkillInfo skillInfo) {
-            if(IsEnoughConsume(skillInfo)){
+        protected virtual void BeforeCast(SkillInfo skillInfo)
+        {
+        }
+
+        protected virtual void AfterCast(SkillInfo skillInfo)
+        {
+        }
+
+        protected virtual void StartCast(SkillInfo skillInfo)
+        {
+        }
+
+        protected virtual void EndCast(SkillInfo skillInfo)
+        {
+        }
+
+        protected virtual void ReadyCast(SkillInfo skillInfo)
+        {
+        }
+
+        protected void Attack(SkillInfo skillInfo)
+        {
+            if (IsEnoughConsume(skillInfo))
+            {
                 GetComponent<AttackPart>().Cast(skillInfo);
             }
         }
 
-        protected virtual void Attack(SkillInfo skillInfo, GameObject target)
+        protected void Attack(SkillInfo skillInfo, GameObject target)
         {
             if (IsEnoughConsume(skillInfo))
             {
@@ -59,7 +88,7 @@ namespace Gj
             }
         }
 
-        protected virtual void Attack(SkillInfo skillInfo, Transform transform)
+        protected void Attack(SkillInfo skillInfo, Transform transform)
         {
             if (IsEnoughConsume(skillInfo))
             {
@@ -67,7 +96,8 @@ namespace Gj
             }
         }
 
-        protected virtual void Die () {
+        protected virtual void Die()
+        {
             Disappear();
         }
 

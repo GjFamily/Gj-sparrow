@@ -14,6 +14,16 @@ namespace Gj
         private float attackDistance;
         private bool attacking = false;
 
+        private SkillInfo cSkillInfo;
+        private SkillEntity cSkillEntity;
+        private bool casting;
+        private bool waitCast;
+        private Action<SkillInfo> beforeCast;
+        private Action<SkillInfo> afterCast;
+        private Action<SkillInfo> readyCast;
+        private Action<SkillInfo> startCast;
+        private Action<SkillInfo> endCast;
+
         private GameSystem gameSystem;
         // Use this for initialization
         void Start()
@@ -74,10 +84,65 @@ namespace Gj
             this.notic = notic;
         }
 
-        public void Cast(SkillEntity skillEntity, SkillInfo skillInfo)
+        public void SetSkillNotic(Action<SkillInfo> before, Action<SkillInfo> after, Action<SkillInfo> start, Action<SkillInfo> end, Action<SkillInfo> ready) {
+            beforeCast = before;
+            afterCast = after;
+            startCast = start;
+            endCast = end;
+            readyCast = ready;
+        }
+
+        private void Cast()
         {
-            skillEntity.Cast();
-            notic(skillInfo);
+            if (cSkillEntity != null)
+            {
+                cSkillEntity.Cast();
+                waitCast = false;
+            }
+        }
+
+        public void CancelCast()
+        {
+            if (waitCast || casting)
+            {
+                waitCast = false;
+                casting = false;
+                cSkillEntity.CancelCast();
+            }
+        }
+
+        private void BeforeCast()
+        {
+            beforeCast(cSkillInfo);
+            notic(cSkillInfo);
+        }
+
+        private void AfterCast()
+        {
+            afterCast(cSkillInfo);
+            cSkillInfo = null;
+            cSkillEntity = null;
+        }
+
+        private void StartCast()
+        {
+            casting = true;
+            startCast(cSkillInfo);
+            notic(cSkillInfo);
+        }
+
+        private void EndCast()
+        {
+            casting = false;
+            endCast(cSkillInfo);
+            cSkillInfo = null;
+            cSkillEntity = null;
+        }
+
+        private void ReadyCast()
+        {
+            readyCast(cSkillInfo);
+            waitCast = true;
         }
 
         public void Cast(SkillInfo skillInfo)
@@ -106,33 +171,11 @@ namespace Gj
             }
         }
 
-        private void Cast(SkillInfo skillInfo, SkillEntity skillEntity){
-            switch(skillInfo.castType){
-                case SkillInfo.CastType.Now:
-                    Cast(skillEntity, skillInfo);
-                    break;
-                case SkillInfo.CastType.Ready:
-                    skillEntity.ReadyCast();
-                    Game.single.WaitSeconds(skillInfo.readyTime, ()=>{
-                        Cast(skillEntity, skillInfo);
-                    });
-                    break;
-                case SkillInfo.CastType.Sustained:
-                    Cast(skillEntity, skillInfo);
-                    Game.single.WaitSeconds(skillInfo.sustainedTime, () => {
-                        skillEntity.CancelCast();
-                    });
-                    break;
-                case SkillInfo.CastType.ReadyAndSustained:
-                    skillEntity.ReadyCast();
-                    Game.single.WaitSeconds(skillInfo.readyTime, () => {
-                        Cast(skillEntity, skillInfo);
-                        Game.single.WaitSeconds(skillInfo.sustainedTime, () => {
-                            skillEntity.CancelCast();
-                        });
-                    });
-                    break;
-            }
+        private void Cast(SkillInfo skillInfo, SkillEntity skillEntity)
+        {
+            cSkillInfo = skillInfo;
+            cSkillEntity = skillEntity;
+            cSkillEntity.Ready(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast);
         }
     }
 }
