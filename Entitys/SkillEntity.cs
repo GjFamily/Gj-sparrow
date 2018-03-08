@@ -72,12 +72,12 @@ namespace Gj
 
         public void Set(GameObject target)
         {
-            TargetObj = target;
+            targetObj = target;
         }
 
         public void Set(Transform transform)
         {
-            TargetTransform = transform;
+            targetTransform = transform;
         }
 
         protected void CastTarget(GameObject target)

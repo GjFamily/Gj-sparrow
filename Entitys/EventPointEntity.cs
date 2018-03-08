@@ -23,7 +23,7 @@ namespace Gj
 
         private bool IsPlayer(GameObject obj)
         {
-            BaseEntity entity = obj.GetComponent<BaseEntity>();
+            TargetEntity entity = obj.GetComponent<TargetEntity>();
             if (entity != null)
             {
                 return entity.player;
