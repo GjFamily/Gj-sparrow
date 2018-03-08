@@ -26,6 +26,10 @@ namespace Gj.Galaxy.Logic{
             this.UserId = userId;
 
         }
+        public override int GetHashCode()
+        {
+            return 0;
+        }
 
         internal bool update(Dictionary<string, object> teamInfo){
             bool flag = false;
@@ -57,11 +61,6 @@ namespace Gj.Galaxy.Logic{
             return (pp != null && this.GetHashCode() == pp.GetHashCode());
         }
 
-        public new string GetHashCode()
-        {
-            return this.UserId;
-        }
-
         #region IComparable implementation
 
         public int CompareTo(TeamPlayer other)
@@ -71,12 +70,12 @@ namespace Gj.Galaxy.Logic{
                 return 0;
             }
 
-            return string.Compare(this.GetHashCode(), other.GetHashCode(), StringComparison.Ordinal);
+            return string.Compare(this.UserId, other.UserId, StringComparison.Ordinal);
         }
 
         public int CompareTo(string other)
         {
-            return string.Compare(this.GetHashCode(), other, StringComparison.Ordinal);
+            return string.Compare(this.UserId, other, StringComparison.Ordinal);
         }
 
         #endregion
@@ -90,12 +89,12 @@ namespace Gj.Galaxy.Logic{
                 return false;
             }
 
-            return this.GetHashCode().Equals(other.GetHashCode());
+            return this.UserId.Equals(other.UserId);
         }
 
         public bool Equals(string other)
         {
-            return this.GetHashCode().Equals(other);
+            return this.UserId.Equals(other);
         }
 
         #endregion
