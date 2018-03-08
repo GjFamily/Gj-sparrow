@@ -11,13 +11,12 @@ namespace Gj.Galaxy.Logic{
     {
         private GameRoomListener Delegate;
         public int MasterClientId = 0;
+        public int LocalClientId = 0;
         public Dictionary<int, NetworkPlayer> mActors = new Dictionary<int, NetworkPlayer>();
 
         public NetworkPlayer[] mOtherPlayerListCopy = new NetworkPlayer[0];
         public NetworkPlayer[] mPlayerListCopy = new NetworkPlayer[0];
 
-        //public NetworkPlayer[] playerList;
-        //public NetworkPlayer[] otherPlayers;
         public Hashtable CustomProperties { get; internal set; }
         public int number;
         public int initNumber;
@@ -35,7 +34,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return SceneConnect.player;
+                return GetPlayerWithId(LocalClientId);
             }
         }
 
@@ -51,14 +50,15 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return SceneConnect.player.Id == MasterClientId;
+                return LocalClientId == MasterClientId;
             }
         }
 
         public GameRoom(GameRoomListener Delegate)
         {
             this.Delegate = Delegate;
-            AddNewPlayer(-1, SceneConnect.player);
+            var player = new NetworkPlayer(true, -1, SceneConnect.player.UserId);
+            AddNewPlayer(player);
         }
 
         internal void OnFail(string reason){
@@ -84,7 +84,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        private void InternalProperties(Hashtable properties)
+        internal void InternalProperties(Hashtable properties)
         {
             if (properties == null || properties.Count == 0 || this.CustomProperties.Equals(properties))
             {
@@ -101,14 +101,16 @@ namespace Gj.Galaxy.Logic{
             {
                 Debug.LogWarning(string.Format("LocalPlayer is null or not in mActors! LocalPlayer: {0} mActors==null: {1} newID: {2}", this.localPlayer, this.mActors == null, newID));
             }
-
-            if (this.mActors.ContainsKey(SceneConnect.player.Id))
+            NetworkPlayer player;
+            var result = this.mActors.TryGetValue(LocalClientId, out player);
+            if(result)
             {
-                this.mActors.Remove(SceneConnect.player.Id);
+                this.mActors.Remove(LocalClientId);
             }
+            player.actorId = newID;
 
-            SceneConnect.player.InternalChangeLocalId(newID);
-            this.mActors[SceneConnect.player.Id] = SceneConnect.player;
+            LocalClientId = newID;
+            this.mActors[LocalClientId] = player;
             this.RebuildPlayerListCopies();
         }
 
@@ -162,9 +164,10 @@ namespace Gj.Galaxy.Logic{
 
         private Hashtable GetLocalActorProperties()
         {
-            if (SceneConnect.player != null)
+            NetworkPlayer player = localPlayer;
+            if (player != null)
             {
-                return SceneConnect.player.CustomProperties;
+                return player.CustomProperties;
             }
             return null;
         }
@@ -175,10 +178,10 @@ namespace Gj.Galaxy.Logic{
                 this.MasterClientId = actor;
         }
 
-        internal void OnRoom(int localActor)
+        internal void OnEnter(int localActor)
         {
             ChangeLocalId(localActor);
-            Delegate.OnRoom();
+            Delegate.OnEnter();
         }
 
         internal void OnLeave(int actorId)
@@ -212,18 +215,26 @@ namespace Gj.Galaxy.Logic{
             if (target == null)
             {
                 target = new NetworkPlayer(false, actorId, userId);
-                AddNewPlayer(actorId, target);
-            }else{
+                AddNewPlayer(target);
+            }
+            else
+            {
                 exist = true;
             }
 
             target.InternalProperties(props);
 
             target.IsInactive = true;// Delegate
-            if (exist){
+            if (exist)
+            {
                 Delegate.OnPlayerRejoin(target);
-            }else{
-                Delegate.OnPlayerJoin(target);
+            }
+            else
+            {
+                AuthConnect.User(userId, (Dictionary<string, object> obj) => {
+                    target.AttachInfo(obj);
+                    Delegate.OnPlayerJoin(target);
+                });
             }
         }
         internal void OnChangeRoom(int sendId, Hashtable roomProperties)
@@ -292,16 +303,16 @@ namespace Gj.Galaxy.Logic{
             player.number++;
         }
 
-        internal void AddNewPlayer(int id, NetworkPlayer player)
+        internal void AddNewPlayer(NetworkPlayer player)
         {
-            if (!this.mActors.ContainsKey(id))
+            if (!this.mActors.ContainsKey(player.Id))
             {
-                this.mActors[id] = player;
+                this.mActors[player.Id] = player;
                 RebuildPlayerListCopies();
             }
             else
             {
-                Debug.LogError("Adding player twice: " + id);
+                Debug.LogError("Adding player twice: " + player.Id);
             }
         }
 
@@ -389,14 +400,14 @@ namespace Gj.Galaxy.Logic{
                 int actorNrToCheck = actorsInRoom[i];
                 if (SceneConnect.player.Id != actorNrToCheck && !this.mActors.ContainsKey(actorNrToCheck))
                 {
-                    this.AddNewPlayer(actorNrToCheck, new NetworkPlayer(false, actorNrToCheck, string.Empty));
+                    this.AddNewPlayer(new NetworkPlayer(false, actorNrToCheck, string.Empty));
                 }
             }
         }
 
         internal void Clear()
         {
-            ChangeLocalId(-1);
+            mActors.Clear();
             localPlayer.initNumber = 0;
             localPlayer.number = 0;
         }
