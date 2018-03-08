@@ -39,6 +39,7 @@ namespace Gj
             Attr
         }
         public float readyTime;
+        public float castTime;
         public float sustainedTime;
         public CastType castType;
         public enum CastType

@@ -72,7 +72,15 @@ namespace Gj
         {
         }
 
-        protected void Attack(SkillInfo skillInfo)
+        protected void CancelCast () {
+            GetComponent<AttackPart>().CancelCast();
+        }
+
+        protected void Cast () {
+            GetComponent<AttackPart>().Cast();
+        }
+
+        protected void Cast(SkillInfo skillInfo)
         {
             if (IsEnoughConsume(skillInfo))
             {
@@ -80,7 +88,7 @@ namespace Gj
             }
         }
 
-        protected void Attack(SkillInfo skillInfo, GameObject target)
+        protected void Cast(SkillInfo skillInfo, GameObject target)
         {
             if (IsEnoughConsume(skillInfo))
             {
@@ -88,7 +96,7 @@ namespace Gj
             }
         }
 
-        protected void Attack(SkillInfo skillInfo, Transform transform)
+        protected void Cast(SkillInfo skillInfo, Transform transform)
         {
             if (IsEnoughConsume(skillInfo))
             {

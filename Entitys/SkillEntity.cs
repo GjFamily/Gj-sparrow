@@ -7,13 +7,17 @@ namespace Gj
     [RequirePart(typeof(BeLongPart))]
     public class SkillEntity : BaseEntity
     {
-        public SkillInfo SkillInfo {
-            get {
+        public SkillInfo SkillInfo
+        {
+            get
+            {
                 return GetComponent<SkillInfo>();
             }
         }
-        public ExtraInfo ExtraInfo {
-            get {
+        public ExtraInfo ExtraInfo
+        {
+            get
+            {
                 return GetComponent<ExtraInfo>();
             }
         }
@@ -23,6 +27,10 @@ namespace Gj
         private Action readyCast;
         private Action startCast;
         private Action endCast;
+        private Action cancelCast;
+
+        private bool waiting = false;
+        private bool sustaining = false;
 
         protected Transform targetTransform;
         protected GameObject targetObj;
@@ -31,43 +39,97 @@ namespace Gj
         {
             Appear();
             GetComponent<BeLongPart>().SetMaster(obj);
-            if (SkillInfo != null) {
+            if (SkillInfo != null)
+            {
                 SkillInfo.master = obj;
             }
-            if (ExtraInfo != null) {
+            if (ExtraInfo != null)
+            {
                 ExtraInfo.master = obj;
             }
         }
 
-        public GameObject GetMaster () {
+        public GameObject GetMaster()
+        {
             return GetComponent<BeLongPart>().GetMaster();
         }
 
-        public void Ready (Action before, Action after, Action start, Action end, Action ready) {
+        public void Init(Action before, Action after, Action start, Action end, Action ready)
+        {
             beforeCast = before;
             afterCast = after;
             startCast = start;
             endCast = end;
             readyCast = ready;
-            if (SkillInfo.castType == SkillInfo.CastType.Now || SkillInfo.castType == SkillInfo.CastType.Sustained) {
-                Cast();
-            } else {
-                readyCast();
+            if (SkillInfo.castType == SkillInfo.CastType.Now || SkillInfo.castType == SkillInfo.CastType.Sustained)
+            {
+                Start();
             }
-
+            else
+            {
+                Ready();
+            }
         }
 
-        public virtual void ReadyCast () {
-            
+        private void Ready()
+        {
+            readyCast();
+            ReadyCast();
+            waiting = true;
+            Invoke("Start", SkillInfo.waitTime);
         }
 
-        public virtual void CancelCast () {
-            
+        private void After()
+        {
+            afterCast();
         }
 
-        public virtual void Cast()
+        private void End()
+        {
+            sustaining = false;
+            endCast();
+        }
+
+        protected virtual void ReadyCast()
         {
 
+        }
+
+        protected virtual void Cast()
+        {
+
+        }
+
+        public void CancelCast()
+        {
+            if (waiting)
+            {
+                CancelInvoke("Start");
+                After();
+            }
+            else if (sustaining)
+            {
+                CancelInvoke("End");
+                End();
+            }
+        }
+
+        public void Start()
+        {
+            waiting = false;
+            if (SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained || SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained)
+            {
+                startCast();
+                Cast();
+                Invoke("End", SkillInfo.sustainedTime);
+            }
+            else
+            {
+                beforeCast();
+                Cast();
+                sustaining = true;
+                Invoke("After", SkillInfo.castTime);
+            }
         }
 
         public void Set(GameObject target)
@@ -86,7 +148,8 @@ namespace Gj
             AddExtraTarget(target);
         }
 
-        protected void BeCastTarget(GameObject target) {
+        protected void BeCastTarget(GameObject target)
+        {
             DefensePart defensePart = target.GetComponent<DefensePart>();
             if (defensePart != null && SkillInfo != null)
             {

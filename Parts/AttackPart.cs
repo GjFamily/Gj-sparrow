@@ -92,11 +92,11 @@ namespace Gj
             readyCast = ready;
         }
 
-        private void Cast()
+        public void Cast()
         {
             if (cSkillEntity != null)
             {
-                cSkillEntity.Cast();
+                cSkillEntity.Start();
                 waitCast = false;
             }
         }
@@ -175,7 +175,7 @@ namespace Gj
         {
             cSkillInfo = skillInfo;
             cSkillEntity = skillEntity;
-            cSkillEntity.Ready(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast);
+            cSkillEntity.Init(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast);
         }
     }
 }
