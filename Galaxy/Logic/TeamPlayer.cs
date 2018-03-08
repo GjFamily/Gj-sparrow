@@ -11,10 +11,44 @@ namespace Gj.Galaxy.Logic{
 
         public bool Status { get; set; }
         public string Location { get; set; }
+        public bool Master { get; set; }
+        private Dictionary<string, object> info;
+        public Dictionary<string, object> Info
+        {
+            get
+            {
+                return info;
+            }
+        }
 
         public TeamPlayer(string userId)
         {
             this.UserId = userId;
+
+        }
+
+        internal bool update(Dictionary<string, object> teamInfo){
+            bool flag = false;
+            var status = (bool)teamInfo["status"];
+            if (Status != status) {
+                flag = true;
+                Status = status;
+            }
+            var location = (string)teamInfo["location"];
+            if (Location != location){
+                flag = true;
+                Location = location;
+            }
+            var master = (bool)teamInfo["master"];
+            if (Master != master){
+                flag = true;
+                Master = master;
+            }
+            return flag;
+        }
+
+        internal void AttachInfo(Dictionary<string, object> info){
+            this.info = info;
         }
 
         public override bool Equals(object p)

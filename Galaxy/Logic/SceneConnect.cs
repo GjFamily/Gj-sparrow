@@ -105,6 +105,7 @@ namespace Gj.Galaxy.Logic{
                 }
             }
             player.SetCustomProperties(customProperties);
+            emitPlayerProp(player.CustomProperties);
         }
         public static void RemoveCustomProperties(string[] customPropertiesToDelete)
         {
@@ -119,6 +120,7 @@ namespace Gj.Galaxy.Logic{
             }
             player.CustomProperties = new Hashtable();
             player.SetCustomProperties(props);
+            emitPlayerProp(player.CustomProperties);
         }
 
         internal static void emitPlayerProp(Hashtable prop){
@@ -143,10 +145,10 @@ namespace Gj.Galaxy.Logic{
                         OnJoinedGame((string)param[1]);
                     break;
                 case SceneEvent.Prop:
-                    player = new NetworkPlayer(true, -1, (string)param[0]);
-                    player.InternalProperties(new Hashtable((Dictionary<object, object>)param[1]));
-                    if (OnPlayInit != null)
-                        OnPlayInit(player);
+                    var userId = (string)param[0];
+                    player = new NetworkPlayer(true, -1, userId);
+                    player.AttachInfo((Dictionary<string, object>)param[1]);
+                    player.InternalProperties(new Hashtable((Dictionary<object, object>)param[2]));
                     break;
 
             }

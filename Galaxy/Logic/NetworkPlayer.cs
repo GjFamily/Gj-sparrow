@@ -12,7 +12,7 @@ namespace Gj.Galaxy.Logic{
             get { return this.actorId; }
         }
 
-        private int actorId = -1;
+        internal int actorId = -1;
 
         public string UserId { get; internal set; }
 
@@ -37,6 +37,14 @@ namespace Gj.Galaxy.Logic{
                 return (initNumber - number) * 100 / initNumber;
             }
         }
+        private Dictionary<string, object> info;
+        public Dictionary<string, object> Info
+        {
+            get
+            {
+                return info;
+            }
+        }
 
         public NetworkPlayer(bool isLocal, int actorId, string userId)
         {
@@ -56,6 +64,11 @@ namespace Gj.Galaxy.Logic{
             this.actorId = actorId;
 
             this.InternalProperties(properties);
+        }
+
+        internal void AttachInfo(Dictionary<string, object> info)
+        {
+            this.info = info;
         }
 
         public override bool Equals(object p)
@@ -98,16 +111,7 @@ namespace Gj.Galaxy.Logic{
                 return;
             }
 
-            Hashtable customProps = propertiesToSet;
-
-            if (!PeerClient.offlineMode)
-            {
-                SceneConnect.emitPlayerProp(customProps);
-            }
-            else
-            {
-                this.InternalProperties(customProps);
-            }
+            this.InternalProperties(propertiesToSet);
         }
 
         #region IComparable implementation
