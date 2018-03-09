@@ -55,7 +55,7 @@ namespace Gj.Galaxy.Logic{
         public const byte Secret2 = 2;
     }
 
-    public enum EntitySynchronization:byte { Off, ReliableDeltaCompressed, Unreliable, UnreliableOnChange }
+    public enum EntitySynchronization:byte { Off, Reliable, Unreliable, UnreliableOnChange }
     public enum TransformParam:byte { Off, OnlyPosition, OnlyRotation, OnlyScale, PositionAndRotation, All }
     public enum RigidBodyParam:byte { Off, OnlyVelocity, OnlyAngularVelocity, All }
 

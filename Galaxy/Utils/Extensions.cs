@@ -55,6 +55,19 @@ namespace Gj.Galaxy.Utils{
             return Mathf.Abs(target - second) < floatDiff;
         }
 
+        public static int ConverInt(this object target){
+            return Convert.ToInt32(target);
+        }
+
+        public static Dictionary<string, object> ConverString(this IDictionary target){
+            var d = new Dictionary<string, object>();
+            foreach (object key in target.Keys)
+            {
+                d[key.ToString()] = target[key];
+            }
+            return d;
+        }
+
         public static void Merge(this IDictionary target, IDictionary addHash)
         {
             if (addHash == null || target.Equals(addHash))

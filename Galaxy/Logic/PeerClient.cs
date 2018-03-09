@@ -478,7 +478,7 @@ namespace Gj.Galaxy.Logic{
         }
 
         public static void Update(){
-            Debug.Log("update");
+            //Debug.Log("update");
             GameConnect.Update();
         }
 

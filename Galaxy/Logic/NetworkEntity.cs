@@ -149,17 +149,6 @@ namespace Gj.Galaxy.Logic{
             this.didAwake = true;
         }
 
-        public void TransferOwnership(NetworkPlayer newOwner, Action<NetworkPlayer> callback)
-        {
-            this.TransferOwnership(newOwner.Id, callback);
-        }
-
-        public void TransferOwnership(int newOwnerId, Action<NetworkPlayer> callback)
-        {
-            GameConnect.Ownership(this.entityId, newOwnerId, (obj) => callback(obj));
-            this.ownerId = newOwnerId;  // immediately switch ownership locally, to avoid more updates sent from this client.
-        }
-
         internal int OnTransferOwnership(int newOwnerId)
         {
             int _oldOwnerID = ownerId;

@@ -58,7 +58,9 @@ namespace Gj.Galaxy.Logic{
         {
             this.Delegate = Delegate;
             var player = new NetworkPlayer(true, -1, SceneConnect.player.UserId);
+            LocalClientId = -1;
             AddNewPlayer(player);
+            this.CustomProperties = new Hashtable();
         }
 
         internal void OnFail(string reason){
@@ -201,7 +203,7 @@ namespace Gj.Galaxy.Logic{
             //this.CheckMasterClient(actorId);
         }
 
-        internal void OnJoin(int actorId, string userId, Hashtable props)
+        internal void OnJoin(int actorId, string userId)
         {
             NetworkPlayer target;
             bool exist = false;
@@ -222,7 +224,7 @@ namespace Gj.Galaxy.Logic{
                 exist = true;
             }
 
-            target.InternalProperties(props);
+            //target.InternalProperties(props);
 
             target.IsInactive = true;// Delegate
             if (exist)
@@ -268,7 +270,7 @@ namespace Gj.Galaxy.Logic{
                 NetworkPlayer player = enumerator.Current;
                 player.IsReady = true;
             }
-            this.CheckMasterClient(0);
+            //this.CheckMasterClient(0);
             // Delegate
             Delegate.OnReadyAll();
         }

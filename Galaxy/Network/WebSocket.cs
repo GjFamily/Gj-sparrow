@@ -144,10 +144,8 @@ namespace Gj.Galaxy.Network
             };
             m_Socket.OnClose += (sender, e) =>
             {
-                if(m_IsConnected){
-                    m_IsConnected = false;
-                    close();
-                }
+                m_IsConnected = false;
+                close();
             };
             m_Socket.Connect();
             //var b = new byte[] { 0,1,2,3,4,5};
@@ -174,7 +172,6 @@ namespace Gj.Galaxy.Network
 
         public void Close()
         {
-            Debug.Log("Websocket close");
             m_IsConnected = false;
             if(m_Socket != null)
                 m_Socket.Close();

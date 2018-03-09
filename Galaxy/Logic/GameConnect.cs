@@ -19,12 +19,12 @@ namespace Gj.Galaxy.Logic
         public const byte ChangeGroups = 4;
         public const byte Sync = 5;
 
-        public const byte ReadyAll = 255;
-        public const byte AssignPlayer = 254;
-        public const byte SwitchMaster = 253;
-        public const byte Finish = 252;
-        public const byte Join = 251;
-        public const byte Leave = 250;
+        public const byte ReadyAll = 254;
+        public const byte AssignPlayer = 253;
+        public const byte SwitchMaster = 252;
+        public const byte Finish = 251;
+        public const byte Join = 250;
+        public const byte Leave = 249;
     }
     internal class SyncEvent
     {
@@ -83,8 +83,8 @@ namespace Gj.Galaxy.Logic
         public delegate GameObject OnInstanceDelegate(string prefabName, NetworkPlayer player);
 
         public OnFinishDelegate OnFinish;
-        public SceneInitDelegate SceneInit;
-        public PlayerInitDelegate PlayerInit;
+        public SceneInitDelegate OnSceneInit;
+        public PlayerInitDelegate OnPlayerInit;
         public OnStartDelegate OnStart;
         public OnLeaveGameDelegate OnLeaveGame;
         public OnOwnershipDelegate OnOwnership;
@@ -97,12 +97,12 @@ namespace Gj.Galaxy.Logic
 
         void GameListener.SceneInit(Action callback)
         {
-            if (SceneInit != null) SceneInit(callback);
+            if (OnSceneInit != null) OnSceneInit(callback);
         }
 
         void GameListener.PlayerInit(Action callback)
         {
-            if (PlayerInit != null) PlayerInit(callback);
+            if (OnPlayerInit != null) OnPlayerInit(callback);
         }
 
         void GameListener.OnStart()
@@ -261,14 +261,18 @@ namespace Gj.Galaxy.Logic
         }
         #region flow
         // SceneConnect收到游戏房间后，执行进入游戏
-        public static void JoinGame(string gameName, GameRoomListener d)
+        public static void JoinGame(string gameName, GameRoomListener listener)
         {
             if (stage != GameStage.None)
                 throw new Exception("Game is going");
+            if (listener == null)
+                throw new Exception("Game Room Delegate empty");
             // 需要设定玩家委托
             // 会触发游戏进入成功，开始接受相关房间事件
             // 玩家加入，玩家修改信息
-            Room = new GameRoom(d);
+            PeerClient.isMessageQueueRunning = true;
+
+            Room = new GameRoom(listener);
             n.Connect("game=" + gameName);
             stage = GameStage.Connect;
         }
@@ -278,7 +282,7 @@ namespace Gj.Galaxy.Logic
         {
             if (stage != GameStage.Join)
                 throw new Exception("game stage need join");
-            n.Emit(GameEvent.Ready, new object[] { Room.localPlayer.Id });
+            n.Emit(GameEvent.Ready, null);
             Room.localPlayer.IsReady = true;
             stage = GameStage.Ready;
             // 会发送给其他玩家准备完毕事件
@@ -286,19 +290,18 @@ namespace Gj.Galaxy.Logic
         }
 
         //开始进行场景同步，需要已经进入必要的scene中
-        public static void StartGame(GameListener d = null)
+        public static void StartGame(GameListener gameListener)
         {
-            if (Delegate == null && d == null)
-                throw new Exception("need Game Delegate");
+            if (gameListener == null)
+                throw new Exception("Game Delegate empty");
             if (!Room.localPlayer.IsReady)
                 throw new Exception("local player need ready");
             if (stage != GameStage.ReadyAll)
                 throw new Exception("game stage need join");
-            Delegate = d;
+            Delegate = gameListener;
             listener.ResetEntityOnSerialize();
             listener.LoadScene();
             //会触发场景初始化及玩家初始化，以及开始游戏
-            PeerClient.isMessageQueueRunning = true;
             stage = GameStage.InitScene;
             if (Room.isMasterClient)
             {
@@ -412,36 +415,37 @@ namespace Gj.Galaxy.Logic
                 Debug.Log("connect is error, need in room");
                 return null;
             }
+            Debug.Log(code);
             switch (code)
             {
                 case GameEvent.AssignPlayer:
-                    Room.OnEnter((int)param[0]);
+                    Room.OnEnter(param[0].ConverInt());
                     break;
                 case GameEvent.Ready:
-                    Room.OnReady((int)param[0]);
+                    Room.OnReady(param[0].ConverInt());
                     break;
                 case GameEvent.ReadyAll:
                     stage = GameStage.ReadyAll;
                     Room.OnReadyAll();
                     break;
                 case GameEvent.SwitchMaster:
-                    Room.SwitchMaster((int)param[0]);
+                    Room.SwitchMaster(param[0].ConverInt());
                     break;
                 case GameEvent.Sync:
-                    OnSync((byte)param[0], (int) param[1], MessagePackSerializer.Deserialize<Hashtable>((byte[])param[2]));
+                    OnSync((byte)param[0], param[1].ConverInt(), MessagePackSerializer.Deserialize<Hashtable>((byte[])param[2]));
                     break;
                 case GameEvent.Finish:
                     stage = GameStage.Finish;
                     Delegate.OnFinish(false, (Dictionary<string, object>)param[0]);
                     break;
                 case GameEvent.Join:
-                    Room.OnJoin((int)param[0], (string)param[1], (Hashtable)param[3]);
+                    Room.OnJoin(param[0].ConverInt(), (string)param[1]);
                     break;
                 case GameEvent.Leave:
-                    Room.OnLeave((int)param[0]);
+                    Room.OnLeave(param[0].ConverInt());
                     break;
                 default:
-                    Debug.Log("GameEvent is error:");
+                    Debug.Log("GameEvent is error:"+code);
                     break;
             }
             return null;
@@ -651,6 +655,11 @@ namespace Gj.Galaxy.Logic
 
         public static void RelationInstance(string prefabName, GameObject prefabGo, byte group, object[] data)
         {
+            if (!inRoom)
+            {
+                Debug.LogError("Failed to Instantiate prefab: " + prefabName + ". Client should be in a room. Current connectionStateDetailed: " + PeerClient.connected);
+                return ;
+            }
             // a scene object instantiated with network visibility has to contain a PhotonView
             if (prefabGo.GetComponent<NetworkEntity>() == null)
             {
@@ -1798,7 +1807,7 @@ namespace Gj.Galaxy.Logic
                     continue;
                 }
 
-                if (entity.synchronization == EntitySynchronization.ReliableDeltaCompressed || entity.mixedModeIsReliable)
+                if (entity.synchronization == EntitySynchronization.Reliable || entity.mixedModeIsReliable)
                 {
                     Hashtable groupHashtable = null;
                     bool found = this.dataPerGroupReliable.TryGetValue(entity.group, out groupHashtable);
@@ -1967,7 +1976,7 @@ namespace Gj.Galaxy.Logic
                 return currentValues;
             }
 
-            if (entity.synchronization == EntitySynchronization.ReliableDeltaCompressed)
+            if (entity.synchronization == EntitySynchronization.Reliable)
             {
                 object[] dataToSend = DeltaCompressionWrite(entity.lastOnSerializeDataSent, currentValues);
 
@@ -2024,7 +2033,7 @@ namespace Gj.Galaxy.Logic
                 return; // Ignore group
             }
 
-            if (entity.synchronization == EntitySynchronization.ReliableDeltaCompressed)
+            if (entity.synchronization == EntitySynchronization.Reliable)
             {
                 object[] uncompressed = this.DeltaCompressionRead(entity.lastOnSerializeDataReceived, data);
                 //LogObjectArray(uncompressed,"uncompressed ");

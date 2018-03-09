@@ -29,11 +29,7 @@ namespace Gj
                 Debug.LogError("GameObject has NetworkEntity Component");
                 return;
             }
-            var e = o.GetComponents<NetworkEntity>();
 
-            if(e.Length == 0){
-                GameConnect.RelationInstance("", o, 0, null);
-            }
             entity = o.AddComponent(typeof(NetworkEntity)) as NetworkEntity;
             entity.synchronization = sync;
             if(transform != TransformParam.Off){
@@ -48,6 +44,7 @@ namespace Gj
                 var ob = gameObservable as GameObservable;
                 if (ob != null) ob.SetSyncParam((byte)transform);
             }
+            GameConnect.RelationInstance(o.name, o, 0, null);
         }
     }
 }

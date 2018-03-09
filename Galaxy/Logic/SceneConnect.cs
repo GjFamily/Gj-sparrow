@@ -3,6 +3,7 @@ using System.Collections;
 using Gj.Galaxy.Network;
 using System.Collections.Generic;
 using System;
+using Gj.Galaxy.Utils;
 
 namespace Gj.Galaxy.Logic{
 
@@ -13,9 +14,9 @@ namespace Gj.Galaxy.Logic{
         public const byte LobbyExist = 2;
         public const byte TeamCreate = 3;
         public const byte PropChanged = 4;
-        public const byte TeamInvite = 255;
-        public const byte GameConnect = 254;
-        public const byte Prop = 253;
+        public const byte TeamInvite = 254;
+        public const byte GameConnect = 253;
+        public const byte Prop = 252;
     }
     public class LobbyType{
         public const string PVE = "pve";
@@ -142,12 +143,12 @@ namespace Gj.Galaxy.Logic{
                     break;
                 case SceneEvent.GameConnect:
                     if (OnJoinedGame != null)
-                        OnJoinedGame((string)param[1]);
+                        OnJoinedGame((string)param[0]);
                     break;
                 case SceneEvent.Prop:
                     var userId = (string)param[0];
                     player = new NetworkPlayer(true, -1, userId);
-                    player.AttachInfo((Dictionary<string, object>)param[1]);
+                    player.AttachInfo(((Dictionary<object, object>)param[1]).ConverString());
                     player.InternalProperties(new Hashtable((Dictionary<object, object>)param[2]));
                     break;
 

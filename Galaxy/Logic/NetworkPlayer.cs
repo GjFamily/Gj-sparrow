@@ -54,18 +54,6 @@ namespace Gj.Galaxy.Logic{
             this.UserId = userId;
         }
 
-        /// <summary>
-        /// Internally used to create players from event Join
-        /// </summary>
-        protected internal NetworkPlayer(bool isLocal, int actorId, Hashtable properties)
-        {
-            this.CustomProperties = new Hashtable();
-            this.IsLocal = isLocal;
-            this.actorId = actorId;
-
-            this.InternalProperties(properties);
-        }
-
         internal void AttachInfo(Dictionary<string, object> info)
         {
             this.info = info;

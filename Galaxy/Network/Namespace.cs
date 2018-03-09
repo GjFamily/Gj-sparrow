@@ -128,7 +128,8 @@ namespace Gj.Galaxy.Network
             data.type = DataType.Event;
             var d = new List<object>();
             d.Add(eb);
-            d.AddRange(param);
+            if(param != null)
+                d.AddRange(param);
             data.data = d.ToArray();
             packet(data);
         }

@@ -184,7 +184,7 @@ namespace Gj.Galaxy.Logic{
                     }
                 }
 
-                if (PeerClient.isMessageQueueRunning || (PeerClient.LocalTimestamp - PeerClient.LastTimestamp) > 10 * 1000)
+                if (!PeerClient.isMessageQueueRunning && (PeerClient.LocalTimestamp - PeerClient.LastTimestamp) > 10 * 1000)
                 {
                     //UnityEngine.Debug.Log(PeerClient.LocalTimestamp);
                     //UnityEngine.Debug.Log(PeerClient.LastTimestamp);
