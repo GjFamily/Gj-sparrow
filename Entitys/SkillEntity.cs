@@ -81,6 +81,7 @@ namespace Gj
 
         private void After()
         {
+            waiting = false;
             afterCast();
         }
 
@@ -121,13 +122,13 @@ namespace Gj
             {
                 startCast();
                 Cast();
+                sustaining = true;
                 Invoke("End", SkillInfo.sustainedTime);
             }
             else
             {
                 beforeCast();
                 Cast();
-                sustaining = true;
                 Invoke("After", SkillInfo.castTime);
             }
         }
