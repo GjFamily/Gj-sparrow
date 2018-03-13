@@ -95,11 +95,11 @@ namespace Gj.Galaxy.Logic{
             n.Emit(SceneEvent.LobbyExist, new object[] { }, (obj) => callback((bool)obj[0]));
         }
 
-        public static void SetCustomProperties(Hashtable customProperties)
+        public static void SetCustomProperties(Dictionary<string, object> customProperties)
         {
             if (customProperties == null)
             {
-                customProperties = new Hashtable();
+                customProperties = new Dictionary<string, object>();
                 foreach (object k in player.CustomProperties.Keys)
                 {
                     customProperties[(string)k] = null;
@@ -119,12 +119,12 @@ namespace Gj.Galaxy.Logic{
                     props.Remove(key);
                 }
             }
-            player.CustomProperties = new Hashtable();
+            player.CustomProperties = new Dictionary<string, object>();
             player.SetCustomProperties(props);
             emitPlayerProp(player.CustomProperties);
         }
 
-        internal static void emitPlayerProp(Hashtable prop){
+        internal static void emitPlayerProp(Dictionary<string, object> prop){
             n.Emit(SceneEvent.PropChanged, new object[] { prop });
         }
 
@@ -149,7 +149,7 @@ namespace Gj.Galaxy.Logic{
                     var userId = (string)param[0];
                     player = new NetworkPlayer(true, -1, userId);
                     player.AttachInfo(((Dictionary<object, object>)param[1]).ConverString());
-                    player.InternalProperties(new Hashtable((Dictionary<object, object>)param[2]));
+                    player.InternalProperties(((Dictionary<object, object>)param[2]).ConverString());
                     break;
 
             }

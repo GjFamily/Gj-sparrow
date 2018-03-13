@@ -38,7 +38,7 @@ namespace MessagePack.Resolvers
 
 namespace MessagePack.Internal
 {
-    internal static class BuiltinResolverGetFormatterHelper
+    public static class BuiltinResolverGetFormatterHelper
     {
         static readonly Dictionary<Type, object> formatterMap = new Dictionary<Type, object>()
         {

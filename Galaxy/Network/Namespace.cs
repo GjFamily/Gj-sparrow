@@ -156,7 +156,7 @@ namespace Gj.Galaxy.Network
         internal void dispatch(NsData data){
 
             Debug.Log("[ SOCKET ] accept Namespace:" + BitConverter.ToString(data.nsp==null?new byte[]{} : data.nsp) + "," + data.type + "," + state);
-            try{
+            //try{
                 switch (data.type)
                 {
                     case DataType.Connect:
@@ -220,9 +220,9 @@ namespace Gj.Galaxy.Network
                         Debug.Log(string.Format("Namespace accept error type:{0}", data.type));
                         break;
                 }
-            }catch(Exception e){
-                Debug.LogException(e);
-            }
+            //}catch(Exception e){
+            //    Debug.LogException(e);
+            //}
         }
 
         private bool CheckTypeMatch(ParameterInfo[] pArray, Type[] argTypes)

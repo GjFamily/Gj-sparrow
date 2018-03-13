@@ -22,7 +22,7 @@ namespace Gj.Galaxy.Network
         internal int time;
         internal Stream reader;
     }
-    internal enum DataType:byte{
+    public enum DataType:byte{
         Connect = 0,
         Disconnect,
         Event,
@@ -30,7 +30,7 @@ namespace Gj.Galaxy.Network
         Error,
         Protocol
     }
-    internal interface DataPacket {
+    public interface DataPacket {
         void Packet(Stream writer);
     }
     public enum CompressType:byte{
@@ -39,7 +39,7 @@ namespace Gj.Galaxy.Network
     }
 
     [MessagePackObject]
-    internal class AppPacket:DataPacket{
+    public class AppPacket:DataPacket{
         //[Key("id")]
         [Key(0)]
         public string appId;
@@ -71,7 +71,7 @@ namespace Gj.Galaxy.Network
     }
 
     [MessagePackObject]
-    internal class NsData{
+    public class NsData{
         //[Key("type")]
         [Key(0)]
         public DataType type;
@@ -88,7 +88,7 @@ namespace Gj.Galaxy.Network
 
     }
 
-    internal class NsDataArray:DataPacket{
+    public class NsDataArray:DataPacket{
         public NsData[] data;
         public void Packet(Stream writer)
         {

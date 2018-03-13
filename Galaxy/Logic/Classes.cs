@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Gj.Galaxy.Network;
+using System.IO;
 
 namespace Gj.Galaxy.Logic{
     public interface GameObservable
@@ -58,6 +59,7 @@ namespace Gj.Galaxy.Logic{
         bool write = false;
         private Queue<object> writeData;
         private object[] readData;
+        internal MemoryStream stream = new MemoryStream();
         internal byte currentItem = 0; //Used to track the next item to receive
 
         /// <summary>
@@ -115,12 +117,28 @@ namespace Gj.Galaxy.Logic{
             if (this.write)
             {
                 Debug.LogError("Error: you cannot read this stream that you are writing!");
-                return null;
             }
 
-            object obj = this.readData[this.currentItem];
+            var obj = this.readData[this.currentItem];
             this.currentItem++;
             return obj;
+        }
+
+        public T ReceiveNext<T>()
+        {
+            if (this.write)
+            {
+                Debug.LogError("Error: you cannot read this stream that you are writing!");
+            }
+
+            var obj = this.readData[this.currentItem];
+            this.currentItem++;
+            var formatter = SerializeTypes.GetFormatter<T>();
+            if(formatter == null){
+                return (T)obj;
+            }else{
+                return (T)formatter.Deserialize((byte[])obj);
+            }
         }
 
         /// <summary>Read next piece of data from the stream without advancing the "current" item.</summary>
@@ -129,7 +147,6 @@ namespace Gj.Galaxy.Logic{
             if (this.write)
             {
                 Debug.LogError("Error: you cannot read this stream that you are writing!");
-                return null;
             }
 
             object obj = this.readData[this.currentItem];
@@ -145,8 +162,25 @@ namespace Gj.Galaxy.Logic{
                 Debug.LogError("Error: you cannot write/send to this stream that you are reading!");
                 return;
             }
-
             this.writeData.Enqueue(obj);
+        }
+        public void SendNext<T>(T obj)
+        {
+            if (!this.write)
+            {
+                Debug.LogError("Error: you cannot write/send to this stream that you are reading!");
+                return;
+            }
+            var formatter = SerializeTypes.GetFormatter<T>();
+            if (formatter == null)
+            {
+                this.writeData.Enqueue(obj);
+            }
+            else
+            {
+                formatter.Serialize(stream, obj);
+                this.writeData.Enqueue(stream.GetBuffer());
+            }
         }
 
         /// <summary>Turns the stream into a new object[].</summary>
@@ -158,133 +192,24 @@ namespace Gj.Galaxy.Logic{
         /// <summary>
         /// Will read or write the value, depending on the stream's isWriting value.
         /// </summary>
-        public void Serialize(ref bool myBool)
-        {
-            if (this.write)
-            {
-                this.writeData.Enqueue(myBool);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    myBool = (bool)this.readData[currentItem];
-                    this.currentItem++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Will read or write the value, depending on the stream's isWriting value.
-        /// </summary>
-        public void Serialize(ref int myInt)
-        {
-            if (write)
-            {
-                this.writeData.Enqueue(myInt);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    myInt = (int)this.readData[currentItem];
-                    currentItem++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Will read or write the value, depending on the stream's isWriting value.
-        /// </summary>
-        public void Serialize(ref string value)
-        {
-            if (write)
-            {
-                this.writeData.Enqueue(value);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    value = (string)this.readData[currentItem];
-                    currentItem++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Will read or write the value, depending on the stream's isWriting value.
-        /// </summary>
-        public void Serialize(ref char value)
-        {
-            if (write)
-            {
-                this.writeData.Enqueue(value);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    value = (char)this.readData[currentItem];
-                    currentItem++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Will read or write the value, depending on the stream's isWriting value.
-        /// </summary>
-        public void Serialize(ref short value)
-        {
-            if (write)
-            {
-                this.writeData.Enqueue(value);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    value = (short)this.readData[currentItem];
-                    currentItem++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Will read or write the value, depending on the stream's isWriting value.
-        /// </summary>
-        public void Serialize(ref float obj)
-        {
-            if (write)
-            {
-                this.writeData.Enqueue(obj);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    obj = (float)this.readData[currentItem];
-                    currentItem++;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Will read or write the value, depending on the stream's isWriting value.
-        /// </summary>
         public void Serialize(ref NetworkPlayer obj)
         {
-            if (write)
+            var formatter = PlayerSerializeFormatter.instance;
+            formatter.Serialize(stream, obj);
+            this.writeData.Enqueue(stream.GetBuffer());
+        }
+
+        public bool DeSerialize(out NetworkPlayer obj)
+        {
+            var formatter = PlayerSerializeFormatter.instance;
+            if (this.readData.Length > currentItem)
             {
-                this.writeData.Enqueue(obj);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    obj = (NetworkPlayer)this.readData[currentItem];
-                    currentItem++;
-                }
+                obj = (NetworkPlayer)formatter.Deserialize((byte[])this.readData[currentItem]);
+                currentItem++;
+                return true;
+            }else{
+                obj = new NetworkPlayer(false, 0, "");
+                return false;
             }
         }
 
@@ -293,17 +218,22 @@ namespace Gj.Galaxy.Logic{
         /// </summary>
         public void Serialize(ref Vector3 obj)
         {
-            if (write)
+            var formatter = Vector3SerializeFormatter.instance;
+            formatter.Serialize(stream, obj);
+            this.writeData.Enqueue(stream.GetBuffer());
+        }
+
+        public bool DeSerialize(out Vector3 obj)
+        {
+            var formatter = Vector3SerializeFormatter.instance;
+            if (this.readData.Length > currentItem)
             {
-                this.writeData.Enqueue(obj);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    obj = (Vector3)this.readData[currentItem];
-                    currentItem++;
-                }
+                obj = (Vector3)formatter.Deserialize((byte[])this.readData[currentItem]);
+                currentItem++;
+                return true;
+            }else{
+                obj = Vector3.zero;
+                return false;
             }
         }
 
@@ -312,17 +242,22 @@ namespace Gj.Galaxy.Logic{
         /// </summary>
         public void Serialize(ref Vector2 obj)
         {
-            if (write)
+            var formatter = Vector2SerializeFormatter.instance;
+            formatter.Serialize(stream, obj);
+            this.writeData.Enqueue(stream.GetBuffer());
+        }
+
+        public bool DeSerialize(out Vector2 obj)
+        {
+            var formatter = Vector2SerializeFormatter.instance;
+            if (this.readData.Length > currentItem)
             {
-                this.writeData.Enqueue(obj);
-            }
-            else
-            {
-                if (this.readData.Length > currentItem)
-                {
-                    obj = (Vector2)this.readData[currentItem];
-                    currentItem++;
-                }
+                obj = (Vector2)formatter.Deserialize((byte[])this.readData[currentItem]);
+                currentItem++;
+                return true;
+            }else{
+                obj = Vector2.zero;
+                return false;
             }
         }
 
@@ -331,17 +266,44 @@ namespace Gj.Galaxy.Logic{
         /// </summary>
         public void Serialize(ref Quaternion obj)
         {
-            if (write)
+            var formatter = QuaternionSerializeFormatter.instance;
+            formatter.Serialize(stream, obj);
+            this.writeData.Enqueue(stream.GetBuffer());
+        }
+
+        public bool DeSerialize(out Quaternion obj)
+        {
+            var formatter = QuaternionSerializeFormatter.instance;
+            if (this.readData.Length > currentItem)
             {
-                this.writeData.Enqueue(obj);
+                obj = (Quaternion)formatter.Deserialize((byte[])this.readData[currentItem]);
+                currentItem++;
+                return true;
+            }else{
+                obj = new Quaternion();
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Will read or write the value, depending on the stream's isWriting value.
+        /// </summary>
+        public void Serialize<T>(ref T obj)
+        {
+            this.writeData.Enqueue(obj);
+        }
+
+        public bool DeSerialize<T>(ref T obj)
+        {
+            if (this.readData.Length > currentItem)
+            {
+                obj = (T)this.readData[this.currentItem];
+                this.currentItem++;
+                return true;
             }
             else
             {
-                if (this.readData.Length > currentItem)
-                {
-                    obj = (Quaternion)this.readData[currentItem];
-                    currentItem++;
-                }
+                return false;
             }
         }
     }

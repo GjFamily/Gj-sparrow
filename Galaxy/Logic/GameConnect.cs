@@ -63,11 +63,11 @@ namespace Gj.Galaxy.Logic
     public interface GameRoomListener{
         void OnEnter();
         void OnFail(string reason);
-        void OnRoomChange(Hashtable props);
+        void OnRoomChange(Dictionary<string, object> props);
         void OnPlayerJoin(NetworkPlayer player);
         void OnPlayerLeave(NetworkPlayer player);
         void OnPlayerRejoin(NetworkPlayer player);
-        void OnPlayerChange(NetworkPlayer player, Hashtable props);
+        void OnPlayerChange(NetworkPlayer player, Dictionary<string, object> props);
         void OnReadyPlayer(NetworkPlayer player);
         void OnReadyAll();
     }
@@ -130,11 +130,11 @@ namespace Gj.Galaxy.Logic
     {
         public delegate void OnEnterDelegate();
         public delegate void OnFailDelegate(string reason);
-        public delegate void OnRoomChangeDelegate(Hashtable props);
+        public delegate void OnRoomChangeDelegate(Dictionary<string, object> props);
         public delegate void OnPlayerJoinDelegate(NetworkPlayer player);
         public delegate void OnPlayerLeaveDelegate(NetworkPlayer player);
         public delegate void OnPlayerRejoinDelegate(NetworkPlayer player);
-        public delegate void OnPlayerChangeDelegate(NetworkPlayer player, Hashtable props);
+        public delegate void OnPlayerChangeDelegate(NetworkPlayer player, Dictionary<string, object> props);
         public delegate void OnReadyPlayerDelegate(NetworkPlayer player);
         public delegate void OnReadyAllDelegate();
 
@@ -158,7 +158,7 @@ namespace Gj.Galaxy.Logic
             if (OnFail != null) OnFail(reason);
         }
 
-        void GameRoomListener.OnRoomChange(Hashtable props)
+        void GameRoomListener.OnRoomChange(Dictionary<string, object> props)
         {
             if (OnRoomChange != null) OnRoomChange(props);
         }
@@ -178,7 +178,7 @@ namespace Gj.Galaxy.Logic
             if (OnPlayerRejoin != null) OnPlayerRejoin(player);
         }
 
-        void GameRoomListener.OnPlayerChange(NetworkPlayer player, Hashtable props)
+        void GameRoomListener.OnPlayerChange(NetworkPlayer player, Dictionary<string, object> props)
         {
             if (OnPlayerChange != null) OnPlayerChange(player, props);
         }
@@ -306,12 +306,12 @@ namespace Gj.Galaxy.Logic
             if (Room.isMasterClient)
             {
                 Delegate.SceneInit(()=>{
-                    Hashtable valueScene = new Hashtable();
+                    Dictionary<byte, object> valueScene = new Dictionary<byte, object>();
                     valueScene[0] = lastUsedViewSubIdScene;
                     EmitSync(SyncEvent.Init, 0, valueScene);
                     stage = GameStage.InitPlayer;
                     Delegate.PlayerInit(()=>{
-                        Hashtable value = new Hashtable();
+                        Dictionary<byte, object> value = new Dictionary<byte, object>();
                         value[0] = lastUsedViewSubId;
                         EmitSync(SyncEvent.Init, Room.localPlayer.Id, value);
                         Room.OnInit(Room.localPlayer.Id, lastUsedViewSubId);
@@ -322,7 +322,7 @@ namespace Gj.Galaxy.Logic
             }else{
                 stage = GameStage.InitPlayer;
                 Delegate.PlayerInit(() => {
-                    Hashtable value = new Hashtable();
+                    Dictionary<byte, object> value = new Dictionary<byte, object>();
                     value[0] = lastUsedViewSubId;
                     EmitSync(SyncEvent.Init, Room.localPlayer.Id, value);
                     Room.OnInit(Room.localPlayer.Id, lastUsedViewSubId);
@@ -415,10 +415,11 @@ namespace Gj.Galaxy.Logic
                 Debug.Log("connect is error, need in room");
                 return null;
             }
-            Debug.Log(code);
+            //Debug.Log(code);
             switch (code)
             {
                 case GameEvent.AssignPlayer:
+                    stage = GameStage.Join;
                     Room.OnEnter(param[0].ConverInt());
                     break;
                 case GameEvent.Ready:
@@ -432,7 +433,7 @@ namespace Gj.Galaxy.Logic
                     Room.SwitchMaster(param[0].ConverInt());
                     break;
                 case GameEvent.Sync:
-                    OnSync((byte)param[0], param[1].ConverInt(), MessagePackSerializer.Deserialize<Hashtable>((byte[])param[2]));
+                    OnSync((byte)param[0], param[1].ConverInt(), MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[2]));
                     break;
                 case GameEvent.Finish:
                     stage = GameStage.Finish;
@@ -451,15 +452,15 @@ namespace Gj.Galaxy.Logic
             return null;
         }
 
-        private static void EmitSync(byte code, int sendId, Hashtable value, int group = 0, Boolean reliable = true)
+        private static void EmitSync(byte code, int sendId, Dictionary<byte, object> value, int group = 0, Boolean reliable = true)
         {
             n.Emit(GameEvent.Sync, new object[] { code, sendId, MessagePackSerializer.Serialize(value), 0, group });
         }
-        private static void EmitSync(byte code, int sendId, Hashtable value, int target, int group = 0, Boolean reliable = true)
+        private static void EmitSync(byte code, int sendId, Dictionary<byte, object> value, int target, int group = 0, Boolean reliable = true)
         {
             n.Emit(GameEvent.Sync, new object[] { code, sendId, MessagePackSerializer.Serialize(value), target, group });
         }
-        private void OnSync(byte code, int sendId, Hashtable value)
+        private void OnSync(byte code, int sendId, Dictionary<byte, object> value)
         {
             switch (code)
             {
@@ -467,37 +468,37 @@ namespace Gj.Galaxy.Logic
                     Room.OnInit(sendId, (int)value[0]);
                     break;
                 case SyncEvent.RPC:
-                    listener.OnRpc(sendId, (Hashtable)value);
+                    listener.OnRpc(sendId, value);
                     break;
                 case SyncEvent.Instance:
-                    listener.OnInstance(sendId, (Hashtable)value, null);
+                    listener.OnInstance(sendId, value, null);
                     break;
                 case SyncEvent.Destory:
                     listener.OnDestory((int)value[0], (int)value[1]);
                     break;
                 case SyncEvent.Serialize:
-                    listener.OnSerialize(sendId, (Hashtable)value);
+                    listener.OnSerialize(sendId, (Dictionary<byte, object>)value);
                     break;
-                case SyncEvent.ChangeRoom:
-                    Room.OnChangeRoom(sendId, (Hashtable)value);
-                    break;
-                case SyncEvent.ChangePlayer:
-                    Room.OnChangePlayer(sendId, (Hashtable)value);
-                    break;
+                //case SyncEvent.ChangeRoom:
+                //    Room.OnChangeRoom(sendId, value.ConverString());
+                //    break;
+                //case SyncEvent.ChangePlayer:
+                    //Room.OnChangePlayer(sendId, value.ConverString());
+                    //break;
                 default:
                     Debug.Log("GameEvent is error:");
                     break;
             }
             
         }
-        public static void EmitRoom(Hashtable props)
+        public static void EmitRoom(Dictionary<string, object> props)
         {
-            EmitSync(SyncEvent.ChangeRoom, Room.localPlayer.Id, props);
+            //EmitSync(SyncEvent.ChangeRoom, Room.localPlayer.Id, props);
         }
 
-        public static void EmitPlayer(Hashtable props)
+        public static void EmitPlayer(Dictionary<string, object> props)
         {
-            EmitSync(SyncEvent.ChangePlayer, Room.localPlayer.Id, props);
+            //EmitSync(SyncEvent.ChangePlayer, Room.localPlayer.Id, props);
         }
 
         public static void Ownership(int entityId, Action<NetworkPlayer> callback)
@@ -593,7 +594,7 @@ namespace Gj.Galaxy.Logic
             }
 
             // Send to others, create info
-            Hashtable instantiateEvent = listener.EmitInstantiate(Room.localPlayer.Id, prefabName, position, rotation, group, entityIds, data, false);
+            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(Room.localPlayer.Id, prefabName, position, rotation, group, entityIds, data, false);
 
             // Instantiate the GO locally (but the same way as if it was done via event). This will also cache the instantiationId
             return listener.OnInstance(Room.localPlayer.Id, instantiateEvent, prefabGo);
@@ -647,7 +648,7 @@ namespace Gj.Galaxy.Logic
             }
 
             // Send to others, create info
-            Hashtable instantiateEvent = listener.EmitInstantiate(0, prefabName, position, rotation, group, entityIds, data, true);
+            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(0, prefabName, position, rotation, group, entityIds, data, true);
 
             // Instantiate the GO locally (but the same way as if it was done via event). This will also cache the instantiationId
             return listener.OnInstance(0, instantiateEvent, prefabGo);
@@ -688,7 +689,7 @@ namespace Gj.Galaxy.Logic
             {
                 
             }
-            Hashtable instantiateEvent = listener.EmitInstantiate(playerId, prefabName, prefabGo.transform.position, prefabGo.transform.rotation, group, entityIds, data, true);
+            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(playerId, prefabName, prefabGo.transform.position, prefabGo.transform.rotation, group, entityIds, data, true);
             listener.OnInstance(playerId, instantiateEvent, prefabGo);
         }
 
@@ -883,8 +884,8 @@ namespace Gj.Galaxy.Logic
 
         private readonly StreamBuffer readStream = new StreamBuffer(false, null);    // only used in OnSerializeRead()
         private readonly StreamBuffer pStream = new StreamBuffer(true, null);        // only used in OnSerializeWrite()
-        private readonly Dictionary<int, Hashtable> dataPerGroupReliable = new Dictionary<int, Hashtable>();    // only used in RunViewUpdate()
-        private readonly Dictionary<int, Hashtable> dataPerGroupUnreliable = new Dictionary<int, Hashtable>();  // only used in RunViewUpdate()
+        private readonly Dictionary<int, Dictionary<byte, object>> dataPerGroupReliable = new Dictionary<int, Dictionary<byte, object>>();    // only used in RunViewUpdate()
+        private readonly Dictionary<int, Dictionary<byte, object>> dataPerGroupUnreliable = new Dictionary<int, Dictionary<byte, object>>();  // only used in RunViewUpdate()
 
         static internal short currentLevelPrefix = 0;
 
@@ -911,13 +912,13 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        internal Hashtable EmitInstantiate(int playerId, string prefabName, Vector3 position, Quaternion rotation, byte group, int[] viewIDs, object[] data, bool isGlobalObject)
+        internal Dictionary<byte, object> EmitInstantiate(int playerId, string prefabName, Vector3 position, Quaternion rotation, byte group, int[] viewIDs, object[] data, bool isGlobalObject)
         {
             // first viewID is now also the gameobject's instantiateId
             int instantiateId = viewIDs[0];   // LIMITS PHOTONVIEWS&PLAYERS
 
             //TODO: reduce hashtable key usage by using a parameter array for the various values
-            Hashtable instantiateEvent = new Hashtable(); // This players info is sent via ActorID
+            Dictionary<byte, object> instantiateEvent = new Dictionary<byte, object>(); // This players info is sent via ActorID
             instantiateEvent[(byte)0] = prefabName;
 
             if (position != Vector3.zero)
@@ -960,7 +961,7 @@ namespace Gj.Galaxy.Logic
 
         private void EmitDestroyOfInstantiate(int instantiateId, int creatorId)
         {
-            Hashtable value = new Hashtable();
+            Dictionary<byte, object> value = new Dictionary<byte, object>();
             value[0] = 1;
             value[1] = instantiateId;
             EmitSync(SyncEvent.Destory, creatorId, value);
@@ -968,7 +969,7 @@ namespace Gj.Galaxy.Logic
 
         private void EmitDestroyOfPlayer(int actorNr)
         {
-            Hashtable value = new Hashtable();
+            Dictionary<byte, object> value = new Dictionary<byte, object>();
             value[0] = 2;
             value[1] = actorNr;
             EmitSync(SyncEvent.Destory, 0, value);
@@ -976,7 +977,7 @@ namespace Gj.Galaxy.Logic
 
         private void EmitDestroyOfAll()
         {
-            Hashtable value = new Hashtable();
+            Dictionary<byte, object> value = new Dictionary<byte, object>();
             value[0] = 0;
             value[1] = 0;
             EmitSync(SyncEvent.Destory, 0, value);
@@ -1031,7 +1032,7 @@ namespace Gj.Galaxy.Logic
         /// <summary>
         /// Executes a received RPC event
         /// </summary>
-        protected internal void OnRpc(int senderID, Hashtable rpcData)
+        protected internal void OnRpc(int senderID, Dictionary<byte, object> rpcData)
         {
             if (rpcData == null || !rpcData.ContainsKey((byte)0))
             {
@@ -1257,7 +1258,7 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        internal GameObject OnInstance(int playerId, Hashtable evData, GameObject resourceGameObject)
+        internal GameObject OnInstance(int playerId, Dictionary<byte, object> evData, GameObject go)
         {
             //var player = Room.GetPlayerWithId(playerId);
             // some values always present:
@@ -1321,7 +1322,7 @@ namespace Gj.Galaxy.Logic
             }
 
             // load prefab, if it wasn't loaded before (calling methods might do this)
-            if (resourceGameObject == null)
+            if (go == null)
             {
                 Room.OnInstance(playerId);
                 //if (!UsePrefabCache || !PrefabCache.TryGetValue(prefabName, out resourceGameObject))
@@ -1332,9 +1333,9 @@ namespace Gj.Galaxy.Logic
                 //        PrefabCache.Add(prefabName, resourceGameObject);
                 //    }
                 //}
-                resourceGameObject = Delegate.OnInstance(prefabName, player);
+                go = Delegate.OnInstance(prefabName, player);
 
-                if (resourceGameObject == null)
+                if (go == null)
                 {
                     Debug.LogError("error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
                     return null;
@@ -1342,7 +1343,7 @@ namespace Gj.Galaxy.Logic
             }
 
             // now modify the loaded "blueprint" object before it becomes a part of the scene (by instantiating it)
-            NetworkEntity[] resourcePVs = resourceGameObject.GetEntitysInChildren();
+            NetworkEntity[] resourcePVs = go.GetEntitysInChildren();
             if (resourcePVs.Length != viewsIDs.Length)
             {
                 throw new Exception("Error in Instantiation! The resource's Entity count is not the same as in incoming data.");
@@ -1358,23 +1359,23 @@ namespace Gj.Galaxy.Logic
                 resourcePVs[i].isRuntimeInstantiated = true;
             }
 
-            this.StoreInstantiationData(instantiationId, incomingInstantiationData);
+            //this.StoreInstantiationData(instantiationId, incomingInstantiationData);
 
-            // load the resource and set it's values before instantiating it:
-            GameObject go = (GameObject)GameObject.Instantiate(resourceGameObject, position, rotation);
+            //// load the resource and set it's values before instantiating it:
+            //GameObject go = (GameObject)GameObject.Instantiate(resourceGameObject, position, rotation);
 
-            for (int i = 0; i < viewsIDs.Length; i++)
-            {
-                // NOTE instantiating the loaded resource will keep the viewID but would not copy instantiation data, so it's set below
-                // so we only set the viewID and instantiationId now. the instantiationData can be fetched
-                resourcePVs[i].entityId = 0;
-                resourcePVs[i].prefix = -1;
-                resourcePVs[i].prefixBackup = -1;
-                resourcePVs[i].instantiationId = -1;
-                resourcePVs[i].isRuntimeInstantiated = false;
-            }
+            //for (int i = 0; i < viewsIDs.Length; i++)
+            //{
+            //    // NOTE instantiating the loaded resource will keep the viewID but would not copy instantiation data, so it's set below
+            //    // so we only set the viewID and instantiationId now. the instantiationData can be fetched
+            //    resourcePVs[i].entityId = 0;
+            //    resourcePVs[i].prefix = -1;
+            //    resourcePVs[i].prefixBackup = -1;
+            //    resourcePVs[i].instantiationId = -1;
+            //    resourcePVs[i].isRuntimeInstantiated = false;
+            //}
 
-            this.RemoveInstantiationData(instantiationId);
+            //this.RemoveInstantiationData(instantiationId);
 
             return go;
         }
@@ -1622,7 +1623,7 @@ namespace Gj.Galaxy.Logic
 
 
             //ts: changed RPCs to a one-level hashtable as described in internal.txt
-            Hashtable rpcEvent = new Hashtable();
+            Dictionary<byte, object> rpcEvent = new Dictionary<byte, object>();
             rpcEvent[(byte)0] = (int)entity.entityId; // LIMITS NETWORKVIEWS&PLAYERS
             if (entity.prefix > 0)
             {
@@ -1736,18 +1737,16 @@ namespace Gj.Galaxy.Logic
 
         private void UpdateEntity()
         {
-            if (PeerClient.offlineMode || stage == GameStage.Start)
+            if (PeerClient.offlineMode || stage != GameStage.Start)
             {
                 return;
             }
 
             // no need to send OnSerialize messages while being alone (these are not buffered anyway)
-            if (Room.mActors.Count <= 1)
-            {
-#if !PHOTON_DEVELOP
-                return;
-#endif
-            }
+            //if (Room.mActors.Count <= 1)
+            //{
+            //    return;
+            //}
 
 
             /* Format of the data hashtable:
@@ -1809,11 +1808,11 @@ namespace Gj.Galaxy.Logic
 
                 if (entity.synchronization == EntitySynchronization.Reliable || entity.mixedModeIsReliable)
                 {
-                    Hashtable groupHashtable = null;
+                    Dictionary<byte, object> groupHashtable = null;
                     bool found = this.dataPerGroupReliable.TryGetValue(entity.group, out groupHashtable);
                     if (!found)
                     {
-                        groupHashtable = new Hashtable(ObjectsInOneUpdate);
+                        groupHashtable = new Dictionary<byte, object>(ObjectsInOneUpdate);
                         this.dataPerGroupReliable[entity.group] = groupHashtable;
                     }
 
@@ -1838,11 +1837,11 @@ namespace Gj.Galaxy.Logic
                 }
                 else
                 {
-                    Hashtable groupHashtable = null;
+                    Dictionary<byte, object> groupHashtable = null;
                     bool found = this.dataPerGroupUnreliable.TryGetValue(entity.group, out groupHashtable);
                     if (!found)
                     {
-                        groupHashtable = new Hashtable(ObjectsInOneUpdate);
+                        groupHashtable = new Dictionary<byte, object>(ObjectsInOneUpdate);
                         this.dataPerGroupUnreliable[entity.group] = groupHashtable;
                     }
 
@@ -1885,7 +1884,7 @@ namespace Gj.Galaxy.Logic
             foreach (int groupId in this.dataPerGroupReliable.Keys)
             {
                 //options.InterestGroup = (byte)groupId;
-                Hashtable groupHashtable = this.dataPerGroupReliable[groupId];
+                Dictionary<byte, object> groupHashtable = this.dataPerGroupReliable[groupId];
                 if (groupHashtable.Count == 0)
                 {
                     continue;
@@ -1903,7 +1902,7 @@ namespace Gj.Galaxy.Logic
             foreach (int groupId in this.dataPerGroupUnreliable.Keys)
             {
                 //options.InterestGroup = (byte)groupId;
-                Hashtable groupHashtable = this.dataPerGroupUnreliable[groupId];
+                Dictionary<byte, object> groupHashtable = this.dataPerGroupUnreliable[groupId];
                 if (groupHashtable.Count == 0)
                 {
                     continue;
@@ -1987,7 +1986,7 @@ namespace Gj.Galaxy.Logic
 
             return null;
         }
-        private void OnSerialize(int actorId, Hashtable serializeData)
+        private void OnSerialize(int actorId, Dictionary<byte, object> serializeData)
         {
             var originatingPlayer = Room.GetPlayerWithId(actorId);
             short remoteLevelPrefix = -1;
@@ -2176,7 +2175,7 @@ namespace Gj.Galaxy.Logic
         #region scene
         internal protected void LoadScene()
         {
-            Hashtable setScene = new Hashtable();
+            Dictionary<string, object> setScene = new Dictionary<string, object>();
             setScene[CurrentSceneProperty] = (string)SceneManagerHelper.ActiveSceneName;
 
             Room.InternalProperties(setScene);

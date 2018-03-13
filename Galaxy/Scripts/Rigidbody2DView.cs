@@ -35,14 +35,14 @@ namespace Gj.Galaxy.Logic{
             switch (this.rigidBodyParam)
             {
                 case RigidBodyParam.All:
-                    m_Body.velocity = (Vector2)stream.ReceiveNext();
+                    m_Body.velocity = stream.ReceiveNext<Vector2>();
                     m_Body.angularVelocity = (float)stream.ReceiveNext();
                     break;
                 case RigidBodyParam.OnlyAngularVelocity:
                     m_Body.angularVelocity = (float)stream.ReceiveNext();
                     break;
                 case RigidBodyParam.OnlyVelocity:
-                    m_Body.velocity = (Vector2)stream.ReceiveNext();
+                    m_Body.velocity = stream.ReceiveNext<Vector2>();
                     break;
             }
         }

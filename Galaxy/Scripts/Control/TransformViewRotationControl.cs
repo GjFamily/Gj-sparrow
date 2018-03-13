@@ -33,12 +33,12 @@ namespace Gj.Galaxy.Logic{
 
         public void OnSerialize(Quaternion currentRotation, StreamBuffer stream, MessageInfo info)
         {
-            stream.SendNext(currentRotation);
+            stream.Serialize(ref currentRotation);
             m_NetworkRotation = currentRotation;
         }
 
         public void OnDeserialize(Quaternion currentRotation, StreamBuffer stream, MessageInfo info){
-            m_NetworkRotation = (Quaternion)stream.ReceiveNext();
+            stream.DeSerialize(out m_NetworkRotation);
         }
     }
 }

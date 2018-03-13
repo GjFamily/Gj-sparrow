@@ -71,17 +71,17 @@ namespace Gj.Galaxy.Network{
         protected static Dictionary<CompressType, Func<Stream, Stream>> readerHandle = new Dictionary<CompressType, Func<Stream, Stream>>();
         protected static Dictionary<CompressType, Func<Stream, Stream>> writerHandle = new Dictionary<CompressType, Func<Stream, Stream>>();
         static Client(){
-            //MessagePack.Resolvers.CompositeResolver.RegisterAndSetAsDefault(
-            //    // use generated resolver first, and combine many other generated/custom resolvers
-            //    //MessagePack.Resolvers.GeneratedResolver.Instance,
-            //    //MessagePack.UnsafeExtensions.UnityBlitResolver.Instance,
-            //    MessagePack.Unity.UnityResolver.Instance,
+            MessagePack.Resolvers.CompositeResolver.RegisterAndSetAsDefault(
+                // use generated resolver first, and combine many other generated/custom resolvers
+                MessagePack.Resolvers.GeneratedResolver.Instance,
+                //MessagePack.UnsafeExtensions.UnityBlitResolver.Instance,
+                MessagePack.Unity.UnityResolver.Instance,
 
-            //    // finally, use builtin/primitive resolver(don't use StandardResolver, it includes dynamic generation)
-            //    MessagePack.Resolvers.BuiltinResolver.Instance,
-            //    MessagePack.Resolvers.AttributeFormatterResolver.Instance,
-            //    MessagePack.Resolvers.PrimitiveObjectResolver.Instance
-            //);
+                // finally, use builtin/primitive resolver(don't use StandardResolver, it includes dynamic generation)
+                MessagePack.Resolvers.BuiltinResolver.Instance,
+                MessagePack.Resolvers.AttributeFormatterResolver.Instance,
+                MessagePack.Resolvers.PrimitiveObjectResolver.Instance
+            );
             readerHandle[CompressType.Snappy] = (Stream arg1) =>
             {
                 return new SnappyStream(arg1, CompressionMode.Decompress);

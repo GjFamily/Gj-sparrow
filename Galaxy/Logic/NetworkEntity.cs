@@ -64,7 +64,7 @@ namespace Gj.Galaxy.Logic{
 
         public OwnershipOption ownershipTransfer = OwnershipOption.Fixed;
 
-        public List<Component> ObservedComponents;
+        public List<Component> ObservedComponents = new List<Component>();
 
         [SerializeField]
         private int idField = 0;
@@ -124,7 +124,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return (this.ownerId == SceneConnect.player.Id) || (!this.isOwnerActive && GameConnect.isMasterClient);
+                return (this.ownerId == GameConnect.Room.LocalClientId) || (!this.isOwnerActive && GameConnect.isMasterClient);
             }
         }
 

@@ -37,12 +37,12 @@ namespace Gj.Galaxy.Logic{
 
         public void OnSerialize(Vector3 currentScale, StreamBuffer stream, MessageInfo info)
         {
-            stream.SendNext(currentScale);
+            stream.Serialize(ref currentScale);
             m_NetworkScale = currentScale;
         }
 
         public void OnDeserialize(Vector3 currentScale, StreamBuffer stream, MessageInfo info){
-            m_NetworkScale = (Vector3)stream.ReceiveNext();
+            stream.DeSerialize(out m_NetworkScale);
         }
     }
 }

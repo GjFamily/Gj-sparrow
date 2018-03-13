@@ -17,7 +17,7 @@ namespace Gj.Galaxy.Logic{
         public NetworkPlayer[] mOtherPlayerListCopy = new NetworkPlayer[0];
         public NetworkPlayer[] mPlayerListCopy = new NetworkPlayer[0];
 
-        public Hashtable CustomProperties { get; internal set; }
+        public Dictionary<string, object> CustomProperties { get; internal set; }
         public int number;
         public int initNumber;
 
@@ -60,21 +60,21 @@ namespace Gj.Galaxy.Logic{
             var player = new NetworkPlayer(true, -1, SceneConnect.player.UserId);
             LocalClientId = -1;
             AddNewPlayer(player);
-            this.CustomProperties = new Hashtable();
+            this.CustomProperties = new Dictionary<string, object>();
         }
 
         internal void OnFail(string reason){
             this.Delegate.OnFail(reason);
         }
 
-        public void SetCustomProperties(Hashtable propertiesToSet)
+        public void SetCustomProperties(Dictionary<string, object> propertiesToSet)
         {
             if (propertiesToSet == null)
             {
                 return;
             }
 
-            Hashtable customProps = propertiesToSet;
+            Dictionary<string, object> customProps = propertiesToSet;
 
             if (!PeerClient.offlineMode)
             {
@@ -86,7 +86,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        internal void InternalProperties(Hashtable properties)
+        internal void InternalProperties(Dictionary<string, object> properties)
         {
             if (properties == null || properties.Count == 0 || this.CustomProperties.Equals(properties))
             {
@@ -164,7 +164,7 @@ namespace Gj.Galaxy.Logic{
             return player;
         }
 
-        private Hashtable GetLocalActorProperties()
+        private Dictionary<string, object> GetLocalActorProperties()
         {
             NetworkPlayer player = localPlayer;
             if (player != null)
@@ -239,13 +239,13 @@ namespace Gj.Galaxy.Logic{
                 });
             }
         }
-        internal void OnChangeRoom(int sendId, Hashtable roomProperties)
+        internal void OnChangeRoom(int sendId, Dictionary<string, object> roomProperties)
         {
             InternalProperties(roomProperties);
             Delegate.OnRoomChange(roomProperties);
         }
 
-        internal void OnChangePlayer(int actorId, Hashtable playerProperties)
+        internal void OnChangePlayer(int actorId, Dictionary<string, object> playerProperties)
         {
             NetworkPlayer player = GetPlayerWithId(actorId);
             player.InternalProperties(playerProperties);

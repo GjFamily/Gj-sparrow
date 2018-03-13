@@ -22,7 +22,7 @@ namespace Gj.Galaxy.Logic{
         public bool IsInactive { get; set; }    // needed for rejoins
         public bool IsReady { get; set; }    // needed for rejoins
 
-        public Hashtable CustomProperties { get; internal set; }
+        public Dictionary<string, object> CustomProperties { get; internal set; }
 
         public object TagObject;
 
@@ -48,7 +48,7 @@ namespace Gj.Galaxy.Logic{
 
         public NetworkPlayer(bool isLocal, int actorId, string userId)
         {
-            this.CustomProperties = new Hashtable();
+            this.CustomProperties = new Dictionary<string, object>();
             this.IsLocal = isLocal;
             this.actorId = actorId;
             this.UserId = userId;
@@ -81,7 +81,7 @@ namespace Gj.Galaxy.Logic{
             this.actorId = newId;
         }
 
-        internal void InternalProperties(Hashtable properties)
+        internal void InternalProperties(Dictionary<string, object> properties)
         {
             if (properties == null || properties.Count == 0 || this.CustomProperties.Equals(properties))
             {
@@ -92,7 +92,7 @@ namespace Gj.Galaxy.Logic{
             this.CustomProperties.StripKeysWithNullValues();
         }
 
-        internal void SetCustomProperties(Hashtable propertiesToSet)
+        internal void SetCustomProperties(Dictionary<string, object> propertiesToSet)
         {
             if (propertiesToSet == null)
             {

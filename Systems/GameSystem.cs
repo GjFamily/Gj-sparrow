@@ -18,6 +18,7 @@ namespace Gj
             {
                 objMap.Add(obj.name, obj);
             }
+            Debug.Log("system awake");
         }
 
         private GameObject GetObj(string objName)
@@ -50,13 +51,16 @@ namespace Gj
             GameObject obj = CacheManage.single.GetCache(objName);
             if (obj == null)
             {
+                Debug.Log("CreateObj");
                 obj = CreateObj(objName);
             }
+            Debug.Log("makeobj"+obj.name);
             return obj;
         }
 
         public GameObject MakeTarget(string targetName)
         {
+            Debug.Log("make"+targetName);
             GameObject targetObj = MakeObj(targetName);
             if (targetObj != null)
             {

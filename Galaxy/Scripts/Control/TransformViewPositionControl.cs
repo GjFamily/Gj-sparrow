@@ -170,25 +170,26 @@ namespace Gj.Galaxy.Logic{
 
         void SerializeData(Vector3 currentPosition, StreamBuffer stream, MessageInfo info)
         {
-            stream.SendNext(currentPosition);
+            stream.Serialize(ref currentPosition);
             m_NetworkPosition = currentPosition;
 
             if (m_Model.ExtrapolateOption == TransformViewPositionModel.ExtrapolateOptions.SynchronizeValues ||
                 m_Model.InterpolateOption == TransformViewPositionModel.InterpolateOptions.SynchronizeValues)
             {
-                stream.SendNext(m_SynchronizedSpeed);
-                stream.SendNext(m_SynchronizedTurnSpeed);
+                stream.Serialize(ref m_SynchronizedSpeed);
+                stream.Serialize(ref m_SynchronizedTurnSpeed);
             }
         }
 
         void DeserializeData(StreamBuffer stream, MessageInfo info)
         {
-            Vector3 readPosition = (Vector3)stream.ReceiveNext();
+            Vector3 readPosition;
+            stream.DeSerialize(out readPosition);
             if (m_Model.ExtrapolateOption == TransformViewPositionModel.ExtrapolateOptions.SynchronizeValues ||
                 m_Model.InterpolateOption == TransformViewPositionModel.InterpolateOptions.SynchronizeValues)
             {
-                m_SynchronizedSpeed = (Vector3)stream.ReceiveNext();
-                m_SynchronizedTurnSpeed = (float)stream.ReceiveNext();
+                stream.DeSerialize(out m_SynchronizedSpeed);
+                stream.DeSerialize(ref m_SynchronizedTurnSpeed);
             }
 
             if (m_OldNetworkPositions.Count == 0)
