@@ -256,7 +256,7 @@ namespace Gj.Galaxy.Logic{
             GamePlayer player = GetPlayerWithId(actorId);
             if (player == null)
             {
-                Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", actorId));
+                Debug.LogError(String.Format("Received event Ready for unknown player ID: {0}", actorId));
                 return;
             }
             player.IsReady = true;

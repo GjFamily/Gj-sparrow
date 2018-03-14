@@ -437,6 +437,14 @@ namespace Gj.Galaxy.Logic
                     break;
                 case GameEvent.Join:
                     Room.OnJoin(param[0].ConverInt(), (string)param[1]);
+                    //active
+                    if(!(bool)param[2]){
+                        Room.OnLeave(param[0].ConverInt());
+                    }
+                    //ready
+                    if((bool)param[3]){
+                        Room.OnReady(param[0].ConverInt());
+                    }
                     break;
                 case GameEvent.Leave:
                     Room.OnLeave(param[0].ConverInt());
