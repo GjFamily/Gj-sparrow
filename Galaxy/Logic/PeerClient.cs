@@ -193,7 +193,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                uint u = (uint)ServerTimestamp;
+                uint u = (uint)LocalTimestamp;
                 double t = u;
                 return t / 1000;
             }

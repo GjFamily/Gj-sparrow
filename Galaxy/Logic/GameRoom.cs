@@ -12,10 +12,10 @@ namespace Gj.Galaxy.Logic{
         private GameRoomListener Delegate;
         public int MasterClientId = 0;
         public int LocalClientId = 0;
-        public Dictionary<int, NetworkPlayer> mActors = new Dictionary<int, NetworkPlayer>();
+        public Dictionary<int, GamePlayer> mActors = new Dictionary<int, GamePlayer>();
 
-        public NetworkPlayer[] mOtherPlayerListCopy = new NetworkPlayer[0];
-        public NetworkPlayer[] mPlayerListCopy = new NetworkPlayer[0];
+        public GamePlayer[] mOtherPlayerListCopy = new GamePlayer[0];
+        public GamePlayer[] mPlayerListCopy = new GamePlayer[0];
 
         public Dictionary<string, object> CustomProperties { get; internal set; }
         public int number;
@@ -30,7 +30,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public NetworkPlayer localPlayer
+        public GamePlayer localPlayer
         {
             get
             {
@@ -38,7 +38,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public NetworkPlayer masterClient
+        public GamePlayer masterClient
         {
             get
             {
@@ -57,7 +57,7 @@ namespace Gj.Galaxy.Logic{
         public GameRoom(GameRoomListener Delegate)
         {
             this.Delegate = Delegate;
-            var player = new NetworkPlayer(true, -1, SceneConnect.player.UserId);
+            var player = new GamePlayer(true, -1, SceneConnect.player.UserId);
             LocalClientId = -1;
             AddNewPlayer(player);
             this.CustomProperties = new Dictionary<string, object>();
@@ -103,7 +103,7 @@ namespace Gj.Galaxy.Logic{
             {
                 Debug.LogWarning(string.Format("LocalPlayer is null or not in mActors! LocalPlayer: {0} mActors==null: {1} newID: {2}", this.localPlayer, this.mActors == null, newID));
             }
-            NetworkPlayer player;
+            GamePlayer player;
             var result = this.mActors.TryGetValue(LocalClientId, out player);
             if(result)
             {
@@ -130,7 +130,7 @@ namespace Gj.Galaxy.Logic{
             this.MasterClientId = ReturnLowestPlayerId(this.mActors.Values.GetEnumerator(), leavingPlayerId);
         }
 
-        private static int ReturnLowestPlayerId(IEnumerator<NetworkPlayer> players, int playerIdToIgnore)
+        private static int ReturnLowestPlayerId(IEnumerator<GamePlayer> players, int playerIdToIgnore)
         {
             if (players == null || !players.MoveNext())
             {
@@ -140,7 +140,7 @@ namespace Gj.Galaxy.Logic{
             int lowestActorNumber = Int32.MaxValue;
             do
             {
-                NetworkPlayer player = players.Current;
+                GamePlayer player = players.Current;
                 if (player.Id == playerIdToIgnore)
                 {
                     continue;
@@ -155,18 +155,18 @@ namespace Gj.Galaxy.Logic{
             return lowestActorNumber;
         }
 
-        protected internal NetworkPlayer GetPlayerWithId(int number)
+        protected internal GamePlayer GetPlayerWithId(int number)
         {
             if (this.mActors == null) return null;
 
-            NetworkPlayer player = null;
+            GamePlayer player = null;
             this.mActors.TryGetValue(number, out player);
             return player;
         }
 
         private Dictionary<string, object> GetLocalActorProperties()
         {
-            NetworkPlayer player = localPlayer;
+            GamePlayer player = localPlayer;
             if (player != null)
             {
                 return player.CustomProperties;
@@ -175,7 +175,7 @@ namespace Gj.Galaxy.Logic{
         }
 
         internal void SwitchMaster(int actor){
-            NetworkPlayer player = GetPlayerWithId(actor);
+            GamePlayer player = GetPlayerWithId(actor);
             if(player != null)
                 this.MasterClientId = actor;
         }
@@ -189,7 +189,7 @@ namespace Gj.Galaxy.Logic{
         internal void OnLeave(int actorId)
         {
             // actorNr is fetched out of event
-            NetworkPlayer player = GetPlayerWithId(actorId);
+            GamePlayer player = GetPlayerWithId(actorId);
             if (player == null)
             {
                 Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", actorId));
@@ -205,7 +205,7 @@ namespace Gj.Galaxy.Logic{
 
         internal void OnJoin(int actorId, string userId)
         {
-            NetworkPlayer target;
+            GamePlayer target;
             bool exist = false;
 
             //var newName = (string)props[PlayerProperties.Name];
@@ -216,7 +216,7 @@ namespace Gj.Galaxy.Logic{
             target = GetPlayerWithId(actorId);
             if (target == null)
             {
-                target = new NetworkPlayer(false, actorId, userId);
+                target = new GamePlayer(false, actorId, userId);
                 AddNewPlayer(target);
             }
             else
@@ -247,13 +247,13 @@ namespace Gj.Galaxy.Logic{
 
         internal void OnChangePlayer(int actorId, Dictionary<string, object> playerProperties)
         {
-            NetworkPlayer player = GetPlayerWithId(actorId);
+            GamePlayer player = GetPlayerWithId(actorId);
             player.InternalProperties(playerProperties);
         }
 
         internal void OnReady(int actorId)
         {
-            NetworkPlayer player = GetPlayerWithId(actorId);
+            GamePlayer player = GetPlayerWithId(actorId);
             if (player == null)
             {
                 Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", actorId));
@@ -267,7 +267,7 @@ namespace Gj.Galaxy.Logic{
         {
             var enumerator = this.mActors.Values.GetEnumerator();
             while(enumerator.MoveNext()){
-                NetworkPlayer player = enumerator.Current;
+                GamePlayer player = enumerator.Current;
                 player.IsReady = true;
             }
             //this.CheckMasterClient(0);
@@ -281,7 +281,7 @@ namespace Gj.Galaxy.Logic{
                 this.initNumber = number;
                 return;
             }
-            NetworkPlayer player = GetPlayerWithId(actorId);
+            GamePlayer player = GetPlayerWithId(actorId);
             if (player == null)
             {
                 Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", actorId));
@@ -296,7 +296,7 @@ namespace Gj.Galaxy.Logic{
             if(actorId == 0){
                 this.number++;
             }
-            NetworkPlayer player = GetPlayerWithId(actorId);
+            GamePlayer player = GetPlayerWithId(actorId);
             if (player == null)
             {
                 Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", actorId));
@@ -305,7 +305,7 @@ namespace Gj.Galaxy.Logic{
             player.number++;
         }
 
-        internal void AddNewPlayer(NetworkPlayer player)
+        internal void AddNewPlayer(GamePlayer player)
         {
             if (!this.mActors.ContainsKey(player.Id))
             {
@@ -318,7 +318,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        internal void RemovePlayer(int Id, NetworkPlayer player)
+        internal void RemovePlayer(int Id, GamePlayer player)
         {
             this.mActors.Remove(Id);
             if (!player.IsLocal)
@@ -329,13 +329,13 @@ namespace Gj.Galaxy.Logic{
 
         private void RebuildPlayerListCopies()
         {
-            this.mPlayerListCopy = new NetworkPlayer[this.mActors.Count];
+            this.mPlayerListCopy = new GamePlayer[this.mActors.Count];
             this.mActors.Values.CopyTo(this.mPlayerListCopy, 0);
 
-            List<NetworkPlayer> otherP = new List<NetworkPlayer>();
+            List<GamePlayer> otherP = new List<GamePlayer>();
             for (int i = 0; i < this.mPlayerListCopy.Length; i++)
             {
-                NetworkPlayer player = this.mPlayerListCopy[i];
+                GamePlayer player = this.mPlayerListCopy[i];
                 if (!player.IsLocal)
                 {
                     otherP.Add(player);
@@ -345,22 +345,22 @@ namespace Gj.Galaxy.Logic{
             this.mOtherPlayerListCopy = otherP.ToArray();
         }
 
-        public NetworkPlayer Find(int ID)
+        public GamePlayer Find(int ID)
         {
             return GetPlayerWithId(ID);
         }
 
-        public NetworkPlayer Get(int id)
+        public GamePlayer Get(int id)
         {
             return Find(id);
         }
 
-        public NetworkPlayer GetNext()
+        public GamePlayer GetNext()
         {
             return GetNextFor(SceneConnect.player);
         }
 
-        public NetworkPlayer GetNextFor(NetworkPlayer currentPlayer)
+        public GamePlayer GetNextFor(GamePlayer currentPlayer)
         {
             if (currentPlayer == null)
             {
@@ -369,14 +369,14 @@ namespace Gj.Galaxy.Logic{
             return GetNextFor(currentPlayer.Id);
         }
 
-        public NetworkPlayer GetNextFor(int currentPlayerId)
+        public GamePlayer GetNextFor(int currentPlayerId)
         {
             if (mActors.Count < 2)
             {
                 return null;
             }
 
-            Dictionary<int, NetworkPlayer> players = mActors;
+            Dictionary<int, GamePlayer> players = mActors;
             int nextHigherId = int.MaxValue;    // we look for the next higher ID
             int lowestId = currentPlayerId;     // if we are the player with the highest ID, there is no higher and we return to the lowest player's id
 
@@ -402,7 +402,7 @@ namespace Gj.Galaxy.Logic{
                 int actorNrToCheck = actorsInRoom[i];
                 if (SceneConnect.player.Id != actorNrToCheck && !this.mActors.ContainsKey(actorNrToCheck))
                 {
-                    this.AddNewPlayer(new NetworkPlayer(false, actorNrToCheck, string.Empty));
+                    this.AddNewPlayer(new GamePlayer(false, actorNrToCheck, string.Empty));
                 }
             }
         }

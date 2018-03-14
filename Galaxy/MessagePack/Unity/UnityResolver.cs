@@ -25,7 +25,6 @@ namespace MessagePack.Unity
 
             static FormatterCache()
             {
-                UnityEngine.Debug.Log(typeof(T));
                 formatter = (IMessagePackFormatter<T>)UnityResolveryResolverGetFormatterHelper.GetFormatter(typeof(T));
             }
         }

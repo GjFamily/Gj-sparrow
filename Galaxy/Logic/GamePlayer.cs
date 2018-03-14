@@ -5,7 +5,7 @@ using UnityEngine;
 using Gj.Galaxy.Utils;
 
 namespace Gj.Galaxy.Logic{
-    public class NetworkPlayer : IComparable<NetworkPlayer>, IComparable<int>, IEquatable<NetworkPlayer>, IEquatable<int>
+    public class GamePlayer : IComparable<GamePlayer>, IComparable<int>, IEquatable<GamePlayer>, IEquatable<int>
     {
         public int Id
         {
@@ -46,7 +46,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public NetworkPlayer(bool isLocal, int actorId, string userId)
+        public GamePlayer(bool isLocal, int actorId, string userId)
         {
             this.CustomProperties = new Dictionary<string, object>();
             this.IsLocal = isLocal;
@@ -61,7 +61,7 @@ namespace Gj.Galaxy.Logic{
 
         public override bool Equals(object p)
         {
-            NetworkPlayer pp = p as NetworkPlayer;
+            GamePlayer pp = p as GamePlayer;
             return (pp != null && this.GetHashCode() == pp.GetHashCode());
         }
 
@@ -104,7 +104,7 @@ namespace Gj.Galaxy.Logic{
 
         #region IComparable implementation
 
-        public int CompareTo(NetworkPlayer other)
+        public int CompareTo(GamePlayer other)
         {
             if (other == null)
             {
@@ -123,7 +123,7 @@ namespace Gj.Galaxy.Logic{
 
         #region IEquatable implementation
 
-        public bool Equals(NetworkPlayer other)
+        public bool Equals(GamePlayer other)
         {
             if (other == null)
             {

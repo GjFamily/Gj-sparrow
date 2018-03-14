@@ -42,7 +42,7 @@ namespace Gj.Galaxy.Logic{
         }
 
         public void OnDeserialize(Vector3 currentScale, StreamBuffer stream, MessageInfo info){
-            stream.DeSerialize(out m_NetworkScale);
+            stream.DeSerialize(ref m_NetworkScale);
         }
     }
 }

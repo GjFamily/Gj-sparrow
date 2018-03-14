@@ -97,7 +97,7 @@ namespace Gj.Galaxy.Logic{
             get { return this.CreatorActorNr == 0; }
         }
 
-        public NetworkPlayer owner
+        public GamePlayer owner
         {
             get
             {

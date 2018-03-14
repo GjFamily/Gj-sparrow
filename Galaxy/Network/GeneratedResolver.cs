@@ -31,8 +31,6 @@ namespace MessagePack.Resolvers
                 var f = GeneratedResolverGetFormatterHelper.GetFormatter(typeof(T));
                 if (f != null)
                 {
-                    UnityEngine.Debug.Log(typeof(T));
-                    UnityEngine.Debug.Log(f.GetType());
                     formatter = (global::MessagePack.Formatters.IMessagePackFormatter<T>)f;
                 }
             }

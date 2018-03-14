@@ -38,7 +38,7 @@ namespace Gj.Galaxy.Logic{
 
         public delegate void OnJoinedGameDelegate(string token);
         public delegate void OnInvitedTeamDelegate(string userId, string teamId);
-        public delegate void OnPlayInitDelegate(NetworkPlayer player);
+        public delegate void OnPlayInitDelegate(GamePlayer player);
 
         public event OnJoinedGameDelegate OnJoinedGame;
         public event OnInvitedTeamDelegate OnInvitedTeam;
@@ -46,7 +46,7 @@ namespace Gj.Galaxy.Logic{
 
         private Action<bool> OnConnectAction;
 
-        public static NetworkPlayer player;
+        public static GamePlayer player;
 
         static SceneConnect(){
             n = PeerClient.Of(NamespaceId.Scene);
@@ -147,7 +147,7 @@ namespace Gj.Galaxy.Logic{
                     break;
                 case SceneEvent.Prop:
                     var userId = (string)param[0];
-                    player = new NetworkPlayer(true, -1, userId);
+                    player = new GamePlayer(true, -1, userId);
                     player.AttachInfo(((Dictionary<object, object>)param[1]).ConverString());
                     player.InternalProperties(((Dictionary<object, object>)param[2]).ConverString());
                     break;

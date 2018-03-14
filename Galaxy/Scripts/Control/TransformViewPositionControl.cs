@@ -183,12 +183,12 @@ namespace Gj.Galaxy.Logic{
 
         void DeserializeData(StreamBuffer stream, MessageInfo info)
         {
-            Vector3 readPosition;
-            stream.DeSerialize(out readPosition);
+            Vector3 readPosition = Vector3.zero;
+            stream.DeSerialize(ref readPosition);
             if (m_Model.ExtrapolateOption == TransformViewPositionModel.ExtrapolateOptions.SynchronizeValues ||
                 m_Model.InterpolateOption == TransformViewPositionModel.InterpolateOptions.SynchronizeValues)
             {
-                stream.DeSerialize(out m_SynchronizedSpeed);
+                stream.DeSerialize(ref m_SynchronizedSpeed);
                 stream.DeSerialize(ref m_SynchronizedTurnSpeed);
             }
 

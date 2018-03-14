@@ -56,19 +56,19 @@ namespace Gj.Galaxy.Logic
         void PlayerInit(Action callback);
         void OnStart();
         void OnLeaveGame();
-        void OnOwnership(NetworkEntity entity, NetworkPlayer oldPlayer);
-        GameObject OnInstance(string prefabName, NetworkPlayer player);
+        void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer);
+        GameObject OnInstance(string prefabName, GamePlayer player);
     }
 
     public interface GameRoomListener{
         void OnEnter();
         void OnFail(string reason);
         void OnRoomChange(Dictionary<string, object> props);
-        void OnPlayerJoin(NetworkPlayer player);
-        void OnPlayerLeave(NetworkPlayer player);
-        void OnPlayerRejoin(NetworkPlayer player);
-        void OnPlayerChange(NetworkPlayer player, Dictionary<string, object> props);
-        void OnReadyPlayer(NetworkPlayer player);
+        void OnPlayerJoin(GamePlayer player);
+        void OnPlayerLeave(GamePlayer player);
+        void OnPlayerRejoin(GamePlayer player);
+        void OnPlayerChange(GamePlayer player, Dictionary<string, object> props);
+        void OnReadyPlayer(GamePlayer player);
         void OnReadyAll();
     }
 
@@ -79,8 +79,8 @@ namespace Gj.Galaxy.Logic
         public delegate void PlayerInitDelegate(Action callback);
         public delegate void OnStartDelegate();
         public delegate void OnLeaveGameDelegate();
-        public delegate void OnOwnershipDelegate(NetworkEntity entity, NetworkPlayer oldPlayer);
-        public delegate GameObject OnInstanceDelegate(string prefabName, NetworkPlayer player);
+        public delegate void OnOwnershipDelegate(NetworkEntity entity, GamePlayer oldPlayer);
+        public delegate GameObject OnInstanceDelegate(string prefabName, GamePlayer player);
 
         public OnFinishDelegate OnFinish;
         public SceneInitDelegate OnSceneInit;
@@ -115,12 +115,12 @@ namespace Gj.Galaxy.Logic
             if (OnLeaveGame != null) OnLeaveGame();
         }
 
-        void GameListener.OnOwnership(NetworkEntity entity, NetworkPlayer oldPlayer)
+        void GameListener.OnOwnership(NetworkEntity entity, GamePlayer oldPlayer)
         {
             if (OnOwnership != null) OnOwnership(entity, oldPlayer);
         }
 
-        GameObject GameListener.OnInstance(string prefabName, NetworkPlayer player)
+        GameObject GameListener.OnInstance(string prefabName, GamePlayer player)
         {
             if (OnInstance != null) return OnInstance(prefabName, player);
             return null;
@@ -131,11 +131,11 @@ namespace Gj.Galaxy.Logic
         public delegate void OnEnterDelegate();
         public delegate void OnFailDelegate(string reason);
         public delegate void OnRoomChangeDelegate(Dictionary<string, object> props);
-        public delegate void OnPlayerJoinDelegate(NetworkPlayer player);
-        public delegate void OnPlayerLeaveDelegate(NetworkPlayer player);
-        public delegate void OnPlayerRejoinDelegate(NetworkPlayer player);
-        public delegate void OnPlayerChangeDelegate(NetworkPlayer player, Dictionary<string, object> props);
-        public delegate void OnReadyPlayerDelegate(NetworkPlayer player);
+        public delegate void OnPlayerJoinDelegate(GamePlayer player);
+        public delegate void OnPlayerLeaveDelegate(GamePlayer player);
+        public delegate void OnPlayerRejoinDelegate(GamePlayer player);
+        public delegate void OnPlayerChangeDelegate(GamePlayer player, Dictionary<string, object> props);
+        public delegate void OnReadyPlayerDelegate(GamePlayer player);
         public delegate void OnReadyAllDelegate();
 
         public OnEnterDelegate OnEnter;
@@ -163,27 +163,27 @@ namespace Gj.Galaxy.Logic
             if (OnRoomChange != null) OnRoomChange(props);
         }
 
-        void GameRoomListener.OnPlayerJoin(NetworkPlayer player)
+        void GameRoomListener.OnPlayerJoin(GamePlayer player)
         {
             if (OnPlayerJoin != null) OnPlayerJoin(player);
         }
 
-        void GameRoomListener.OnPlayerLeave(NetworkPlayer player)
+        void GameRoomListener.OnPlayerLeave(GamePlayer player)
         {
             if (OnPlayerLeave != null) OnPlayerLeave(player);
         }
 
-        void GameRoomListener.OnPlayerRejoin(NetworkPlayer player)
+        void GameRoomListener.OnPlayerRejoin(GamePlayer player)
         {
             if (OnPlayerRejoin != null) OnPlayerRejoin(player);
         }
 
-        void GameRoomListener.OnPlayerChange(NetworkPlayer player, Dictionary<string, object> props)
+        void GameRoomListener.OnPlayerChange(GamePlayer player, Dictionary<string, object> props)
         {
             if (OnPlayerChange != null) OnPlayerChange(player, props);
         }
 
-        void GameRoomListener.OnReadyPlayer(NetworkPlayer player)
+        void GameRoomListener.OnReadyPlayer(GamePlayer player)
         {
             if (OnReadyPlayer != null) OnReadyPlayer(player);
         }
@@ -205,7 +205,7 @@ namespace Gj.Galaxy.Logic
 
         protected static internal Dictionary<int, NetworkEntity> entityList = new Dictionary<int, NetworkEntity>(); //TODO: make private again
 
-        public static NetworkPlayer masterClient
+        public static GamePlayer masterClient
         {
             get
             {
@@ -501,7 +501,7 @@ namespace Gj.Galaxy.Logic
             //EmitSync(SyncEvent.ChangePlayer, Room.localPlayer.Id, props);
         }
 
-        public static void Ownership(int entityId, Action<NetworkPlayer> callback)
+        public static void Ownership(int entityId, Action<GamePlayer> callback)
         {
             n.Emit(GameEvent.Ownership, new object[] { entityId },(object[] obj) => {
                 listener.OnOwnership(entityId, (int)obj[0]);
@@ -717,7 +717,7 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        public static void DestroyPlayerObjects(NetworkPlayer targetPlayer)
+        public static void DestroyPlayerObjects(GamePlayer targetPlayer)
         {
             if (targetPlayer == null)
             {
@@ -780,7 +780,7 @@ namespace Gj.Galaxy.Logic
         /// <summary>
         /// Internal to send an RPC on given PhotonView. Do not call this directly but use: PhotonView.RPC!
         /// </summary>
-        public static void RPC(NetworkEntity entity, string methodName, NetworkPlayer targetPlayer, params object[] parameters)
+        public static void RPC(NetworkEntity entity, string methodName, GamePlayer targetPlayer, params object[] parameters)
         {
             if (Room == null)
             {
@@ -986,9 +986,9 @@ namespace Gj.Galaxy.Logic
 
         private void OnOwnership(int requestedEntityId, int newOwnerId)
         {
-            NetworkPlayer newPlayer = Room.GetPlayerWithId(newOwnerId);
+            GamePlayer newPlayer = Room.GetPlayerWithId(newOwnerId);
             NetworkEntity requestedEntity = GetEntity(requestedEntityId);
-            NetworkPlayer oldPlayer = requestedEntity.owner;
+            GamePlayer oldPlayer = requestedEntity.owner;
             if (requestedEntity == null)
             {
                 Debug.LogWarning("Can't find PhotonView of incoming OwnershipRequest. ViewId not found: " + requestedEntityId);
@@ -1604,7 +1604,7 @@ namespace Gj.Galaxy.Logic
         ///
         /// This is sent as event (code: 200) which will contain a sender (origin of this RPC).
 
-        internal void EmitRPC(NetworkEntity entity, string methodName, SyncTargets target, NetworkPlayer player, params object[] parameters)
+        internal void EmitRPC(NetworkEntity entity, string methodName, SyncTargets target, GamePlayer player, params object[] parameters)
         {
             if (blockSendingGroups.Contains(entity.group))
             {
@@ -1805,6 +1805,7 @@ namespace Gj.Galaxy.Logic
                 {
                     continue;
                 }
+                evData = SerializeStream(ref evData);
 
                 if (entity.synchronization == EntitySynchronization.Reliable || entity.mixedModeIsReliable)
                 {
@@ -1952,7 +1953,6 @@ namespace Gj.Galaxy.Logic
                 return currentValues;
             }
 
-
             // ViewSynchronization: Off, Unreliable, UnreliableOnChange, ReliableDeltaCompressed
             if (entity.synchronization == EntitySynchronization.UnreliableOnChange)
             {
@@ -2004,7 +2004,7 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        private void OnSerializeRead(object[] data, NetworkPlayer sender, short correctPrefix)
+        private void OnSerializeRead(object[] data, GamePlayer sender, short correctPrefix)
         {
             // read view ID from key (byte)0: a int-array (PUN 1.17++)
             int entityId = (int)data[SyncViewId];
@@ -2280,6 +2280,25 @@ namespace Gj.Galaxy.Logic
             }
         }
         #endregion
+
+        private static object[] SerializeStream(ref object[] data){
+            SerializeFormatter formatter;
+            var result = new object[data.Length];
+            for (var i = 0; i < data.Length; i++){
+                var r = data[i];
+                if (r == null){
+                    result[i] = r;
+                }else{
+                    formatter = SerializeTypes.GetFormatter(r.GetType());
+                    if (formatter == null){
+                        result[i] = r;
+                    }else{
+                        result[i] = formatter.Serialize(r);
+                    }
+                }
+            }
+            return result;
+        }
 
         private static bool AlmostEquals(object[] lastData, object[] currentContent)
         {

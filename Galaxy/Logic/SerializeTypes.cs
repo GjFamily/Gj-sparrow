@@ -4,22 +4,31 @@ using UnityEngine;
 
 namespace Gj.Galaxy.Logic{
     interface SerializeFormatter {
-        short Serialize(Stream outStream, object customobject);
+        byte[] Serialize(object customobject);
         object Deserialize(byte[] stream);
-        short Length();
+        short Size();
+
     }
     internal static class SerializeTypes
     {
-        static readonly global::System.Collections.Generic.Dictionary<Type, SerializeFormatter> lookup;
+        static readonly global::System.Collections.Generic.Dictionary<Type, SerializeFormatter> typeD;
+        static readonly global::System.Collections.Generic.Dictionary<string, SerializeFormatter> symbolD;
 
         static SerializeTypes()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<Type, SerializeFormatter>(4)
+            typeD = new global::System.Collections.Generic.Dictionary<Type, SerializeFormatter>(4)
             {
                 {typeof(Vector2), Vector2SerializeFormatter.instance },
                 {typeof(Vector3), Vector3SerializeFormatter.instance },
                 {typeof(Quaternion), QuaternionSerializeFormatter.instance },
-                {typeof(NetworkPlayer), PlayerSerializeFormatter.instance },
+                {typeof(GamePlayer), PlayerSerializeFormatter.instance },
+            };
+            symbolD = new global::System.Collections.Generic.Dictionary<string, SerializeFormatter>(4)
+            {
+                {"2", Vector2SerializeFormatter.instance },
+                {"3", Vector3SerializeFormatter.instance },
+                {"q", QuaternionSerializeFormatter.instance },
+                {"p", PlayerSerializeFormatter.instance },
             };
         }
 
@@ -30,7 +39,18 @@ namespace Gj.Galaxy.Logic{
         internal static SerializeFormatter GetFormatter(Type t)
         {
             SerializeFormatter formatter;
-            if (lookup.TryGetValue(t, out formatter))
+            if (typeD.TryGetValue(t, out formatter))
+            {
+                return formatter;
+            }
+
+            return null;
+        }
+
+        internal static SerializeFormatter GetFormatter(string symbol)
+        {
+            SerializeFormatter formatter;
+            if (symbolD.TryGetValue(symbol, out formatter))
             {
                 return formatter;
             }
@@ -42,14 +62,15 @@ namespace Gj.Galaxy.Logic{
     {
         internal static readonly short vector3Length = 3 * 4;
         internal static readonly Vector3SerializeFormatter instance = new Vector3SerializeFormatter();
-        public short Serialize(Stream outStream, object customobject)
+        public byte[] Serialize(object customobject)
         {
             Vector3 vo = (Vector3)customobject;
-            outStream.Write(BitConverter.GetBytes(vo.x), 0, 4);
-            outStream.Write(BitConverter.GetBytes(vo.y), 0, 4);
-            outStream.Write(BitConverter.GetBytes(vo.z), 0, 4);
+            byte[] vector3Byte = new byte[vector3Length];
+            BitConverter.GetBytes(vo.x).CopyTo(vector3Byte, 0);
+            BitConverter.GetBytes(vo.y).CopyTo(vector3Byte, 4);
+            BitConverter.GetBytes(vo.z).CopyTo(vector3Byte, 8);
 
-            return 3 * 4;
+            return vector3Byte;
         }
 
         public object Deserialize(byte[] stream)
@@ -63,7 +84,7 @@ namespace Gj.Galaxy.Logic{
             return vo;
         }
 
-        public short Length()
+        public short Size()
         {
             return vector3Length;
         }
@@ -72,13 +93,13 @@ namespace Gj.Galaxy.Logic{
     {
         internal static readonly short vector2Length = 2 * 4;
         internal static readonly Vector2SerializeFormatter instance = new Vector2SerializeFormatter();
-        public short Serialize(Stream outStream, object customobject)
+        public byte[] Serialize(object customobject)
         {
             Vector2 vo = (Vector2)customobject;
-
-            outStream.Write(BitConverter.GetBytes(vo.x), 0, 4);
-            outStream.Write(BitConverter.GetBytes(vo.y), 0, 4);
-            return 2 * 4;
+            byte[] vector2Byte = new byte[vector2Length];
+            BitConverter.GetBytes(vo.x).CopyTo(vector2Byte, 0);
+            BitConverter.GetBytes(vo.y).CopyTo(vector2Byte, 4);
+            return vector2Byte;
         }
 
         public object Deserialize(byte[] stream)
@@ -89,7 +110,7 @@ namespace Gj.Galaxy.Logic{
 
             return vo;
         }
-        public short Length()
+        public short Size()
         {
             return vector2Length;
         }
@@ -99,15 +120,16 @@ namespace Gj.Galaxy.Logic{
     {
         internal static readonly short quarternionLength = 4 * 4;
         internal static readonly QuaternionSerializeFormatter instance = new QuaternionSerializeFormatter();
-        public short Serialize(Stream outStream, object customobject)
+        public byte[] Serialize(object customobject)
         {
             Quaternion o = (Quaternion)customobject;
-            outStream.Write(BitConverter.GetBytes(o.w), 0, 4);
-            outStream.Write(BitConverter.GetBytes(o.x), 0, 4);
-            outStream.Write(BitConverter.GetBytes(o.y), 0, 4);
-            outStream.Write(BitConverter.GetBytes(o.z), 0, 4);
+            byte[] quarternionByte = new byte[quarternionLength];
+            BitConverter.GetBytes(o.w).CopyTo(quarternionByte, 0);
+            BitConverter.GetBytes(o.x).CopyTo(quarternionByte, 4);
+            BitConverter.GetBytes(o.y).CopyTo(quarternionByte, 8);
+            BitConverter.GetBytes(o.z).CopyTo(quarternionByte, 12);
 
-            return 4 * 4;
+            return quarternionByte;
         }
 
         public object Deserialize(byte[] stream)
@@ -121,7 +143,7 @@ namespace Gj.Galaxy.Logic{
 
             return o;
         }
-        public short Length()
+        public short Size()
         {
             return quarternionLength;
         }
@@ -131,12 +153,11 @@ namespace Gj.Galaxy.Logic{
     {
         internal static readonly short playerLength = 4;
         internal static readonly PlayerSerializeFormatter instance = new PlayerSerializeFormatter();
-        public short Serialize(Stream outStream, object customobject)
+        public byte[] Serialize(object customobject)
         {
-            int ID = ((NetworkPlayer)customobject).Id;
+            int ID = ((GamePlayer)customobject).Id;
 
-            outStream.Write(BitConverter.GetBytes(ID), 0, 4);
-            return 4;
+            return BitConverter.GetBytes(ID);
         }
 
         public object Deserialize(byte[] stream)
@@ -145,7 +166,7 @@ namespace Gj.Galaxy.Logic{
             return GameConnect.Room.GetPlayerWithId(ID);
         }
 
-        public short Length()
+        public short Size()
         {
             return playerLength;
         }
