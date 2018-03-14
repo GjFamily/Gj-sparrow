@@ -12,7 +12,7 @@ namespace Gj.Galaxy.Logic{
             Lerp,
         }
 
-        public InterpolateOptions InterpolateOption = InterpolateOptions.RotateTowards;
+        public InterpolateOptions InterpolateOption = InterpolateOptions.Lerp;
         public float InterpolateRotateTowardsSpeed = 180;
         public float InterpolateLerpSpeed = 5;
     }

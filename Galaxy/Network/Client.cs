@@ -309,7 +309,7 @@ namespace Gj.Galaxy.Network{
         protected bool webSocket(string url)
         {
             Uri uri = new Uri(url + "/galaxy.socket");
-            var conn = new WebSocket(uri);
+            var conn = new WebSocketAgent(uri);
 
             return Accept(ProtocolType.Safe, conn);
         }

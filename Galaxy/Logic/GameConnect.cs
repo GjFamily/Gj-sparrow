@@ -1999,11 +1999,16 @@ namespace Gj.Galaxy.Logic
                 remoteLevelPrefix = (short)serializeData[(byte)0];
                 headerLength = 2;
             }
+            var s = initialDataIndex;
 
-            for (byte s = initialDataIndex; s - initialDataIndex < serializeData.Count - headerLength; s++)
+            object data;
+            do
             {
-                listener.OnSerializeRead(serializeData[s] as object[], originatingPlayer, remoteLevelPrefix);
-            }
+                var result = serializeData.TryGetValue(s, out data);
+                if (!result) break;
+                OnSerializeRead(data as object[], originatingPlayer, remoteLevelPrefix);
+                s++;
+            } while (true);
         }
 
         private void OnSerializeRead(object[] data, GamePlayer sender, short correctPrefix)
@@ -2014,7 +2019,6 @@ namespace Gj.Galaxy.Logic
 
             // debug:
             //LogObjectArray(data);
-
             NetworkEntity entity = GetEntity(entityId);
             if (entity == null)
             {
