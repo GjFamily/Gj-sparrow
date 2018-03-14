@@ -621,9 +621,7 @@ namespace Gj.Galaxy.Logic
             //        PrefabCache.Add(prefabName, prefabGo);
             //    }
             //}
-            cycle = GameCycle.Scene;
             prefabGo = Delegate.OnInstance(prefabName, null);
-            cycle = GameCycle.None;
 
             if (prefabGo == null)
             {

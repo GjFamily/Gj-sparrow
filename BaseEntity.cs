@@ -22,12 +22,19 @@ namespace Gj
         [HideInInspector]
         public bool show = false;
 
-        void Main ()
+        private AllowSync sync = null;
+
+
+        void Awake ()
         {
             Tools.BindPart(this, gameObject);
             Tools.AddSub(this, gameObject);
-            Tools.AllowSync(this, gameObject);
+            sync = Tools.AllowSync(this, gameObject);
             Tools.InfoSync(this, gameObject);
+        }
+
+        public void OpenSync(){
+            if (sync != null) sync.Sync();
         }
 
         protected Info GetInfo (GameObject obj) {

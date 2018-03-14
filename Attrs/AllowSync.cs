@@ -15,6 +15,9 @@ namespace Gj
         public RigidBodyParam rigid = RigidBodyParam.Off;
         public EntitySynchronization sync;
 
+        private Component c;
+        private GameObject o;
+
         //
         // Constructors
         //
@@ -44,16 +47,27 @@ namespace Gj
                 var ob = gameObservable as GameObservable;
                 if (ob != null) ob.SetSyncParam((byte)transform);
             }
+            this.c = c;
+            this.o = o;
+        }
+
+        public void Sync(){
             InstanceRelation relation;
             var player = c.GetComponent<PlayerEntity>() as PlayerEntity;
-            if (player == null) {
+            if (player == null)
+            {
                 relation = InstanceRelation.Scene;
                 Debug.Log("scene");
-            }else{
-                if (player.player){
+            }
+            else
+            {
+                if (player.player)
+                {
                     relation = InstanceRelation.Player;
                     Debug.Log("player");
-                }else{
+                }
+                else
+                {
                     relation = InstanceRelation.OtherPlayer;
                     Debug.Log("other player");
                 }

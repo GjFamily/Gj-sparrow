@@ -58,14 +58,15 @@ namespace Gj
             return obj;
         }
 
-        public GameObject MakeTarget(string targetName)
+        public TargetEntity MakeTarget(string targetName)
         {
             Debug.Log("make"+targetName);
             GameObject targetObj = MakeObj(targetName);
             if (targetObj != null)
             {
-                targetObj.GetComponent<TargetEntity>().SetGameSystem(this);
-                return targetObj;
+                var targetEntity = targetObj.GetComponent<TargetEntity>();
+                targetEntity.SetGameSystem(this);
+                return targetEntity;
             }
             else
             {
