@@ -324,7 +324,7 @@ namespace Gj.Galaxy.Logic{
 
             if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                Debug.Log(string.Format("Not playing {0} {1}", UnityEditor.EditorApplication.isPlaying, UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode));
+                //Debug.Log(string.Format("Not playing {0} {1}", UnityEditor.EditorApplication.isPlaying, UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode));
                 return;
             }
             Debug.Log("PeerClient");

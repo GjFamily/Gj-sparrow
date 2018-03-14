@@ -8,6 +8,9 @@ using System.Runtime.InteropServices;
 using Snappy;
 using System.IO.Compression;
 using MsgPack.Serialization;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Gj.Galaxy.Network{
     public delegate long TimestampDelegate();
@@ -373,6 +376,12 @@ namespace Gj.Galaxy.Network{
                     if(state == ConnectionState.Connecting){
                         listener.OnConnect(false);
                     }
+#if UNITY_EDITOR
+                    if (!EditorApplication.isPlaying || !EditorApplication.isPlayingOrWillChangePlaymode)
+                    {
+                        return;
+                    }
+#endif
                     if(UpdateState())
                         Reconnect(protocolType);
                 }catch(Exception e){

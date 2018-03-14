@@ -667,25 +667,26 @@ namespace Gj.Galaxy.Logic
             }
 
             Component[] entitys = (Component[])prefabGo.GetEntitysInChildren();
-            int[] entityIds = AllocateSceneEntityIds(entitys.Length);
-
-            if (entityIds == null)
-            {
-                Debug.LogError("Failed to RelationInstance prefab: " + prefabName + ". No ViewIDs are free to use. Max is: " + MAX_ENTITY_IDS);
-                return ;
-            }
             int playerId = 0;
+            int[] entityIds = null;
             if (relation == InstanceRelation.Scene)
             {
                 playerId = 0;
+                entityIds = AllocateSceneEntityIds(entitys.Length);
             }
             else if (relation == InstanceRelation.Player)
             {
                 playerId = Room.localPlayer.Id;
+                entityIds = AllocateEntityIds(entitys.Length);
             }
             else if (relation == InstanceRelation.OtherPlayer)
             {
                 // other
+                return;
+            }
+            if (entityIds == null)
+            {
+                Debug.LogError("Failed to RelationInstance prefab: " + prefabName + ". No ViewIDs are free to use. Max is: " + MAX_ENTITY_IDS);
                 return;
             }
             Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(playerId, prefabName, prefabGo.transform.position, prefabGo.transform.rotation, group, entityIds, data, true);
@@ -2211,9 +2212,20 @@ namespace Gj.Galaxy.Logic
         #region Allocate
         internal static int AllocateEntityId()
         {
-            int manualId = AllocateEntityId(SceneConnect.player.Id);
+            int manualId = AllocateEntityId(Room.localPlayer.Id);
             manuallyAllocatedEntityIds.Add(manualId);
             return manualId;
+        }
+
+        internal static int[] AllocateEntityIds(int countOfNewEntitys)
+        {
+            int[] entityIds = new int[countOfNewEntitys];
+            for (int entity = 0; entity < countOfNewEntitys; entity++)
+            {
+                entityIds[entity] = AllocateEntityId(Room.localPlayer.Id);
+            }
+
+            return entityIds;
         }
 
         internal static int AllocateSceneEntityId()
@@ -2227,6 +2239,17 @@ namespace Gj.Galaxy.Logic
             int manualId = AllocateEntityId(0);
             manuallyAllocatedEntityIds.Add(manualId);
             return manualId;
+        }
+
+        internal static int[] AllocateSceneEntityIds(int countOfNewEntitys)
+        {
+            int[] entityIds = new int[countOfNewEntitys];
+            for (int entity = 0; entity < countOfNewEntitys; entity++)
+            {
+                entityIds[entity] = AllocateEntityId(0);
+            }
+
+            return entityIds;
         }
 
         internal static int AllocateEntityId(int ownerId)
@@ -2254,21 +2277,12 @@ namespace Gj.Galaxy.Logic
                 }else{
                     lastUsedViewSubIdScene = newSubId;
                 }
+                Debug.Log(newEntityId);
+                Debug.Log(newSubId);
                 return newEntityId;
             }
 
             throw new Exception(string.Format("AllocateEntityId() failed. User {0} is out of subIds, as all Entity are used.", ownerId));
-        }
-
-        internal static int[] AllocateSceneEntityIds(int countOfNewEntitys)
-        {
-            int[] entityIds = new int[countOfNewEntitys];
-            for (int entity = 0; entity < countOfNewEntitys; entity++)
-            {
-                entityIds[entity] = AllocateEntityId(0);
-            }
-
-            return entityIds;
         }
 
         internal static void UnAllocateEntityId(int entityId)
