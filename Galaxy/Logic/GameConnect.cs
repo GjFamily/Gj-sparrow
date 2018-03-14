@@ -45,15 +45,27 @@ namespace Gj.Galaxy.Logic
         Join,
         Ready,
         ReadyAll,
-        InitScene,
-        InitPlayer,
+        Init,
         Start,
         Finish
     }
+
+    internal enum GameCycle
+    {
+        None,
+        Player,
+        Scene,
+        Sync
+    }
+
+    public enum InstanceRelation
+    {
+        Player,
+        Scene,
+        OtherPlayer
+    }
     public interface GameListener{
         void OnFinish(bool exit, Dictionary<string, object> result);
-        void SceneInit(Action callback);
-        void PlayerInit(Action callback);
         void OnStart();
         void OnLeaveGame();
         void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer);
@@ -93,16 +105,6 @@ namespace Gj.Galaxy.Logic
         void GameListener.OnFinish(bool exit, Dictionary<string, object> result)
         {
             if (OnFinish != null) OnFinish(exit, result);
-        }
-
-        void GameListener.SceneInit(Action callback)
-        {
-            if (OnSceneInit != null) OnSceneInit(callback);
-        }
-
-        void GameListener.PlayerInit(Action callback)
-        {
-            if (OnPlayerInit != null) OnPlayerInit(callback);
         }
 
         void GameListener.OnStart()
@@ -290,7 +292,7 @@ namespace Gj.Galaxy.Logic
         }
 
         //开始进行场景同步，需要已经进入必要的scene中
-        public static void StartGame(GameListener gameListener)
+        public static void StartInitGame(GameListener gameListener)
         {
             if (gameListener == null)
                 throw new Exception("Game Delegate empty");
@@ -301,37 +303,31 @@ namespace Gj.Galaxy.Logic
             Delegate = gameListener;
             listener.ResetEntityOnSerialize();
             listener.LoadScene();
-            //会触发场景初始化及玩家初始化，以及开始游戏
-            stage = GameStage.InitScene;
-            if (Room.isMasterClient)
-            {
-                Delegate.SceneInit(()=>{
-                    Dictionary<byte, object> valueScene = new Dictionary<byte, object>();
-                    valueScene[0] = lastUsedViewSubIdScene;
-                    EmitSync(SyncEvent.Init, 0, valueScene);
-                    stage = GameStage.InitPlayer;
-                    Delegate.PlayerInit(()=>{
-                        Dictionary<byte, object> value = new Dictionary<byte, object>();
-                        value[0] = lastUsedViewSubId;
-                        EmitSync(SyncEvent.Init, Room.localPlayer.Id, value);
-                        Room.OnInit(Room.localPlayer.Id, lastUsedViewSubId);
-                        stage = GameStage.Start;
-                        Delegate.OnStart();
-                    });
-                });
-            }else{
-                stage = GameStage.InitPlayer;
-                Delegate.PlayerInit(() => {
-                    Dictionary<byte, object> value = new Dictionary<byte, object>();
-                    value[0] = lastUsedViewSubId;
-                    EmitSync(SyncEvent.Init, Room.localPlayer.Id, value);
-                    Room.OnInit(Room.localPlayer.Id, lastUsedViewSubId);
-                    stage = GameStage.Start;
-                    Delegate.OnStart();
-                });
-            }
+            //可以开始进行游戏初始化
+            stage = GameStage.Init;
 
             //PeerClient.isMessageQueueRunning = false;
+        }
+
+        //完成基础初始化，触发开始游戏
+        public static void FinishInitGame(){
+            if (!Room.localPlayer.IsReady)
+                throw new Exception("local player need ready");
+            if (stage != GameStage.Init)
+                throw new Exception("game stage need start");
+            if (Room.isMasterClient)
+            {
+                Dictionary<byte, object> valueScene = new Dictionary<byte, object>();
+                valueScene[0] = lastUsedViewSubIdScene;
+                EmitSync(SyncEvent.Init, 0, valueScene);
+                Room.OnInit(0, lastUsedViewSubIdScene);
+            }
+            Dictionary<byte, object> value = new Dictionary<byte, object>();
+            value[0] = lastUsedViewSubId;
+            EmitSync(SyncEvent.Init, Room.localPlayer.Id, value);
+            Room.OnInit(Room.localPlayer.Id, lastUsedViewSubId);
+            stage = GameStage.Start;
+            Delegate.OnStart();
         }
 
         // 准备退出游戏
@@ -571,7 +567,9 @@ namespace Gj.Galaxy.Logic
             //        PrefabCache.Add(prefabName, prefabGo);
             //    }
             //}
+            cycle = GameCycle.Player;
             prefabGo = Delegate.OnInstance(prefabName, Room.localPlayer);
+            cycle = GameCycle.None;
 
             if (prefabGo == null)
             {
@@ -623,7 +621,9 @@ namespace Gj.Galaxy.Logic
             //        PrefabCache.Add(prefabName, prefabGo);
             //    }
             //}
+            cycle = GameCycle.Scene;
             prefabGo = Delegate.OnInstance(prefabName, null);
+            cycle = GameCycle.None;
 
             if (prefabGo == null)
             {
@@ -654,7 +654,7 @@ namespace Gj.Galaxy.Logic
             return listener.OnInstance(0, instantiateEvent, prefabGo);
         }
 
-        public static void RelationInstance(string prefabName, GameObject prefabGo, byte group, object[] data)
+        public static void RelationInstance(string prefabName, InstanceRelation relation, GameObject prefabGo, byte group, object[] data)
         {
             if (!inRoom)
             {
@@ -677,17 +677,18 @@ namespace Gj.Galaxy.Logic
                 return ;
             }
             int playerId = 0;
-            if (stage == GameStage.InitScene)
+            if (relation == InstanceRelation.Scene)
             {
                 playerId = 0;
             }
-            else if (stage == GameStage.InitPlayer)
+            else if (relation == InstanceRelation.Player)
             {
                 playerId = Room.localPlayer.Id;
             }
-            else
+            else if (relation == InstanceRelation.OtherPlayer)
             {
-                
+                // other
+                return;
             }
             Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(playerId, prefabName, prefabGo.transform.position, prefabGo.transform.rotation, group, entityIds, data, true);
             listener.OnInstance(playerId, instantiateEvent, prefabGo);
@@ -893,6 +894,8 @@ namespace Gj.Galaxy.Logic
         protected internal const string CurrentSceneProperty = "curScn";
 
         static internal GameStage stage = GameStage.None;
+        static internal GameCycle cycle = GameCycle.None;
+        static internal int syncPlayer = 0;
 
         public static bool UsePrefabCache = true;
 
@@ -1334,7 +1337,6 @@ namespace Gj.Galaxy.Logic
                 //    }
                 //}
                 go = Delegate.OnInstance(prefabName, player);
-
                 if (go == null)
                 {
                     Debug.LogError("error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
@@ -1357,6 +1359,7 @@ namespace Gj.Galaxy.Logic
                 resourcePVs[i].prefix = objLevelPrefix;
                 resourcePVs[i].instantiationId = instantiationId;
                 resourcePVs[i].isRuntimeInstantiated = true;
+                resourcePVs[i].ownerId = playerId;
             }
 
             //this.StoreInstantiationData(instantiationId, incomingInstantiationData);

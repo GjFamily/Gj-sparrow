@@ -121,7 +121,6 @@ namespace Gj.Galaxy.Network
 
         public void Connect(Action open, Action close, Action message, Action<Exception> error)
         {
-            //Debug.Log(mUrl);
             m_Socket = new WebSocketSharp.WebSocket(mUrl.ToString());// modified by TS
             m_Socket.EnableRedirection = true;
             //m_Socket.SslConfiguration.EnabledSslProtocols = m_Socket.SslConfiguration.EnabledSslProtocols | (SslProtocols)(3072| 768);
@@ -137,7 +136,7 @@ namespace Gj.Galaxy.Network
             };
             m_Socket.OnError += (sender, e) =>
             {
-                if(m_IsConnected){
+                if (!m_IsConnected){
                     error(new Exception(e.Message));
                     m_Error = e.Message + (e.Exception == null ? "" : " / " + e.Exception);
                 }
@@ -148,9 +147,6 @@ namespace Gj.Galaxy.Network
                 close();
             };
             m_Socket.Connect();
-            //var b = new byte[] { 0,1,2,3,4,5};
-            //m_Socket.Send(b);
-            //Debug.Log("Websocket connect");
         }
 
         public bool Connected(){

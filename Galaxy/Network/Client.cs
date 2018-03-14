@@ -220,7 +220,7 @@ namespace Gj.Galaxy.Network{
         }
 
         internal void ResetReconnect(){
-            ReconnectLast = 0;
+            ReconnectLast = LocalTimestamp();
             nowReconnectTimes = 0;
             ReconnectTimeout = 1;
         }

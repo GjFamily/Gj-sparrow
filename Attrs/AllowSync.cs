@@ -44,7 +44,21 @@ namespace Gj
                 var ob = gameObservable as GameObservable;
                 if (ob != null) ob.SetSyncParam((byte)transform);
             }
-            GameConnect.RelationInstance(o.name, o, 0, null);
+            InstanceRelation relation;
+            var player = c.GetComponent<PlayerEntity>() as PlayerEntity;
+            if (player == null) {
+                relation = InstanceRelation.Scene;
+                Debug.Log("scene");
+            }else{
+                if (player.player){
+                    relation = InstanceRelation.Player;
+                    Debug.Log("player");
+                }else{
+                    relation = InstanceRelation.OtherPlayer;
+                    Debug.Log("other player");
+                }
+            }
+            GameConnect.RelationInstance(o.name, relation, o, 0, null);
         }
     }
 }

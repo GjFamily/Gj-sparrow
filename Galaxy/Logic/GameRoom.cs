@@ -295,11 +295,12 @@ namespace Gj.Galaxy.Logic{
         {
             if(actorId == 0){
                 this.number++;
+                return;
             }
             GamePlayer player = GetPlayerWithId(actorId);
             if (player == null)
             {
-                Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", actorId));
+                Debug.LogError(String.Format("Received event Instance for unknown player ID: {0}", actorId));
                 return;
             }
             player.number++;

@@ -22,7 +22,7 @@ namespace Gj
         [HideInInspector]
         public bool show = false;
 
-        protected virtual void Awake()
+        void Main ()
         {
             Tools.BindPart(this, gameObject);
             Tools.AddSub(this, gameObject);
