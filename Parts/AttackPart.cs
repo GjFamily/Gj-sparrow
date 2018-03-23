@@ -24,7 +24,6 @@ namespace Gj
         private Action<SkillInfo> startCast;
         private Action<SkillInfo> endCast;
 
-        private GameSystem gameSystem;
         // Use this for initialization
         void Start()
         {
@@ -59,16 +58,6 @@ namespace Gj
                     }
                 }
             }
-        }
-
-        public SkillInfo GetSkillInfo(string skillName)
-        {
-            return gameSystem.GetSkillInfo(skillName);
-        }
-
-        public void SetGameSystem(GameSystem system)
-        {
-            gameSystem = system;
         }
 
         public void SetAttackTarget(GameObject obj, Action enterAction, Action exitAction)
@@ -145,33 +134,25 @@ namespace Gj
             waitCast = true;
         }
 
-        public void Cast(SkillInfo skillInfo)
-        {
-            SkillEntity skillEntity = gameSystem.InitSkill(skillInfo.name, gameObject);
-            Cast(skillInfo, skillEntity);
-        }
-
-        public void Cast(SkillInfo skillInfo, GameObject target)
+        public void Cast(SkillInfo skillInfo, SkillEntity skillEntity, GameObject target)
         {
             if (skillInfo.AllowTarget(gameObject, target) && skillInfo.IsAllowRange(gameObject, target))
             {
-                SkillEntity skillEntity = gameSystem.InitSkill(skillInfo.name, gameObject);
                 skillEntity.Set(target);
                 Cast(skillInfo, skillEntity);
             }
         }
 
-        public void Cast(SkillInfo skillInfo, Transform transform)
+        public void Cast(SkillInfo skillInfo, SkillEntity skillEntity, Transform transform)
         {
             if (skillInfo.IsAllowRange(gameObject, transform))
             {
-                SkillEntity skillEntity = gameSystem.InitSkill(skillInfo.name, gameObject);
                 skillEntity.Set(transform);
                 Cast(skillInfo, skillEntity);
             }
         }
 
-        private void Cast(SkillInfo skillInfo, SkillEntity skillEntity)
+        public void Cast(SkillInfo skillInfo, SkillEntity skillEntity)
         {
             cSkillInfo = skillInfo;
             cSkillEntity = skillEntity;

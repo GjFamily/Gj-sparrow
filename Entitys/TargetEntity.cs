@@ -44,12 +44,9 @@ namespace Gj
             return gameSystem.GetSkillInfo(skillName);
         }
 
-        protected virtual void GetPower(SkillInfo skillInfo)
+        protected SkillEntity GetSkillEntity(SkillInfo skillInfo)
         {
-            if (IsEnoughConsume(skillInfo))
-            {
-                GetComponent<AttackPart>().Cast(skillInfo, gameObject);
-            }
+            return gameSystem.InitSkill(skillInfo.name, gameObject);
         }
 
         protected virtual void BeforeCast(SkillInfo skillInfo)
@@ -72,35 +69,49 @@ namespace Gj
         {
         }
 
-        protected void CancelCast () {
+        protected void CancelCast()
+        {
             GetComponent<AttackPart>().CancelCast();
         }
 
-        protected void Cast () {
+        protected void Cast()
+        {
             GetComponent<AttackPart>().Cast();
+        }
+
+        protected virtual void GetPower(SkillInfo skillInfo)
+        {
+            SkillEntity skillEntity = gameSystem.InitSkill(skillInfo.name, gameObject);
+            if (IsEnoughConsume(skillInfo) && skillEntity != null)
+            {
+                GetComponent<AttackPart>().Cast(skillInfo, skillEntity, gameObject);
+            }
         }
 
         protected void Cast(SkillInfo skillInfo)
         {
-            if (IsEnoughConsume(skillInfo))
+            SkillEntity skillEntity = gameSystem.InitSkill(skillInfo.name, gameObject);
+            if (IsEnoughConsume(skillInfo) && skillEntity != null)
             {
-                GetComponent<AttackPart>().Cast(skillInfo);
+                GetComponent<AttackPart>().Cast(skillInfo, skillEntity);
             }
         }
 
         protected void Cast(SkillInfo skillInfo, GameObject target)
         {
-            if (IsEnoughConsume(skillInfo))
+            SkillEntity skillEntity = gameSystem.InitSkill(skillInfo.name, gameObject);
+            if (IsEnoughConsume(skillInfo) && skillEntity != null)
             {
-                GetComponent<AttackPart>().Cast(skillInfo, target);
+                GetComponent<AttackPart>().Cast(skillInfo, skillEntity, target);
             }
         }
 
         protected void Cast(SkillInfo skillInfo, Transform transform)
         {
-            if (IsEnoughConsume(skillInfo))
+            SkillEntity skillEntity = gameSystem.InitSkill(skillInfo.name, gameObject);
+            if (IsEnoughConsume(skillInfo) && skillEntity != null)
             {
-                GetComponent<AttackPart>().Cast(skillInfo, transform);
+                GetComponent<AttackPart>().Cast(skillInfo, skillEntity, transform);
             }
         }
 
