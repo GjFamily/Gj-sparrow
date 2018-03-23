@@ -127,7 +127,7 @@ namespace Gj.Galaxy.Logic{
 
             if (m_Model.ExtrapolateIncludingRoundTripTime == true)
             {
-                timePassed += (float)PeerClient.GetPing() / 1000f;
+                timePassed += (float)PeerClient.PingTime / 1000f;
             }
 
             Vector3 extrapolatePosition = Vector3.zero;

@@ -9,7 +9,7 @@ using System.Collections;
 namespace Gj.Galaxy.Network
 {
     // 客户端随机生成conv并作为后续与服务器通信
-    public class Udp
+    public class UdpSocket
     {
         private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
 
@@ -28,18 +28,18 @@ namespace Gj.Galaxy.Network
 
         private SwitchQueue<byte[]> mRecvQueue = new SwitchQueue<byte[]>(128);
 
-        public Udp(Action<byte[]> handler)
+        public UdpSocket(IPEndPoint point)
         {
-            evHandler = handler;
-        }
-
-        public void Connect(IPAddress host, int port)
-        {
-            mSvrEndPoint = new IPEndPoint(host, port);
+            mSvrEndPoint = point;
             mUdpClient = new UdpClient(mSvrEndPoint);
             //mUdpClient.Connect(mSvrEndPoint);
 
             init_kcp((UInt32)new Random((int)DateTime.Now.Ticks).Next(1, Int32.MaxValue));
+        }
+
+        public void Connect(Action<byte[]> handler)
+        {
+            evHandler = handler;
 
             mUdpClient.BeginReceive(ReceiveCallback, this);
         }

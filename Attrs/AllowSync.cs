@@ -13,6 +13,7 @@ namespace Gj
         //
         public TransformParam transform = TransformParam.Off;
         public RigidBodyParam rigid = RigidBodyParam.Off;
+        public string[] infoList = null;
         public EntitySynchronization sync;
 
         private Component c;
@@ -38,14 +39,21 @@ namespace Gj
             if(transform != TransformParam.Off){
                 var gameObservable = o.AddComponent(typeof(TransformView));
                 entity.ObservedComponents.Add(gameObservable);
-                var ob = gameObservable as GameObservable;
+                var ob = gameObservable as TransformView;
                 if (ob != null) ob.SetSyncParam((byte)transform);
             }
             if(rigid != RigidBodyParam.Off){
-                var gameObservable = o.AddComponent(typeof(Rigidbody));
+                var gameObservable = o.AddComponent(typeof(RigidbodyView));
                 entity.ObservedComponents.Add(gameObservable);
-                var ob = gameObservable as GameObservable;
-                if (ob != null) ob.SetSyncParam((byte)transform);
+                var ob = gameObservable as RigidbodyView;
+                if (ob != null) ob.SetSyncParam((byte)rigid);
+            }
+            if(infoList != null && infoList.Length > 0){
+                var gameObservable = o.AddComponent(typeof(InfoView));
+                entity.ObservedComponents.Add(gameObservable);
+                var ob = gameObservable as InfoView;
+                ob.infoList = infoList;
+                ob.SetSyncParam(1);
             }
             this.c = c;
             this.o = o;

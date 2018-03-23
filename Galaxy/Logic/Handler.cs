@@ -15,9 +15,13 @@ namespace Gj.Galaxy.Logic{
 
         public int updateIntervalOnSerialize;  // time [ms] between consecutive RunViewUpdate calls (sending syncs, etc)
 
+        public int updateStatInterval;
+
         private int nextSendTickCount = 0;
 
         private int nextSendTickCountOnSerialize = 0;
+
+        private int nextStatCount = 0;
 
         private static bool sendThreadShouldRun;
 
@@ -39,6 +43,7 @@ namespace Gj.Galaxy.Logic{
 
             this.updateInterval = 1000 / PeerClient.sendRate;
             this.updateIntervalOnSerialize = 1000 / PeerClient.sendRateOnSerialize;
+            this.updateStatInterval = 1000 / PeerClient.statRate;
 
             Handler.StartFallbackSendAckThread();
         }
@@ -130,6 +135,13 @@ namespace Gj.Galaxy.Logic{
 
                 this.nextSendTickCount = currentMsSinceStart + this.updateInterval;
             }
+
+            currentMsSinceStart = (int)(Time.realtimeSinceStartup * 1000);
+            if(currentMsSinceStart > this.nextStatCount)
+            {
+                PeerClient.Stat();
+                this.nextStatCount = currentMsSinceStart + this.updateStatInterval;
+            }
         }
 
         public static void StartFallbackSendAckThread()
@@ -184,10 +196,8 @@ namespace Gj.Galaxy.Logic{
                     }
                 }
 
-                if (!PeerClient.isMessageQueueRunning && (PeerClient.LocalTimestamp - PeerClient.LastTimestamp) > 10 * 1000)
+                if ((PeerClient.LocalTimestamp - PeerClient.LastPingTimestamp) > PeerClient.pingInterval)
                 {
-                    //UnityEngine.Debug.Log(PeerClient.LocalTimestamp);
-                    //UnityEngine.Debug.Log(PeerClient.LastTimestamp);
                     PeerClient.Ping();
                 }
             }

@@ -61,7 +61,6 @@ namespace Gj.Galaxy.Network
         Stream Read(int head, out byte[] headB);
         bool Write(byte[] head, Stream reader);
         bool Connected();
-        string Error();
         void Close();
     }
 

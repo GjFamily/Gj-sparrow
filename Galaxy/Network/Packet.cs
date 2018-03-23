@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections;
 using System.IO;
-using MsgPack.Serialization;
 using MessagePack;
 
 namespace Gj.Galaxy.Network
@@ -19,7 +18,7 @@ namespace Gj.Galaxy.Network
     }
     internal class Message{
         internal MessageType type;
-        internal int time;
+        //internal int time;
         internal Stream reader;
     }
     public enum DataType:byte{

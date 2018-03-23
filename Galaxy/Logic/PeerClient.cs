@@ -32,7 +32,7 @@ namespace Gj.Galaxy.Logic{
 
         public static LogLevel logLevel = LogLevel.Error;
 
-        public static float precisionForVectorSynchronization = 0.000099f;
+        public static float precisionForVectorSynchronization = 0.1f; // 0.000099f;
 
         public static float precisionForQuaternionSynchronization = 1.0f;
 
@@ -51,9 +51,18 @@ namespace Gj.Galaxy.Logic{
         private static bool isOfflineMode = false;
         private static bool isConnect = false;
 
+        public static int pingInterval = 1000 * 10; // 10s
+
         private static int sendInterval = 50; // in miliseconds.
 
         private static int sendIntervalOnSerialize = 100; // in miliseconds. I.e. 100 = 100ms which makes 10 times/second
+
+        private static long inDataLength = 0;
+        private static long outDataLength = 0;
+        private static long preInDataLength = 0;
+        private static long preOutDataLength = 0;
+        private static int statInterval = 1000;  // in miliseconds
+        private static bool is_stat = false;
 
         public static bool connected
         {
@@ -148,6 +157,29 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
+        public static int statRate
+        {
+            get
+            {
+                return 1000 / statInterval;
+            }
+
+            set
+            {
+                if (value > statInterval)
+                {
+                    Debug.LogError("Error: Can not set the Stat rate higher than the overall SendRate.");
+                    value = statInterval;
+                }
+
+                statInterval = 1000 / value;
+                if (back != null)
+                {
+                    back.updateStatInterval = statInterval;
+                }
+            }
+        }
+
         // 有队列namespace在运行：game同步
         // 用来触发game.update,发送队列消息，获取队列消息
         public static bool isMessageQueueRunning
@@ -224,6 +256,22 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
+        public static long PingTime
+        {
+            get
+            {
+                return client.PingTime;
+            }
+        }
+
+        public static long LastPingTimestamp
+        {
+            get
+            {
+                return client.LastPingTimestamp;
+            }
+        }
+
         public static long LastTimestamp
         {
             get
@@ -231,88 +279,6 @@ namespace Gj.Galaxy.Logic{
                 return client.LastTimestamp;
             }
         }
-
-        //public static int MaxResendsBeforeDisconnect
-        //{
-        //    get { return client.SentCountAllowance; }
-        //    set
-        //    {
-        //        if (value < 3) value = 3;
-        //        if (value > 10) value = 10;
-        //        client.SentCountAllowance = value;
-        //    }
-        //}
-
-        //public static int QuickResends
-        //{
-        //    get { return client.QuickResendAttempts; }
-        //    set
-        //    {
-        //        if (value < 0) value = 0;
-        //        if (value > 3) value = 3;
-        //        client.QuickResendAttempts = (byte)value;
-        //    }
-        //}
-        //private static AuthConnect mAuth;
-        //public static AuthConnect Auth
-        //{
-        //    get
-        //    {
-        //        if (mAuth != null) return mAuth;
-        //        var n = client.Of((byte)NamespaceId.Auth);
-        //        mAuth = new AuthConnect(n);
-        //        return mAuth;
-        //    }
-        //}
-        //private static ChatConnect mChat;
-        //public static ChatConnect Chat
-        //{
-        //    get
-        //    {
-        //        if (mChat != null) return mChat;
-        //        var n = client.Of((byte)NamespaceId.Chat);
-        //        mChat = new ChatConnect(n);
-        //        return mChat;
-        //    }
-        //}
-        //private static SceneConnect mScene;
-        //public static SceneConnect Scene
-        //{
-        //    get
-        //    {
-        //        if (mScene != null) return mScene;
-        //        var n = client.Of((byte)NamespaceId.Scene);
-        //        mScene = new SceneConnect(n);
-        //        return mScene;
-        //    }
-        //}
-
-
-        //private static GameConnect mGame;
-        //public static GameConnect Game
-        //{
-        //    get
-        //    {
-        //        if (mGame != null) return mGame;
-        //        var n = client.Of((byte)NamespaceId.Scene);
-        //        n = n.Of((byte)SceneRoom.Game);
-        //        mGame = new GameConnect(n);
-        //        return mGame;
-        //    }
-        //}
-
-        //private static TeamConnect mTeam;
-        //public static TeamConnect Team
-        //{
-        //    get
-        //    {
-        //        if (mTeam != null) return mTeam;
-        //        var n = client.Of((byte)NamespaceId.Scene);
-        //        n = n.Of((byte)SceneRoom.Team);
-        //        mTeam = new TeamConnect(n);
-        //        return mTeam;
-        //    }
-        //}
 
         public delegate void EventCallback(byte eventCode, object content, int senderId);
 
@@ -329,7 +295,7 @@ namespace Gj.Galaxy.Logic{
             }
             Debug.Log("PeerClient");
 
-            InternalCleanPhotonMonoFromSceneIfStuck();
+            InternalCleanMonoFromSceneIfStuck();
 #endif
 
             //if (ServerSettings != null)
@@ -365,6 +331,32 @@ namespace Gj.Galaxy.Logic{
 
         public static Namespace Of(NamespaceId ns){
             return PeerClient.client.Of((byte)ns);
+        }
+
+        public static void SetStatic(bool sw)
+        {
+            inDataLength = 0;
+            outDataLength = 0;
+            if(sw && !is_stat){
+                PeerClient.client.InData += PeerClient.InDataStat;
+                PeerClient.client.OutData += PeerClient.OutDataStat;
+            }else if(!sw && is_stat){
+                PeerClient.client.InData -= PeerClient.InDataStat;
+                PeerClient.client.OutData -= PeerClient.OutDataStat;
+            }
+            is_stat = sw;
+        }
+
+        internal static void InDataStat(long length)
+        {
+            inDataLength += length;
+            preInDataLength += length;
+        }
+
+        internal static void OutDataStat(long length)
+        {
+            outDataLength += length;
+            preOutDataLength += length;
         }
 
         /// <summary>
@@ -422,39 +414,15 @@ namespace Gj.Galaxy.Logic{
             client.listener = Listener;
             return client.Connect(GetServerAddress());
         }
+
         public static void Close(){
             if (client.IsRuning)
                 client.Close();
         }
 
-        //public static bool Reconnect()
-        //{
-        //    if (string.IsNullOrEmpty(ServerAddress))
-        //    {
-        //        Debug.LogWarning("Reconnect() failed. It seems the client wasn't connected before?! Current state: " + client.State);
-        //        return false;
-        //    }
-
-        //    if (client.State != Network.ConnectionState.Disconnected)
-        //    {
-        //        Debug.LogWarning("Reconnect() failed. Can only connect while in state 'Disconnected'. Current state: " + client.State);
-        //        return false;
-        //    }
-
-        //    if (offlineMode)
-        //    {
-        //        offlineMode = false; // Cleanup offline mode
-        //        Debug.LogWarning("Reconnect() disabled the offline mode. No longer offline.");
-        //    }
-
-        //    if (!isMessageQueueRunning)
-        //    {
-        //        isMessageQueueRunning = true;
-        //        Debug.LogWarning("Reconnect() enabled isMessageQueueRunning. Needs to be able to dispatch incoming messages.");
-        //    }
-
-        //    return client.Reconnect();
-        //}
+        public static void Reconnend(){
+            
+        }
 
         public static void Disconnect()
         {
@@ -472,14 +440,16 @@ namespace Gj.Galaxy.Logic{
                 client.Disconnect();
         }
 
-        public static int GetPing()
-        {
-            return client.PingTime;
-        }
-
-        public static void Update(){
+        internal static void Update(){
             //Debug.Log("update");
             GameConnect.Update();
+        }
+
+        internal static void Stat(){
+            if (!is_stat) return;
+            Debug.Log(String.Format("All: {0}, in: {1}, out: {2}", inDataLength + outDataLength, preInDataLength, preOutDataLength));
+            preInDataLength = 0;
+            preOutDataLength = 0;
         }
 
         //public static void Wait(){
@@ -487,11 +457,11 @@ namespace Gj.Galaxy.Logic{
         //        client.WaitConnect();
         //}
 
-        public static bool DispatchIncomingCommands(){
+        internal static bool DispatchIncomingCommands(){
             return client.ReadQueue(10);
         }
 
-        public static bool SendOutgoingCommands(){
+        internal static bool SendOutgoingCommands(){
             return client.WriteQueue(10);
         }
 
@@ -566,7 +536,7 @@ namespace Gj.Galaxy.Logic{
 
 #if UNITY_EDITOR
 
-        public static void InternalCleanPhotonMonoFromSceneIfStuck()
+        public static void InternalCleanMonoFromSceneIfStuck()
         {
             Handler[] Handlers = GameObject.FindObjectsOfType(typeof(Handler)) as Handler[];
             if (Handlers != null && Handlers.Length > 0)

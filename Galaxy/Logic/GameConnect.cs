@@ -255,7 +255,7 @@ namespace Gj.Galaxy.Logic
         static GameConnect()
         {
             n = SceneConnect.Of(SceneRoom.Game);
-            n.compress = CompressType.Snappy;
+            //n.compress = CompressType.Snappy;
             n.protocol = ProtocolType.Speed;
             n.messageQueue = MessageQueue.On;
             listener = new GameConnect();
