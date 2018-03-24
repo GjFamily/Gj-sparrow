@@ -7,7 +7,7 @@ namespace Gj
     {
         private void OnTriggerEnter(Collider other)
         {
-            if (IsPlayer(other.gameObject))
+            if (IsCurrentPlayer(other.gameObject))
             {
                 EventManage.single.Emit(name+"-enter");
             }
@@ -15,18 +15,18 @@ namespace Gj
 
         private void OnTriggerExit(Collider other)
         {
-            if (IsPlayer(other.gameObject))
+            if (IsCurrentPlayer(other.gameObject))
             {
                 EventManage.single.Emit(name + "-exit");
             }
         }
 
-        private bool IsPlayer(GameObject obj)
+        private bool IsCurrentPlayer(GameObject obj)
         {
-            TargetEntity entity = obj.GetComponent<TargetEntity>();
-            if (entity != null)
+            Info info = obj.GetComponent<Info>();
+            if (info != null)
             {
-                return entity.player;
+                return info.currentPlayer;
             }
             else
             {

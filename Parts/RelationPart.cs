@@ -10,7 +10,6 @@ namespace Gj
         {
             Partner,
             Monster,
-            Player,
             Empty
         }
 
@@ -21,7 +20,7 @@ namespace Gj
 
         public bool IsPartner()
         {
-            return identity == Identity.Player || identity == Identity.Partner;
+            return identity == Identity.Partner;
         }
 
         public bool IsEnemy()
@@ -48,9 +47,9 @@ namespace Gj
             {
                 return relation.identity == Identity.Monster;
             }
-            else if (identity == Identity.Partner || identity == Identity.Player)
+            else if (identity == Identity.Partner)
             {
-                return relation.identity == Identity.Partner || relation.identity == Identity.Player;
+                return relation.identity == Identity.Partner;
             }
             else
             {
@@ -75,9 +74,9 @@ namespace Gj
         {
             if (identity == Identity.Monster)
             {
-                return relation.identity == Identity.Partner || relation.identity == Identity.Player;
+                return relation.identity == Identity.Partner;
             }
-            else if (identity == Identity.Partner || identity == Identity.Player)
+            else if (identity == Identity.Partner)
             {
                 return relation.identity == Identity.Monster;
             }

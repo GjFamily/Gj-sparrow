@@ -76,16 +76,56 @@ namespace Gj
             return Mathf.Atan2(h, v) * Mathf.Rad2Deg;
         }
 
-        protected virtual void LeftRockerEnter(string key) { }
+        protected virtual void LeftRockerEnter(string key)
+        {
+            if (player != null)
+            {
+                player.LeftRockerEnter(key);
+            }
+        }
 
-        protected virtual void LeftRocker(float angle, float h, float v) { }
+        protected virtual void LeftRocker(float angle, float h, float v)
+        {
 
-        protected virtual void LeftRockerExit() { }
+            if (player != null)
+            {
+                player.LeftRocker(angle, h, v);
+            }
+        }
 
-        protected virtual void RightRockerEnter(string key) { }
+        protected virtual void LeftRockerExit()
+        {
 
-        protected virtual void RightRocker(float angle, float h, float v) { }
+            if (player != null)
+            {
+                player.LeftRockerExit();
+            }
+        }
 
-        protected virtual void RightRockerExit() { }
+        protected virtual void RightRockerEnter(string key)
+        {
+
+            if (player != null)
+            {
+                player.RightRockerEnter(key);
+            }
+        }
+
+        protected virtual void RightRocker(float angle, float h, float v)
+        {
+            if (player != null)
+            {
+                player.RightRocker(angle, h, v);
+            }
+        }
+
+        protected virtual void RightRockerExit()
+        {
+
+            if (player != null)
+            {
+                player.RightRockerExit();
+            }
+        }
     }
 }

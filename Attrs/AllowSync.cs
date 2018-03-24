@@ -61,15 +61,15 @@ namespace Gj
 
         public void Sync(){
             InstanceRelation relation;
-            var player = c.GetComponent<PlayerEntity>() as PlayerEntity;
-            if (player == null)
+            Info info = c.GetComponent<Info>();
+            if (info == null && !info.player)
             {
                 relation = InstanceRelation.Scene;
                 Debug.Log("scene");
             }
             else
             {
-                if (player.player)
+                if (info.currentPlayer)
                 {
                     relation = InstanceRelation.Player;
                     Debug.Log("player");

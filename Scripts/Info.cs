@@ -8,6 +8,8 @@ namespace Gj
 {
     public class Info : MonoBehaviour
     {
+        public bool player = false;
+        public bool currentPlayer = false;
         private Category category = Category.Empty;
         [Serializable]
         public struct Attribute

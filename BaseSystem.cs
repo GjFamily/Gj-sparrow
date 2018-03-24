@@ -7,7 +7,7 @@ namespace Gj
 {
     public class BaseSystem : MonoBehaviour
     {
-        protected GameObject player;
+        protected BasePlayer player;
         protected virtual void Awake()
         {
             Tools.AddSub(this, gameObject);

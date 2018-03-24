@@ -10,6 +10,7 @@ namespace Gj
 
         public GameObject[] objs;
         private Dictionary<string, GameObject> objMap = new Dictionary<string, GameObject>();
+        private Dictionary<string, SkillInfo> skillInfoMap = new Dictionary<string, SkillInfo>();
 
         protected override void Awake()
         {
@@ -18,6 +19,7 @@ namespace Gj
             {
                 objMap.Add(obj.name, obj);
             }
+            Game.single.SetGameSystem(this);
         }
 
         private GameObject GetObj(string objName)
@@ -60,9 +62,7 @@ namespace Gj
             GameObject targetObj = MakeObj(targetName);
             if (targetObj != null)
             {
-                var targetEntity = targetObj.GetComponent<TargetEntity>();
-                targetEntity.SetGameSystem(this);
-                return targetEntity;
+                return targetObj.GetComponent<TargetEntity>();
             }
             else
             {
@@ -72,10 +72,15 @@ namespace Gj
 
         public SkillInfo GetSkillInfo(string skillName)
         {
+            if (skillInfoMap.ContainsKey(skillName)) {
+                return skillInfoMap[skillName];
+            }
             GameObject skillObj = GetObj(skillName);
             if (skillObj != null)
             {
-                return skillObj.GetComponent<SkillInfo>();
+                SkillInfo skillInfo = skillObj.GetComponent<SkillInfo>();
+                skillInfoMap.Add(skillName, skillInfo);
+                return skillInfo;
             }
             else
             {
