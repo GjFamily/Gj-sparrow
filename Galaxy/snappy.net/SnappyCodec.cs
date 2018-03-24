@@ -38,16 +38,16 @@ namespace Snappy
                 input = new byte[1];
                 offset = 0;
             }
-            fixed (byte *inputPtr = &input[offset])
+            fixed (byte* inputPtr = &input[offset])
             fixed (byte* outputPtr = &output[outOffset])
             {
-                var status = NativeBindings.Instance.Compress(inputPtr, length, outputPtr, ref outLength);
+                var status = NativeProxy.Instance.Compress(inputPtr, length, outputPtr, ref outLength);
                 if (status == SnappyStatus.Ok)
                     return outLength;
                 else if (status == SnappyStatus.BufferTooSmall)
                     throw new ArgumentOutOfRangeException("Output array is too small");
                 else
-                    throw new ArgumentOutOfRangeException("Invalid input");
+                    throw new InvalidCastException("Invalid input");
             }
         }
 
@@ -89,7 +89,7 @@ namespace Snappy
             if (offset < 0 || length < 0 || offset + length > input.Length)
                 throw new ArgumentOutOfRangeException("Selected range is outside the bounds of the input array");
             if (length == 0)
-                throw new ArgumentOutOfRangeException("Compressed block cannot be empty");
+                throw new InvalidCastException("Compressed block cannot be empty");
             if (outOffset < 0 || outOffset > output.Length)
                 throw new ArgumentOutOfRangeException("Output offset is outside the bounds of the output array");
             int outLength = output.Length - outOffset;
@@ -101,13 +101,13 @@ namespace Snappy
             fixed (byte* inputPtr = &input[offset])
             fixed (byte* outputPtr = &output[outOffset])
             {
-                var status = NativeBindings.Instance.Uncompress(inputPtr, length, outputPtr, ref outLength);
+                var status = NativeProxy.Instance.Uncompress(inputPtr, length, outputPtr, ref outLength);
                 if (status == SnappyStatus.Ok)
                     return outLength;
                 else if (status == SnappyStatus.BufferTooSmall)
                     throw new ArgumentOutOfRangeException("Output array is too small");
                 else
-                    throw new ArgumentOutOfRangeException("Input is not a valid snappy-compressed block");
+                    throw new InvalidCastException("Input is not a valid snappy-compressed block");
             }
         }
 
@@ -136,7 +136,7 @@ namespace Snappy
         /// <returns>Maximum length of compressed data given input of length inLength.</returns>
         public static int GetMaxCompressedLength(int inLength)
         {
-            return NativeBindings.Instance.GetMaxCompressedLength(inLength);
+            return NativeProxy.Instance.GetMaxCompressedLength(inLength);
         }
 
         /// <summary>
@@ -154,15 +154,15 @@ namespace Snappy
             if (offset < 0 || length < 0 || offset + length > input.Length)
                 throw new ArgumentOutOfRangeException("Selected range is outside the bounds of the input array");
             if (length == 0)
-                throw new ArgumentOutOfRangeException("Compressed block cannot be empty");
+                throw new InvalidCastException("Compressed block cannot be empty");
             fixed (byte* inputPtr = &input[offset])
             {
                 int outLength;
-                var status = NativeBindings.Instance.GetUncompressedLength(inputPtr, length, out outLength);
+                var status = NativeProxy.Instance.GetUncompressedLength(inputPtr, length, out outLength);
                 if (status == SnappyStatus.Ok)
                     return outLength;
                 else
-                    throw new ArgumentOutOfRangeException("Input is not a valid snappy-compressed block");
+                    throw new InvalidCastException("Input is not a valid snappy-compressed block");
             }
         }
 
@@ -197,7 +197,7 @@ namespace Snappy
             if (length == 0)
                 return false;
             fixed (byte* inputPtr = &input[offset])
-                return NativeBindings.Instance.ValidateCompressedBuffer(inputPtr, length) == SnappyStatus.Ok;
+                return NativeProxy.Instance.ValidateCompressedBuffer(inputPtr, length) == SnappyStatus.Ok;
         }
 
         /// <summary>

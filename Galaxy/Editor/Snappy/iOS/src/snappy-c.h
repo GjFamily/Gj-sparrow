@@ -41,6 +41,8 @@ extern "C" {
 #define EXPORT_API __declspec(dllexport) __stdcall
 #elif UNITY_WIN
 #define EXPORT_API __declspec(dllexport)
+#elif UNITY_OSX
+#define EXPORT_API __attribute__((visibility("default")))
 #else
 #define EXPORT_API
 #endif

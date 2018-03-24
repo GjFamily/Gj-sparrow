@@ -6,6 +6,7 @@ using System.Threading;
 #if SNAPPY_ASYNC
 using System.Threading.Tasks;
 #endif
+using Crc32C;
 
 namespace Snappy
 {
@@ -172,12 +173,12 @@ namespace Snappy
             {
                 var count = SnappyCodec.Uncompress(Buffer, 0, BufferUsage, buffer, offset);
                 if (ComputeMasked(buffer, offset, count) != Checksum)
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidCastException();
             }
             else if (Type == SnappyFrameType.Uncompressed)
             {
                 if (ComputeMasked(Buffer, offset, BufferUsage) != Checksum)
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidCastException();
                 Array.Copy(Buffer, 0, buffer, offset, BufferUsage);
             }
             else
@@ -206,17 +207,17 @@ namespace Snappy
                 if (Type == SnappyFrameType.Compressed || Type == SnappyFrameType.Uncompressed)
                 {
                     if (length < 4)
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidCastException();
                     EnsureRead(stream, WordBuffer, 0, 4);
                     Checksum = (uint)WordBuffer[0] + ((uint)WordBuffer[1] << 8) + ((uint)WordBuffer[2] << 16) + ((uint)WordBuffer[3] << 24);
                     BufferUsage = length - 4;
                     if (BufferUsage > MaxBufferUsage)
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidCastException();
                     EnsureBuffer(BufferUsage);
                     EnsureRead(stream, Buffer, 0, BufferUsage);
                     DataLength = Type == SnappyFrameType.Uncompressed ? BufferUsage : SnappyCodec.GetUncompressedLength(Buffer, 0, BufferUsage);
                     if (DataLength > MaxFrameSize)
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidCastException();
                 }
                 else if (Type == SnappyFrameType.Padding || (byte)Type >= (byte)SnappyFrameType.SkippableFirst && (byte)Type <= (byte)SnappyFrameType.SkippableLast)
                 {
@@ -235,10 +236,10 @@ namespace Snappy
                     EnsureBuffer(6);
                     EnsureRead(stream, Buffer, 0, 6);
                     if (!Utils.BuffersEqual(Buffer, StreamIdentifier, 6))
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidCastException();
                 }
                 else
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidCastException();
                 return true;
             }
             catch
@@ -283,17 +284,17 @@ namespace Snappy
                 if (Type == SnappyFrameType.Compressed || Type == SnappyFrameType.Uncompressed)
                 {
                     if (length < 4)
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidDataException();
                     await EnsureReadAsync(stream, WordBuffer, 0, 4, cancellation);
                     Checksum = (uint)WordBuffer[0] + ((uint)WordBuffer[1] << 8) + ((uint)WordBuffer[2] << 16) + ((uint)WordBuffer[3] << 24);
                     BufferUsage = length - 4;
                     if (BufferUsage > MaxBufferUsage)
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidDataException();
                     EnsureBuffer(BufferUsage);
                     await EnsureReadAsync(stream, Buffer, 0, BufferUsage, cancellation);
                     DataLength = Type == SnappyFrameType.Uncompressed ? BufferUsage : SnappyCodec.GetUncompressedLength(Buffer, 0, BufferUsage);
                     if (DataLength > MaxFrameSize)
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidDataException();
                 }
                 else if (Type == SnappyFrameType.Padding || (byte)Type >= (byte)SnappyFrameType.SkippableFirst && (byte)Type <= (byte)SnappyFrameType.SkippableLast)
                 {
@@ -312,10 +313,10 @@ namespace Snappy
                     EnsureBuffer(6);
                     await EnsureReadAsync(stream, Buffer, 0, 6, cancellation);
                     if (!Utils.BuffersEqual(Buffer, StreamIdentifier, 6))
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidDataException();
                 }
                 else
-                    throw new ArgumentOutOfRangeException();
+                    throw new InvalidDataException();
                 return true;
             }
             catch
@@ -334,15 +335,15 @@ namespace Snappy
         {
             if (Type != SnappyFrameType.Compressed && Type != SnappyFrameType.Uncompressed && Type != SnappyFrameType.StreamIdentifier && Type != SnappyFrameType.Padding)
                 throw new InvalidOperationException();
-            
+
             int totalLength = Type == SnappyFrameType.Compressed || Type == SnappyFrameType.Uncompressed ? BufferUsage + 4 : DataLength;
-            
+
             WordBuffer[0] = (byte)Type;
             WordBuffer[1] = (byte)totalLength;
             WordBuffer[2] = (byte)(totalLength >> 8);
             WordBuffer[3] = (byte)(totalLength >> 16);
             stream.Write(WordBuffer, 0, 4);
-            
+
             if (Type == SnappyFrameType.Compressed || Type == SnappyFrameType.Uncompressed)
             {
                 WordBuffer[0] = (byte)Checksum;
@@ -489,11 +490,7 @@ namespace Snappy
 
         static uint ComputeMasked(byte[] data, int offset, int count)
         {
-            byte[] dataPart = new byte[count];
-            UnityEngine.Debug.Log(string.Format("{0}, {1}, {2}", data.Length, count, offset));
-            Array.Copy(data, offset, dataPart, 0, count);
-            //data.CopyTo(dataPart, offset);
-            var checksum = Crc32.Compute(dataPart);
+            var checksum = Crc32CAlgorithm.Compute(data, offset, count);
             return ((checksum >> 15) | (checksum << 17)) + 0xa282ead8;
         }
 

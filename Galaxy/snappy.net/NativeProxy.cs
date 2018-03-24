@@ -7,11 +7,11 @@ using UnityEngine;
 
 namespace Snappy
 {
-    class NativeBindings
+    class NativeProxy
     {
-        public static readonly NativeBindings Instance = new NativeBindings();
+        public static readonly NativeProxy Instance = new NativeProxy();
 
-        public NativeBindings() { }
+        public NativeProxy() { }
 
         public unsafe SnappyStatus Compress(byte* input, int inLength, byte* output, ref int outLength)
         {
