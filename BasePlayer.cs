@@ -13,13 +13,13 @@ namespace Gj
 
         public virtual void LeftRocker(float angle, float h, float v) { }
 
-        public virtual void LeftRockerExit() { }
+        public virtual void LeftRockerExit(string key) { }
 
         public virtual void RightRockerEnter(string key) { }
 
         public virtual void RightRocker(float angle, float h, float v) { }
 
-        public virtual void RightRockerExit() { }
+        public virtual void RightRockerExit(string key) { }
 
         public virtual void Message(string key) { }
     }

@@ -6,10 +6,16 @@ namespace Gj
 {
     public class MobileUISystem : BaseSystem
     {
-        public bool leftRocker = false;
-        public bool rightRocker = false;
+        [SerializeField]
+        private bool leftRocker = false;
+        [SerializeField]
+        private bool rightRocker = false;
+
         private bool leftRockerTouch = false;
         private bool rightRochkerTouch = false;
+
+        private string leftRockerKey = "";
+        private string rightRockerKey = "";
 
         // Use this for initialization
         protected override void Start()
@@ -26,7 +32,8 @@ namespace Gj
                 HandleRocker(SystemInput.lh, SystemInput.lv, true);
                 if (!leftRockerTouch)
                 {
-                    LeftRockerEnter(SystemInput.lk);
+                    leftRockerKey = SystemInput.lk;
+                    LeftRockerEnter(leftRockerKey);
                     leftRockerTouch = true;
                 }
             }
@@ -34,7 +41,8 @@ namespace Gj
             {
                 if (leftRockerTouch)
                 {
-                    LeftRockerExit();
+                    LeftRockerExit(leftRockerKey);
+                    leftRockerKey = "";
                     leftRockerTouch = false;
                 }
             }
@@ -44,7 +52,8 @@ namespace Gj
                 HandleRocker(SystemInput.rh, SystemInput.rv, false);
                 if (!rightRochkerTouch)
                 {
-                    RightRockerEnter(SystemInput.rk);
+                    rightRockerKey = SystemInput.rk;
+                    RightRockerEnter(rightRockerKey);
                     rightRochkerTouch = true;
                 }
             }
@@ -52,7 +61,8 @@ namespace Gj
             {
                 if (rightRochkerTouch)
                 {
-                    RightRockerExit();
+                    RightRockerExit(rightRockerKey);
+                    rightRockerKey = "";
                     rightRochkerTouch = false;
                 }
             }
@@ -93,12 +103,12 @@ namespace Gj
             }
         }
 
-        protected virtual void LeftRockerExit()
+        protected virtual void LeftRockerExit(string key)
         {
 
             if (player != null)
             {
-                player.LeftRockerExit();
+                player.LeftRockerExit(key);
             }
         }
 
@@ -119,12 +129,12 @@ namespace Gj
             }
         }
 
-        protected virtual void RightRockerExit()
+        protected virtual void RightRockerExit(string key)
         {
 
             if (player != null)
             {
-                player.RightRockerExit();
+                player.RightRockerExit(key);
             }
         }
     }

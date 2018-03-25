@@ -6,7 +6,8 @@ namespace Gj
 {
     public class GameSystem : BaseSystem
     {
-        public GameObject content;
+        [SerializeField]
+        private GameObject content;
 
         public GameObject[] objs;
         private Dictionary<string, GameObject> objMap = new Dictionary<string, GameObject>();
