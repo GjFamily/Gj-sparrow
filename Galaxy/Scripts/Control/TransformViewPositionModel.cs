@@ -26,7 +26,7 @@ namespace Gj.Galaxy.Logic{
         public bool TeleportEnabled = true;
         public float TeleportIfDistanceGreaterThan = 3f;
 
-        public InterpolateOptions InterpolateOption = InterpolateOptions.EstimatedSpeed;
+        public InterpolateOptions InterpolateOption = InterpolateOptions.Lerp;
         public float InterpolateMoveTowardsSpeed = 1f;
         public float InterpolateLerpSpeed = 1f;
         public float InterpolateMoveTowardsAcceleration = 2;
@@ -37,10 +37,11 @@ namespace Gj.Galaxy.Logic{
                                                                               new Keyframe( 1, 1, 0, 1 ),
                                                                               new Keyframe( 4, 4, 1, 0 ) });
 
-        public ExtrapolateOptions ExtrapolateOption = ExtrapolateOptions.Disabled;
+        public ExtrapolateOptions ExtrapolateOption = ExtrapolateOptions.FixedSpeed;
         public float ExtrapolateSpeed = 1f;
         public bool ExtrapolateIncludingRoundTripTime = true;
         public int ExtrapolateNumberOfStoredPositions = 1;
+        public int ExtrapolateIfTimeLesserThan = 2;
 
         //public bool DrawNetworkGizmo = true;
         //public Color NetworkGizmoColor = Color.red;

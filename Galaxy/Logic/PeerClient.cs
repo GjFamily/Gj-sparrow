@@ -32,7 +32,7 @@ namespace Gj.Galaxy.Logic{
 
         public static LogLevel logLevel = LogLevel.Error;
 
-        public static float precisionForVectorSynchronization = 0.1f; // 0.000099f;
+        public static float precisionForVectorSynchronization = 0.000099f;
 
         public static float precisionForQuaternionSynchronization = 1.0f;
 

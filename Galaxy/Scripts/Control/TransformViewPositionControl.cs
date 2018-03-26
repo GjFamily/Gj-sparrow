@@ -131,7 +131,11 @@ namespace Gj.Galaxy.Logic{
             }
 
             Vector3 extrapolatePosition = Vector3.zero;
-
+            Vector3 oldPosition = GetOldestStoredNetworkPosition();
+            if(m_NetworkPosition == oldPosition || timePassed > m_Model.ExtrapolateIfTimeLesserThan * 2 * (float)PeerClient.PingTime / 1000f)
+            {
+                return extrapolatePosition;
+            }
             switch (m_Model.ExtrapolateOption)
             {
                 case TransformViewPositionModel.ExtrapolateOptions.SynchronizeValues:
@@ -139,12 +143,12 @@ namespace Gj.Galaxy.Logic{
                     extrapolatePosition = turnRotation * (m_SynchronizedSpeed * timePassed);
                     break;
                 case TransformViewPositionModel.ExtrapolateOptions.FixedSpeed:
-                    Vector3 moveDirection = (m_NetworkPosition - GetOldestStoredNetworkPosition()).normalized;
+                    Vector3 moveDirection = (m_NetworkPosition - oldPosition).normalized;
 
                     extrapolatePosition = moveDirection * m_Model.ExtrapolateSpeed * timePassed;
                     break;
                 case TransformViewPositionModel.ExtrapolateOptions.EstimateSpeedAndTurn:
-                    Vector3 moveDelta = (m_NetworkPosition - GetOldestStoredNetworkPosition()) * PeerClient.sendRateOnSerialize;
+                    Vector3 moveDelta = (m_NetworkPosition - oldPosition) * PeerClient.sendRateOnSerialize;
                     extrapolatePosition = moveDelta * timePassed;
                     break;
             }
@@ -192,21 +196,31 @@ namespace Gj.Galaxy.Logic{
                 stream.DeSerialize(ref m_SynchronizedTurnSpeed);
             }
 
-            if (m_OldNetworkPositions.Count == 0)
-            {
-                // if we don't have old positions yet, this is the very first update this client reads. let's use this as current AND old position.
-                m_NetworkPosition = readPosition;
-            }
+            //if (m_OldNetworkPositions.Count == 0)
+            //{
+            //    // if we don't have old positions yet, this is the very first update this client reads. let's use this as current AND old position.
+            //    m_NetworkPosition = readPosition;
+            //}
 
-            // the previously received position becomes the old(er) one and queued. the new one is the m_NetworkPosition
+            //// the previously received position becomes the old(er) one and queued. the new one is the m_NetworkPosition
+            //m_OldNetworkPositions.Enqueue(m_NetworkPosition);
+            //m_NetworkPosition = readPosition;
+
+            //// reduce items in queue to defined number of stored positions.
+            //while (m_OldNetworkPositions.Count > m_Model.ExtrapolateNumberOfStoredPositions)
+            //{
+            //    m_OldNetworkPositions.Dequeue();
+            //}
             m_OldNetworkPositions.Enqueue(m_NetworkPosition);
-            m_NetworkPosition = readPosition;
-
-            // reduce items in queue to defined number of stored positions.
-            while (m_OldNetworkPositions.Count > m_Model.ExtrapolateNumberOfStoredPositions)
-            {
-                m_OldNetworkPositions.Dequeue();
-            }
+            //if(readPosition == m_NetworkPosition){
+            //    m_OldNetworkPositions.Clear();
+            //}else{
+                while (m_OldNetworkPositions.Count > m_Model.ExtrapolateNumberOfStoredPositions)
+                {
+                    m_OldNetworkPositions.Dequeue();
+                }
+                m_NetworkPosition = readPosition;
+            //}
         }
     }
 }

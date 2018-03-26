@@ -1939,7 +1939,7 @@ namespace Gj.Galaxy.Logic
 
 
             // each view creates a list of values that should be sent
-            MessageInfo info = new MessageInfo(SceneConnect.player, entity);
+            MessageInfo info = new MessageInfo(Room.localPlayer, entity);
             this.pStream.ResetWriteStream();
             this.pStream.SendNext(null);
             this.pStream.SendNext(null);

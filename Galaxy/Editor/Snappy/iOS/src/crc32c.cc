@@ -27,7 +27,7 @@
 #define NOMINMAX
 //#include <windows.h>
 
-#include <nmmintrin.h>
+//#include <nmmintrin.h>
 #include <stdio.h>
 
 #include <random>
@@ -37,7 +37,7 @@
 typedef const uint8_t *buffer;
 
 
-#include "generated-constants.cpp"
+#include "generated-constants.cc"
 
 /* Table-driven software version as a fall-back.  This is about 15 times slower
    than using the hardware instructions.  This assumes little-endian integers,

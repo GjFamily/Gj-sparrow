@@ -18,6 +18,7 @@ namespace Gj
 
         private Component c;
         private GameObject o;
+        private TransformView tv;
 
         //
         // Constructors
@@ -39,8 +40,9 @@ namespace Gj
             if(transform != TransformParam.Off){
                 var gameObservable = o.AddComponent(typeof(TransformView));
                 entity.ObservedComponents.Add(gameObservable);
-                var ob = gameObservable as TransformView;
-                if (ob != null) ob.SetSyncParam((byte)transform);
+                var tv = gameObservable as TransformView;
+                if (tv != null) tv.SetSyncParam((byte)transform);
+
             }
             if(rigid != RigidBodyParam.Off){
                 var gameObservable = o.AddComponent(typeof(RigidbodyView));
@@ -82,5 +84,6 @@ namespace Gj
             }
             GameConnect.RelationInstance(o.name, relation, o, 0, null);
         }
+
     }
 }
