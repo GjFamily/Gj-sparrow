@@ -11,14 +11,6 @@ namespace Gj
 	{
 		public static Game single;
 
-        private GameSystem gameSystem;
-
-        public GameSystem GameSystem {
-            get {
-                return gameSystem;
-            }
-        }
-
 		private AudioSource audioMusicSource;
 		private AudioSource audioSoundSource;
 
@@ -44,10 +36,6 @@ namespace Gj
 		{
 			return Application.platform.ToString ();
 		}
-
-        public void SetGameSystem (GameSystem system) {
-            this.gameSystem = system;
-        }
 
 		public void AddScene (string sceneName)
 		{

@@ -8,9 +8,9 @@ namespace Gj
 {
     public class Info : MonoBehaviour
     {
+        public bool ai = false;
         public bool player = false;
         public bool currentPlayer = false;
-        private Category category = Category.Empty;
         [Serializable]
         public struct Attribute
         {
@@ -19,6 +19,7 @@ namespace Gj
         }
         public Attribute[] attrubutes;
         private Dictionary<string, float> attributeMap = new Dictionary<string, float>();
+        private Category category = Category.Empty;
         public enum Category
         {
             Build,

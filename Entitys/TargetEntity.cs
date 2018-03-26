@@ -31,12 +31,12 @@ namespace Gj
 
         protected SkillInfo GetSkillInfo(string skillName)
         {
-            return Game.single.GameSystem.GetSkillInfo(skillName);
+            return SkillManage.single.GetSkillInfo(skillName);
         }
 
         protected SkillEntity GetSkillEntity(string skillName)
         {
-            return Game.single.GameSystem.InitSkill(skillName, gameObject);
+            return SkillManage.single.InitSkill(skillName, gameObject);
         }
 
         protected virtual void BeforeCast(SkillInfo skillInfo)
