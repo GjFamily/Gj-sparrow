@@ -104,5 +104,15 @@ namespace Gj
         {
             Info.SetAttribute(key, value);
         }
+
+        public void Show()
+        {
+            Model.SetActive(true);
+        }
+
+        public void Hide()
+        {
+            Model.SetActive(false);
+        }
     }
 }

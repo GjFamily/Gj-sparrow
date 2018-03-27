@@ -9,6 +9,14 @@ namespace Gj
     [RequirePart(typeof(RelationPart))]
     public class TargetEntity : BaseEntity
     {
+        protected Role role = Role.Empty;
+        public enum Role
+        {
+            Empty,
+            Self,
+            Partner,
+            Enemy
+        }
         // Use this for initialization
         protected virtual void Start()
         {
@@ -18,15 +26,20 @@ namespace Gj
             GetComponent<AttackPart>().SetSkillNotic(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast);
         }
 
-        public virtual void Init()
+        public TargetEntity Init()
         {
+            BefortInit();
             Appear();
-            InitFeature();
+            AfterInit();
+            return this;
         }
 
-        protected virtual void InitFeature()
+        protected virtual void BefortInit()
         {
+        }
 
+        protected virtual void AfterInit()
+        {
         }
 
         protected SkillInfo GetSkillInfo(string skillName)

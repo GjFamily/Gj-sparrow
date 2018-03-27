@@ -9,7 +9,7 @@ namespace Gj
         public enum Identity
         {
             Partner,
-            Monster,
+            Enemy,
             Empty
         }
 
@@ -25,7 +25,7 @@ namespace Gj
 
         public bool IsEnemy()
         {
-            return identity == Identity.Monster;
+            return identity == Identity.Enemy;
         }
 
         public bool IsPartner(GameObject obj)
@@ -43,9 +43,9 @@ namespace Gj
 
         public bool IsPartner(RelationPart relation)
         {
-            if (identity == Identity.Monster)
+            if (identity == Identity.Enemy)
             {
-                return relation.identity == Identity.Monster;
+                return relation.identity == Identity.Enemy;
             }
             else if (identity == Identity.Partner)
             {
@@ -72,13 +72,13 @@ namespace Gj
 
         public bool IsEnemy(RelationPart relation)
         {
-            if (identity == Identity.Monster)
+            if (identity == Identity.Enemy)
             {
                 return relation.identity == Identity.Partner;
             }
             else if (identity == Identity.Partner)
             {
-                return relation.identity == Identity.Monster;
+                return relation.identity == Identity.Enemy;
             }
             else
             {
