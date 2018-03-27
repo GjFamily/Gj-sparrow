@@ -8,8 +8,11 @@ namespace Gj
 {
     public class Info : MonoBehaviour
     {
+        [HideInInspector]
         public bool ai = false;
+        [HideInInspector]
         public bool player = false;
+        [HideInInspector]
         public bool currentPlayer = false;
         [Serializable]
         public struct Attribute

@@ -33,6 +33,20 @@ namespace Gj
             }
         }
 
+        protected TargetEntity MakeTarget(string targetName, Vector3 position)
+        {
+            TargetEntity target = MakeTarget(targetName);
+            if (target != null)
+            {
+                target.transform.position = position;
+                return target;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
     }
 }
 

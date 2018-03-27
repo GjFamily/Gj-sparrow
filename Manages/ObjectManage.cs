@@ -43,7 +43,7 @@ namespace Gj
 
         private GameObject CreateObj(string objName)
         {
-            GameObject obj = ObjManage.single.GetObj(objName);
+            GameObject obj = ObjectManage.single.GetObj(objName);
             if (obj != null)
             {
                 return ModelTools.Create(obj, container);

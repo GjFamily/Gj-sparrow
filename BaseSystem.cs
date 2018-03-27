@@ -10,7 +10,7 @@ namespace Gj
         protected BasePlayer player;
         protected virtual void Awake()
         {
-            Tools.AddSub(this, gameObject);
+            CoreTools.AddFeature(this, gameObject);
         }
 
         // Use this for initialization

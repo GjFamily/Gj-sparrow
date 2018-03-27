@@ -5,7 +5,12 @@ namespace Gj
 {
     public class BasePlayer : MonoBehaviour
     {
-        public virtual void Init() {
+        protected virtual void Awake()
+        {
+            CoreTools.BindPart(this, gameObject);
+        }
+        public virtual void Init()
+        {
             GetComponent<Info>().player = true;
         }
 

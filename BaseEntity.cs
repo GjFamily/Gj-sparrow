@@ -27,10 +27,10 @@ namespace Gj
 
         void Awake ()
         {
-            Tools.BindPart(this, gameObject);
-            Tools.AddSub(this, gameObject);
-            sync = Tools.AllowSync(this, gameObject);
-            Tools.InfoSync(this, gameObject);
+            CoreTools.BindPart(this, gameObject);
+            CoreTools.AddFeature(this, gameObject);
+            sync = CoreTools.AllowSync(this, gameObject);
+            CoreTools.InfoSync(this, gameObject);
         }
 
         public void OpenSync(){

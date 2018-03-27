@@ -144,7 +144,7 @@ namespace Gj
 		IEnumerator LoadUrlAsyn (string url, string folderName, string suffix, Action<bool, WWW, string> CB)
 		{
 			string path = Application.persistentDataPath;
-			string fileName = Tools.Md5 (url) + "." + suffix;
+			string fileName = SimpleTools.Md5 (url) + "." + suffix;
 			string localUrl = path + "/" + folderName + "/" + fileName;
 			bool local = false;
 			WWW www;
@@ -176,7 +176,7 @@ namespace Gj
 			string url = result ["url"];
 			FileInfo file = new FileInfo (filepath);
 			Dictionary<string, string> headers = new Dictionary<string, string> ();
-			var boundary = "--" + Tools.GenerateStr (32) + "--";
+			var boundary = "--" + SimpleTools.GenerateStr (32) + "--";
 			headers.Add ("Content-Type", "multipart/form-data; boundary=" + boundary);
 			var requestBody = "--" + boundary + "\r\n"
 			                  + "Content-Disposition: form-data; name=\"key\"\r\n"

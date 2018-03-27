@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 
 namespace Gj
 {
@@ -41,7 +42,7 @@ namespace Gj
             set
             {
                 _model = value;
-                Tools.BindPart(this, _model);
+                CoreTools.BindPart(this, _model);
                 GetFeatureComponent<BeLongPart>().SetMaster(gameObject);
             }
         }
@@ -53,6 +54,11 @@ namespace Gj
         protected T[] GetFeatureComponents<T>()
         {
             return Model.GetComponents<T>();
+        }
+
+        protected T AddFeatureComponent<T>() where T : Component
+        {
+            return Model.AddComponent<T>();
         }
 
         protected Info GetInfo(GameObject obj)

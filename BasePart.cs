@@ -19,7 +19,7 @@ namespace Gj
         }
         protected virtual void Awake()
         {
-            Tools.BindPart(this, gameObject);
+            CoreTools.BindPart(this, gameObject);
         }
 
         protected Info GetInfo(GameObject obj)

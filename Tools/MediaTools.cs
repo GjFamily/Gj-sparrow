@@ -53,7 +53,7 @@ namespace Gj
 				CB (false, null, "Generating, do not start again");
 				return;
 			}
-			var file = Application.persistentDataPath + "/" + Tools.GenerateStr (10) + ".png";
+			var file = Application.persistentDataPath + "/" + SimpleTools.GenerateStr (10) + ".png";
 			generateCallBack = () => {
 				CB (true, file, "success");
 			};
@@ -143,7 +143,7 @@ namespace Gj
 			__recording = true;
 			__inter_recording = true;
 
-			mediaAllPath = Application.persistentDataPath + "/" + Tools.GenerateStr (10) + ".mp4";
+			mediaAllPath = Application.persistentDataPath + "/" + SimpleTools.GenerateStr (10) + ".mp4";
 			bool started = unity_startRecord (_session, mediaAllPath);
 			if (!started) {
 				Debug.Log ("Recording start error");

@@ -108,7 +108,7 @@ namespace Gj
             }
             else
             {
-                return x - Tools.width + radius + offsetX;
+                return x - SimpleTools.width + radius + offsetX;
             }
         }
 
@@ -125,8 +125,8 @@ namespace Gj
 
         private Vector2 GetPosition(float x, float y)
         {
-            float targetX = GetPositionX(Tools.GetX(x));
-            float targetY = GetPositionY(Tools.GetY(y));
+            float targetX = GetPositionX(SimpleTools.GetX(x));
+            float targetY = GetPositionY(SimpleTools.GetY(y));
             if (IsOut(targetX, targetY))
             {
                 //获取x，y坐标点弧度

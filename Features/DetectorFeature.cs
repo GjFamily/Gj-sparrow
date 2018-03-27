@@ -9,7 +9,14 @@ namespace Gj
     {
         private Action<GameObject> FindPartner;
         private Action<GameObject> FindEnemy;
-        private GameObject[] targetList;
+
+        public void Init () {
+            Rigidbody rigidbody = AddFeatureComponent<Rigidbody>();
+            rigidbody.useGravity = false;
+            SphereCollider sphereCollider = AddFeatureComponent<SphereCollider>();
+            sphereCollider.isTrigger = true;
+            sphereCollider.radius = 5;
+        }
 
         void Start()
         {

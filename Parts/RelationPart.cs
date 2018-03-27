@@ -30,7 +30,7 @@ namespace Gj
 
         public bool IsPartner(GameObject obj)
         {
-            RelationPart relation = Tools.GetMaster(obj).GetComponent<RelationPart>();
+            RelationPart relation = CoreTools.GetMaster(obj).GetComponent<RelationPart>();
             if (relation != null)
             {
                 return IsPartner(relation);
@@ -59,7 +59,7 @@ namespace Gj
 
         public bool IsEnemy(GameObject obj)
         {
-            RelationPart relation = Tools.GetMaster(obj).GetComponent<RelationPart>();
+            RelationPart relation = CoreTools.GetMaster(obj).GetComponent<RelationPart>();
             if (relation != null)
             {
                 return IsEnemy(relation);
