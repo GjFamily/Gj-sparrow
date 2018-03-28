@@ -143,10 +143,33 @@ namespace Gj
             targetTransform = transform;
         }
 
+        protected bool IsEnv (GameObject obj) {
+            return obj.tag == "Env";
+        }
+
+        protected bool AllowCollision (GameObject obj) {
+            if (IsEnv(obj)) {
+                return true;
+            } else {
+                Info _info = obj.GetComponent<Info>();
+                if (_info != null && _info.HaveBody()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+
+        protected bool AllowTarget (GameObject target) {
+            return SkillInfo.AllowTarget(target);
+        }
+
         protected void CastTarget(GameObject target)
         {
-            BeCastTarget(target);
-            AddExtraTarget(target);
+            if (AllowTarget(target)) {
+                BeCastTarget(target);
+                AddExtraTarget(target);
+            }
         }
 
         protected void BeCastTarget(GameObject target)

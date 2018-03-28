@@ -53,21 +53,34 @@ namespace Gj
         [HideInInspector]
         public GameObject master;
 
+
+        public bool AllowTarget(GameObject target)
+        {
+            return AllowTarget(master, target);
+        }
+
         public bool AllowTarget(GameObject master, GameObject target)
         {
-            RelationPart relation = master.GetComponent<RelationPart>();
-            if (relation == null) return false;
-            if (targetRelation == RargetRelation.Partner)
+            if (targetRelation == RargetRelation.Self)
             {
-                return relation.IsPartner(target);
-            }
-            else if (targetRelation == RargetRelation.Enemy)
-            {
-                return relation.IsEnemy(target);
+                return master == target;
             }
             else
             {
-                return false;
+                RelationPart relation = master.GetComponent<RelationPart>();
+                if (relation == null) return false;
+                if (targetRelation == RargetRelation.Partner)
+                {
+                    return relation.IsPartner(target);
+                }
+                else if (targetRelation == RargetRelation.Enemy)
+                {
+                    return relation.IsEnemy(target);
+                }
+                else
+                {
+                    return false;
+                }
             }
         }
 

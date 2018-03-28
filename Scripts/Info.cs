@@ -71,6 +71,10 @@ namespace Gj
             category = c;
         }
 
+        public bool HaveBody() {
+            return category != Category.Empty && category != Category.Skill;
+        }
+
         public bool IsEmpty()
         {
             return category == Category.Empty;
