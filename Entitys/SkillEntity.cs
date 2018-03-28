@@ -63,7 +63,7 @@ namespace Gj
             readyCast = ready;
             if (SkillInfo.castType == SkillInfo.CastType.Now || SkillInfo.castType == SkillInfo.CastType.Sustained)
             {
-                Start();
+                Now();
             }
             else
             {
@@ -115,7 +115,7 @@ namespace Gj
             }
         }
 
-        public void Start()
+        public void Now()
         {
             waiting = false;
             if (SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained || SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained)

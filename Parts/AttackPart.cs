@@ -85,7 +85,7 @@ namespace Gj
         {
             if (cSkillEntity != null)
             {
-                cSkillEntity.Start();
+                cSkillEntity.Now();
                 waitCast = false;
             }
         }
