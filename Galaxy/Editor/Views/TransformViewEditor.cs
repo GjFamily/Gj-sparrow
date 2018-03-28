@@ -48,7 +48,6 @@ public class TransformViewEditor : Editor
 
     public void OnEnable()
     {
-        SetupSerializedProperties();
     }
 
     public override void OnInspectorGUI()
@@ -90,13 +89,6 @@ public class TransformViewEditor : Editor
         GUILayout.EndVertical();
     }
 
-    private void SetupSerializedProperties()
-    {
-        this.m_SynchronizePositionProperty = serializedObject.FindProperty("m_PositionModel.SynchronizeEnabled");
-        this.m_SynchronizeRotationProperty = serializedObject.FindProperty("m_RotationModel.SynchronizeEnabled");
-        this.m_SynchronizeScaleProperty = serializedObject.FindProperty("m_ScaleModel.SynchronizeEnabled");
-    }
-
     private void DrawSynchronizePositionHeader()
     {
         DrawHeader("Synchronize Position", this.m_SynchronizePositionProperty);
@@ -110,17 +102,17 @@ public class TransformViewEditor : Editor
         }
 
         SerializedProperty interpolatePositionProperty = serializedObject.FindProperty("m_PositionModel.InterpolateOption");
-        TransformViewPositionModel.InterpolateOptions interpolateOption = (TransformViewPositionModel.InterpolateOptions)interpolatePositionProperty.enumValueIndex;
+        PositionParam interpolateOption = (PositionParam)interpolatePositionProperty.enumValueIndex;
 
         SerializedProperty extrapolatePositionProperty = serializedObject.FindProperty("m_PositionModel.ExtrapolateOption");
-        TransformViewPositionModel.ExtrapolateOptions extrapolateOption = (TransformViewPositionModel.ExtrapolateOptions)extrapolatePositionProperty.enumValueIndex;
+        ExtrapolatedParam extrapolateOption = (ExtrapolatedParam)extrapolatePositionProperty.enumValueIndex;
 
         float containerHeight = 155;
 
         switch (interpolateOption)
         {
-            case TransformViewPositionModel.InterpolateOptions.FixedSpeed:
-            case TransformViewPositionModel.InterpolateOptions.Lerp:
+            case PositionParam.FixedSpeed:
+            case PositionParam.Lerp:
                 containerHeight += EDITOR_LINE_HEIGHT;
                 break;
             /*case PhotonTransformViewPositionModel.InterpolateOptions.MoveTowardsComplex:
@@ -128,14 +120,14 @@ public class TransformViewEditor : Editor
                 break;*/
         }
 
-        if (extrapolateOption != TransformViewPositionModel.ExtrapolateOptions.Disabled)
+        if (extrapolateOption != ExtrapolatedParam.Disabled)
         {
             containerHeight += EDITOR_LINE_HEIGHT;
         }
 
         switch (extrapolateOption)
         {
-            case TransformViewPositionModel.ExtrapolateOptions.FixedSpeed:
+            case ExtrapolatedParam.FixedSpeed:
                 containerHeight += EDITOR_LINE_HEIGHT;
                 break;
         }
@@ -238,12 +230,12 @@ public class TransformViewEditor : Editor
         propertyRect.y += EDITOR_LINE_HEIGHT;
     }
 
-    private void DrawSynchronizePositionDataExtrapolation(ref Rect propertyRect, SerializedProperty extrapolatePositionProperty, TransformViewPositionModel.ExtrapolateOptions extrapolateOption)
+    private void DrawSynchronizePositionDataExtrapolation(ref Rect propertyRect, SerializedProperty extrapolatePositionProperty, ExtrapolatedParam extrapolateOption)
     {
         DrawPropertyWithHelpIcon(ref propertyRect, ref this.m_ExtrapolateHelpOpen, extrapolatePositionProperty, EXTRAPOLATE_TOOLTIP);
         DrawHelpBox(ref propertyRect, this.m_ExtrapolateHelpOpen, GetExtrapolateHelpBoxHeight(), EXTRAPOLATE_HELP, EXTRAPOLATE_HELP_URL);
 
-        if (extrapolateOption != TransformViewPositionModel.ExtrapolateOptions.Disabled)
+        if (extrapolateOption != ExtrapolatedParam.Disabled)
         {
             EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_PositionModel.ExtrapolateIncludingRoundTripTime"));
             propertyRect.y += EDITOR_LINE_HEIGHT;
@@ -251,7 +243,7 @@ public class TransformViewEditor : Editor
 
         switch (extrapolateOption)
         {
-            case TransformViewPositionModel.ExtrapolateOptions.FixedSpeed:
+            case ExtrapolatedParam.FixedSpeed:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_PositionModel.ExtrapolateSpeed"));
                 propertyRect.y += EDITOR_LINE_HEIGHT;
                 break;
@@ -270,20 +262,20 @@ public class TransformViewEditor : Editor
     }
 
     private void DrawSynchronizePositionDataInterpolation(ref Rect propertyRect, SerializedProperty interpolatePositionProperty,
-        TransformViewPositionModel.InterpolateOptions interpolateOption)
+                                                          PositionParam interpolateOption)
     {
         DrawPropertyWithHelpIcon(ref propertyRect, ref this.m_InterpolateHelpOpen, interpolatePositionProperty, INTERPOLATE_TOOLTIP);
         DrawHelpBox(ref propertyRect, this.m_InterpolateHelpOpen, GetInterpolateHelpBoxHeight(), INTERPOLATE_HELP, INTERPOLATE_HELP_URL);
 
         switch (interpolateOption)
         {
-            case TransformViewPositionModel.InterpolateOptions.FixedSpeed:
+            case PositionParam.FixedSpeed:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_PositionModel.InterpolateMoveTowardsSpeed"),
                     new GUIContent("MoveTowards Speed"));
                 propertyRect.y += EDITOR_LINE_HEIGHT;
                 break;
 
-            case TransformViewPositionModel.InterpolateOptions.Lerp:
+            case PositionParam.Lerp:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_PositionModel.InterpolateLerpSpeed"), new GUIContent("Lerp Speed"));
                 propertyRect.y += EDITOR_LINE_HEIGHT;
                 break;
@@ -323,15 +315,15 @@ public class TransformViewEditor : Editor
         }
 
         SerializedProperty interpolateRotationProperty = serializedObject.FindProperty("m_RotationModel.InterpolateOption");
-        TransformViewRotationModel.InterpolateOptions interpolateOption =
-            (TransformViewRotationModel.InterpolateOptions) interpolateRotationProperty.enumValueIndex;
+        RotationParam interpolateOption =
+            (RotationParam) interpolateRotationProperty.enumValueIndex;
 
         float containerHeight = 20;
 
         switch (interpolateOption)
         {
-            case TransformViewRotationModel.InterpolateOptions.RotateTowards:
-            case TransformViewRotationModel.InterpolateOptions.Lerp:
+            case RotationParam.RotateTowards:
+            case RotationParam.Lerp:
                 containerHeight += EDITOR_LINE_HEIGHT;
                 break;
         }
@@ -349,11 +341,11 @@ public class TransformViewEditor : Editor
 
         switch (interpolateOption)
         {
-            case TransformViewRotationModel.InterpolateOptions.RotateTowards:
+            case RotationParam.RotateTowards:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_RotationModel.InterpolateRotateTowardsSpeed"),
                     new GUIContent("RotateTowards Speed"));
                 break;
-            case TransformViewRotationModel.InterpolateOptions.Lerp:
+            case RotationParam.Lerp:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_RotationModel.InterpolateLerpSpeed"), new GUIContent("Lerp Speed"));
                 break;
         }
@@ -372,14 +364,14 @@ public class TransformViewEditor : Editor
         }
 
         SerializedProperty interpolateScaleProperty = serializedObject.FindProperty("m_ScaleModel.InterpolateOption");
-        TransformViewScaleModel.InterpolateOptions interpolateOption = (TransformViewScaleModel.InterpolateOptions) interpolateScaleProperty.enumValueIndex;
+        ScaleParam interpolateOption = (ScaleParam) interpolateScaleProperty.enumValueIndex;
 
         float containerHeight = EDITOR_LINE_HEIGHT;
 
         switch (interpolateOption)
         {
-            case TransformViewScaleModel.InterpolateOptions.MoveTowards:
-            case TransformViewScaleModel.InterpolateOptions.Lerp:
+            case ScaleParam.MoveTowards:
+            case ScaleParam.Lerp:
                 containerHeight += EDITOR_LINE_HEIGHT;
                 break;
         }
@@ -397,11 +389,11 @@ public class TransformViewEditor : Editor
 
         switch (interpolateOption)
         {
-            case TransformViewScaleModel.InterpolateOptions.MoveTowards:
+            case ScaleParam.MoveTowards:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_ScaleModel.InterpolateMoveTowardsSpeed"),
                     new GUIContent("MoveTowards Speed"));
                 break;
-            case TransformViewScaleModel.InterpolateOptions.Lerp:
+            case ScaleParam.Lerp:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_ScaleModel.InterpolateLerpSpeed"), new GUIContent("Lerp Speed"));
                 break;
         }

@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 
 namespace Gj.Galaxy.Logic{
+    public enum RigidBodyParam : byte { Off, OnlyVelocity, OnlyAngularVelocity, All }
+
     [RequireComponent(typeof(Rigidbody))]
     public class RigidbodyView : MonoBehaviour, GameObservable
     {

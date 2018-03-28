@@ -1,15 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Gj.Galaxy.Scripts;
+using Gj.Galaxy.Logic;
 
-namespace Gj.Galaxy.Logic{
-    public class TransformViewScaleControl
+namespace Gj.Galaxy.Scripts{
+    public class TransformViewScale
     {
-        TransformViewScaleModel m_Model;
+        TransformOptions options;
+        Extrapolated extrapolated;
+
         Vector3 m_NetworkScale = Vector3.one;
 
-        public TransformViewScaleControl(TransformViewScaleModel model)
+        public TransformViewScale(TransformOptions options, Extrapolated extrapolated)
         {
-            m_Model = model;
+            this.options = options;
+            this.extrapolated = extrapolated;
         }
 
         /// <summary>
@@ -21,17 +26,17 @@ namespace Gj.Galaxy.Logic{
             return m_NetworkScale;
         }
 
-        public Vector3 GetScale(Vector3 currentScale)
+        public Vector3 UpdateScale(Vector3 currentScale)
         {
-            switch (m_Model.InterpolateOption)
+            switch (options.scaleParam)
             {
                 default:
-                case TransformViewScaleModel.InterpolateOptions.Disabled:
+                case ScaleParam.Disabled:
                     return m_NetworkScale;
-                case TransformViewScaleModel.InterpolateOptions.MoveTowards:
-                    return Vector3.MoveTowards(currentScale, m_NetworkScale, m_Model.InterpolateMoveTowardsSpeed * Time.deltaTime);
-                case TransformViewScaleModel.InterpolateOptions.Lerp:
-                    return Vector3.Lerp(currentScale, m_NetworkScale, m_Model.InterpolateLerpSpeed * Time.deltaTime);
+                case ScaleParam.MoveTowards:
+                    return Vector3.MoveTowards(currentScale, m_NetworkScale, options.scaleSpeed * Time.deltaTime);
+                case ScaleParam.Lerp:
+                    return Vector3.Lerp(currentScale, m_NetworkScale, options.scaleSpeed * Time.deltaTime);
             }
         }
 

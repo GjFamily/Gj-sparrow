@@ -392,8 +392,8 @@ namespace Gj.Galaxy.Network{
                     Debug.LogException(e);
                 } 
             }, ()=>{
-                try
-                {
+                //try
+                //{
                     var r = conn.Read(headLength, out h);
                     if (r == null)
                     {
@@ -428,9 +428,9 @@ namespace Gj.Galaxy.Network{
                     //ServerTimestamp = message.time;
                     if (InData != null) InData(headLength + length);
                     dispatch(message);
-                }catch(Exception e){
-                    Debug.LogException(e);
-                }
+                //}catch(Exception e){
+                //    Debug.LogException(e);
+                //}
             }, (e)=>{
                 try
                 {

@@ -80,7 +80,7 @@ namespace Gj
                 }
                 else
                 {
-                    transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(0, angle, 0), Time.deltaTime * speed);
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.Euler(0, angle, 0), Time.deltaTime * speed);
                 }
             }
         }

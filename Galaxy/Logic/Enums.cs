@@ -56,8 +56,6 @@ namespace Gj.Galaxy.Logic{
     }
 
     public enum EntitySynchronization:byte { Off, Reliable, Unreliable, UnreliableOnChange }
-    public enum TransformParam:byte { Off, OnlyPosition, OnlyRotation, OnlyScale, PositionAndRotation, All }
-    public enum RigidBodyParam:byte { Off, OnlyVelocity, OnlyAngularVelocity, All }
 
     /// <summary>
     /// Options to define how Ownership Transfer is handled per PhotonView.

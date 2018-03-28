@@ -1,31 +1,48 @@
 ﻿using UnityEngine;
 using Gj.Galaxy.Logic;
 using Gj.Galaxy.Utils;
+using System.Collections.Generic;
 
 namespace Gj.Galaxy.Scripts{
+    public enum TransformParam : byte { Off, OnlyPosition, OnlyRotation, OnlyScale, PositionAndRotation, All }
+    public enum ExtrapolatedParam : byte { Disabled, SynchronizeValues, EstimateSpeed, FixedSpeed, }
+    public enum PositionParam : byte 
+    {
+        Disabled,
+        FixedSpeed,
+        //EstimatedSpeed,
+        SynchronizeValues,
+        MoveTowardsComplex,
+        Lerp,
+    }
+    public enum RotationParam : byte
+    {
+        Disabled,
+        RotateTowards,
+        SynchronizeValues,
+        Lerp,
+    }
+    public enum ScaleParam : byte
+    {
+        Disabled,
+        MoveTowards,
+        Lerp,
+    }
     [RequireComponent(typeof(NetworkEntity))]
     public class TransformView : MonoBehaviour, GameObservable
     {
-        [SerializeField]
-        public TransformViewPositionModel m_PositionModel = new TransformViewPositionModel();
-
-        [SerializeField]
-        public TransformViewRotationModel m_RotationModel = new TransformViewRotationModel();
-
-        [SerializeField]
-        public TransformViewScaleModel m_ScaleModel = new TransformViewScaleModel();
-
         public TransformParam transformParam = TransformParam.PositionAndRotation;
+        public TransformOptions options = new TransformOptions();
 
-        TransformViewPositionControl m_PositionControl;
-        TransformViewRotationControl m_RotationControl;
-        TransformViewScaleControl m_ScaleControl;
+        TransformViewPosition positionControl;
+        TransformViewRotation rotationControl;
+        TransformViewScale scaleControl;
 
-        public bool SynchronizeEnabled;
+        Extrapolated extrapolated;
 
-        NetworkEntity m_entity;
+        NetworkEntity entity;
 
-        bool m_ReceivedNetworkUpdate = false;
+        bool receivedNetworkUpdate = false;
 
         /// <summary>
         /// Flag to skip initial data when Object is instantiated and rely on the first deserialized data instead.
@@ -34,11 +51,13 @@ namespace Gj.Galaxy.Scripts{
 
         void Awake()
         {
-            this.m_entity = GetComponent<NetworkEntity>();
+            this.entity = GetComponent<NetworkEntity>();
+            this.extrapolated = new Extrapolated(this.options);
 
-            this.m_PositionControl = new TransformViewPositionControl(this.m_PositionModel);
-            this.m_RotationControl = new TransformViewRotationControl(this.m_RotationModel);
-            this.m_ScaleControl = new TransformViewScaleControl(this.m_ScaleModel);
+            this.positionControl = new TransformViewPosition(this.options, this.extrapolated);
+            this.rotationControl = new TransformViewRotation(this.options, this.extrapolated);
+            this.scaleControl = new TransformViewScale(this.options, this.extrapolated);
+
         }
 
         void OnEnable()
@@ -48,7 +67,7 @@ namespace Gj.Galaxy.Scripts{
 
         void Update()
         {
-            if (this.m_entity == null || this.m_entity.isMine == true || PeerClient.connected == false)
+            if (this.entity == null || this.entity.isMine == true || PeerClient.connected == false)
             {
                 return;
             }
@@ -57,8 +76,10 @@ namespace Gj.Galaxy.Scripts{
 
         void transformUpdate()
         {
-            if (this.m_ReceivedNetworkUpdate == false && this.SynchronizeEnabled)
+            if (this.receivedNetworkUpdate == false)
             {
+                UnityEngine.Debug.Log(this.receivedNetworkUpdate);
+                UnityEngine.Debug.Log(this.receivedNetworkUpdate);
                 return;
             }
             switch (this.transformParam)
@@ -87,22 +108,23 @@ namespace Gj.Galaxy.Scripts{
 
         void UpdatePosition()
         {
-            transform.localPosition = this.m_PositionControl.UpdatePosition(transform.localPosition);
+            transform.localPosition = this.positionControl.UpdatePosition(transform.localPosition);
         }
 
         void UpdateRotation()
         {
-            transform.localRotation = this.m_RotationControl.GetRotation(transform.localRotation);
+            transform.localRotation = this.rotationControl.UpdateRotation(transform.localRotation);
         }
 
         void UpdateScale()
         {
-            transform.localScale = this.m_ScaleControl.GetScale(transform.localScale);
+            transform.localScale = this.scaleControl.UpdateScale(transform.localScale);
         }
 
-        public void SetSynchronizedValues(Vector3 speed, float turnSpeed)
+        public void SetSynchronizedValues(float speed, float turnSpeed)
         {
-            this.m_PositionControl.SetSynchronizedValues(speed, turnSpeed);
+            this.positionControl.SetSynchronizedValues(speed);
+            this.rotationControl.SetSynchronizedValues(turnSpeed);
         }
 
         public void OnSerializeEntity(StreamBuffer stream, MessageInfo info)
@@ -110,26 +132,26 @@ namespace Gj.Galaxy.Scripts{
             switch (this.transformParam)
             {
                 case TransformParam.All:
-                    this.m_PositionControl.OnSerialize(transform.localPosition, stream, info);
-                    this.m_RotationControl.OnSerialize(transform.localRotation, stream, info);
-                    this.m_ScaleControl.OnSerialize(transform.localScale, stream, info);
+                    this.positionControl.OnSerialize(transform.localPosition, stream, info);
+                    this.rotationControl.OnSerialize(transform.localRotation, stream, info);
+                    this.scaleControl.OnSerialize(transform.localScale, stream, info);
                     break;
                 case TransformParam.OnlyPosition:
-                    this.m_PositionControl.OnSerialize(transform.localPosition, stream, info);
+                    this.positionControl.OnSerialize(transform.localPosition, stream, info);
                     break;
                 case TransformParam.OnlyRotation:
-                    this.m_RotationControl.OnSerialize(transform.localRotation, stream, info);
+                    this.rotationControl.OnSerialize(transform.localRotation, stream, info);
                     break;
                 case TransformParam.OnlyScale:
-                    this.m_ScaleControl.OnSerialize(transform.localScale, stream, info);
+                    this.scaleControl.OnSerialize(transform.localScale, stream, info);
                     break;
                 case TransformParam.PositionAndRotation:
-                    this.m_PositionControl.OnSerialize(transform.localPosition, stream, info);
-                    this.m_RotationControl.OnSerialize(transform.localRotation, stream, info);
+                    this.positionControl.OnSerialize(transform.localPosition, stream, info);
+                    this.rotationControl.OnSerialize(transform.localRotation, stream, info);
                     break;
             }
 
-            if (this.m_entity.isMine == false && this.m_PositionModel.DrawErrorGizmo == true)
+            if (this.entity.isMine == false && this.options.DrawErrorGizmo == true)
             {
                 this.DoDrawEstimatedPositionError();
             }
@@ -140,31 +162,31 @@ namespace Gj.Galaxy.Scripts{
             switch (this.transformParam)
             {
                 case TransformParam.All:
-                    this.m_PositionControl.OnDeserialize(transform.localPosition, stream, info);
-                    this.m_RotationControl.OnDeserialize(transform.localRotation, stream, info);
-                    this.m_ScaleControl.OnDeserialize(transform.localScale, stream, info);
+                    this.positionControl.OnDeserialize(transform.localPosition, stream, info);
+                    this.rotationControl.OnDeserialize(transform.localRotation, stream, info);
+                    this.scaleControl.OnDeserialize(transform.localScale, stream, info);
                     break;
                 case TransformParam.OnlyPosition:
-                    this.m_PositionControl.OnDeserialize(transform.localPosition, stream, info);
+                    this.positionControl.OnDeserialize(transform.localPosition, stream, info);
                     break;
                 case TransformParam.OnlyRotation:
-                    this.m_RotationControl.OnDeserialize(transform.localRotation, stream, info);
+                    this.rotationControl.OnDeserialize(transform.localRotation, stream, info);
                     break;
                 case TransformParam.OnlyScale:
-                    this.m_ScaleControl.OnDeserialize(transform.localScale, stream, info);
+                    this.scaleControl.OnDeserialize(transform.localScale, stream, info);
                     break;
                 case TransformParam.PositionAndRotation:
-                    this.m_PositionControl.OnDeserialize(transform.localPosition, stream, info);
-                    this.m_RotationControl.OnDeserialize(transform.localRotation, stream, info);
+                    this.positionControl.OnDeserialize(transform.localPosition, stream, info);
+                    this.rotationControl.OnDeserialize(transform.localRotation, stream, info);
                     break;
             }
 
-            if (this.m_entity.isMine == false && this.m_PositionModel.DrawErrorGizmo == true)
+            if (this.entity.isMine == false && this.options.DrawErrorGizmo == true)
             {
                 this.DoDrawEstimatedPositionError();
             }
 
-            this.m_ReceivedNetworkUpdate = true;
+            this.receivedNetworkUpdate = true;
 
             // force latest data to avoid initial drifts when player is instantiated.
             if (m_firstTake)
@@ -178,7 +200,7 @@ namespace Gj.Galaxy.Scripts{
 
         void DoDrawEstimatedPositionError()
         {
-            Vector3 targetPosition = this.m_PositionControl.GetNetworkPosition();
+            Vector3 targetPosition = this.positionControl.GetNetworkPosition();
 
             // we are synchronizing the localPosition, so we need to add the parent position for a proper positioning.
             if (transform.parent != null)
@@ -195,5 +217,50 @@ namespace Gj.Galaxy.Scripts{
         {
             this.transformParam = (TransformParam)param;
         }
-    } 
+    }
+
+    public class TransformOptions{
+
+        public bool TeleportEnabled = true;
+        public float TeleportIfDistanceGreaterThan = 3f;
+
+        public PositionParam positionParam = PositionParam.SynchronizeValues;
+        public float positionSpeed = 3f;
+
+        public float Acceleration = 2;
+        public float Deceleration = 2;
+        public AnimationCurve SpeedCurve = new AnimationCurve(
+            new Keyframe[] {
+              new Keyframe( -1, 0, 0, Mathf.Infinity ),
+              new Keyframe( 0, 1, 0, 0 ),
+              new Keyframe( 1, 1, 0, 1 ),
+              new Keyframe( 4, 4, 1, 0 )
+            }
+        );
+
+        public RotationParam rotationParam = RotationParam.SynchronizeValues;
+        public float rotationSpeed = 180;
+
+        public ScaleParam scaleParam = ScaleParam.Disabled;
+        public float scaleSpeed = 1f;
+
+        public ExtrapolatedParam extrapolatedParam = ExtrapolatedParam.SynchronizeValues;
+        public float extrapolatedSpeed = 1f;
+        public bool IncludingRoundTripTime = true;
+        public int NumberOfStoredPositions = 1;
+        public int IfTimeLesserThan = 2;
+
+        //public bool DrawNetworkGizmo = true;
+        //public Color NetworkGizmoColor = Color.red;
+        //public ExitGames.Client.GUI.GizmoType NetworkGizmoType;
+        //public float NetworkGizmoSize = 1f;
+
+        //public bool DrawExtrapolatedGizmo = true;
+        //public Color ExtrapolatedGizmoColor = Color.yellow;
+        //public ExitGames.Client.GUI.GizmoType ExtrapolatedGizmoType;
+        //public float ExtrapolatedGizmoSize = 1f;
+
+        public bool DrawErrorGizmo = true;
+    }
+
 }

@@ -12,7 +12,9 @@ namespace Gj
         // Fields
         //
         public TransformParam transform = TransformParam.Off;
+        public TransformOptions options;
         public RigidBodyParam rigid = RigidBodyParam.Off;
+
         public string[] infoList = null;
         public EntitySynchronization sync;
 
@@ -23,11 +25,13 @@ namespace Gj
         //
         // Constructors
         //
-        public AllowSync(EntitySynchronization sync) {
+        public AllowSync(EntitySynchronization sync)
+        {
             this.sync = sync;
         }
 
-        public void Register(Component c, GameObject o){
+        public void Register(Component c, GameObject o)
+        {
             var entity = c.GetComponent<NetworkEntity>() as NetworkEntity;
             if (entity != null)
             {
@@ -37,20 +41,24 @@ namespace Gj
 
             entity = o.AddComponent(typeof(NetworkEntity)) as NetworkEntity;
             entity.synchronization = sync;
-            if(transform != TransformParam.Off){
+            if (transform != TransformParam.Off)
+            {
                 var gameObservable = o.AddComponent(typeof(TransformView));
                 entity.ObservedComponents.Add(gameObservable);
-                var tv = gameObservable as TransformView;
+                tv = gameObservable as TransformView;
                 if (tv != null) tv.SetSyncParam((byte)transform);
-
+                if (options != null) tv.options = options;
+                o.AddComponent(typeof(SyncSpeedScript));
             }
-            if(rigid != RigidBodyParam.Off){
+            if (rigid != RigidBodyParam.Off)
+            {
                 var gameObservable = o.AddComponent(typeof(RigidbodyView));
                 entity.ObservedComponents.Add(gameObservable);
                 var ob = gameObservable as RigidbodyView;
                 if (ob != null) ob.SetSyncParam((byte)rigid);
             }
-            if(infoList != null && infoList.Length > 0){
+            if (infoList != null && infoList.Length > 0)
+            {
                 var gameObservable = o.AddComponent(typeof(InfoView));
                 entity.ObservedComponents.Add(gameObservable);
                 var ob = gameObservable as InfoView;
@@ -61,7 +69,8 @@ namespace Gj
             this.o = o;
         }
 
-        public void Sync(){
+        public void Sync()
+        {
             InstanceRelation relation;
             Info info = c.GetComponent<Info>();
             if (info == null && !info.player)
@@ -85,5 +94,27 @@ namespace Gj
             GameConnect.RelationInstance(o.name, relation, o, 0, null);
         }
 
+        public void SyncSpeed(float speed, float turnSpeed)
+        {
+            if (tv == null) return;
+            tv.SetSynchronizedValues(speed, turnSpeed);
+        }
+
     }
+    [RequireComponent(typeof(Info))]
+    [RequireComponent(typeof(TransformView))]
+    public class SyncSpeedScript:MonoBehaviour{
+        Info info;
+        TransformView tv;
+		void Awake()
+		{
+            info = GetComponent<Info>() as Info;
+            tv = GetComponent<TransformView>() as TransformView;
+		}
+
+		void Update()
+		{
+            tv.SetSynchronizedValues(info.GetAttribute("moveSpeed"), info.GetAttribute("rotateSpeed"));
+		}
+	}
 }
