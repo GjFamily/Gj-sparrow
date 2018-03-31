@@ -7,26 +7,53 @@ namespace Gj
     public class EventManage
     {
         public static EventManage single;
-        private Dictionary<string, List<Action<string[]>>> eventDic = new Dictionary<string, List<Action<string[]>>>();
+        private Dictionary<string, List<Event>> eventDic = new Dictionary<string, List<Event>>();
 
+        private struct Event {
+            public Action<String[]> action;
+            public string key;
+            public bool once;
+        }
 
         static EventManage()
         {
             single = new EventManage();
         }
 
-        public void On(string eventName, Action<string[]> eventAction)
+        public string On(string eventName, Action<string[]> eventAction, bool once = false)
         {
-            List<Action<string[]>> eventList = GetEventList(eventName);
+            List<Event> eventList = GetEventList(eventName);
             if (eventList == null)
             {
-                eventList = new List<Action<string[]>>();
+                eventList = new List<Event>();
                 eventDic.Add(eventName, eventList);
             }
-            eventList.Add(eventAction);
+            Event e = new Event
+            {
+                key = SimpleTools.GenerateStr(8),
+                action = eventAction,
+                once = once
+            };
+            eventList.Add(e);
+            return e.key;
         }
 
-        private List<Action<string[]>> GetEventList(string eventName)
+        public string Once(string eventName, Action<string[]> eventAction) {
+            return On(eventName, eventAction, true);
+        }
+
+        public void Off (string eventName, string key) {
+            List<Event> eventList = GetEventList(eventName);
+            if (eventList != null) {
+                foreach (Event e in eventList) {
+                    if (key.Equals(e.key)) {
+                        eventList.Remove(e);
+                    }
+                }
+            }
+        }
+
+        private List<Event> GetEventList(string eventName)
         {
             if (eventDic.ContainsKey(eventName))
             {
@@ -40,14 +67,20 @@ namespace Gj
 
         public void Emit(string eventName, string[] param)
         {
-            List<Action<string[]>> eventList = GetEventList(eventName);
+            List<Event> eventList = GetEventList(eventName);
             if (eventList != null)
             {
-                foreach (Action<string[]> action in eventList)
+                foreach (Event e in eventList)
                 {
-                    if (action != null)
+                    if (e.action != null)
                     {
-                        action(param);
+                        e.action(param);
+                        if (e.once)
+                        {
+                            eventList.Remove(e);
+                        }
+                    } else {
+                        eventList.Remove(e);
                     }
                 }
             }
@@ -71,15 +104,6 @@ namespace Gj
         public void Emit(string eventName, string param1, string param2, string param3)
         {
             Emit(eventName, new string[] { param1, param2, param3 });
-        }
-
-        public void Clean(string eventName, Action<string[]> eventAction)
-        {
-            List<Action<string[]>> eventList = GetEventList(eventName);
-            if (eventList != null)
-            {
-                eventList.Remove(eventAction);
-            }
         }
     }
 }
