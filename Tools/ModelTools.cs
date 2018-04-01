@@ -18,7 +18,6 @@ namespace Gj
 			if (prefab != null) {
                 GameObject obj = GameObject.Instantiate(prefab);
                 obj.name = prefab.name;
-                Debug.Log(obj.name);
                 return obj;
 			} else {
 				return new GameObject ();

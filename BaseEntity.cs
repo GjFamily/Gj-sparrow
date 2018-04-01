@@ -37,11 +37,11 @@ namespace Gj
             if (sync != null) sync.Sync();
         }
 
-        protected Info GetInfo (GameObject obj) {
+        public static Info GetInfo (GameObject obj) {
             return obj.GetComponent<Info>();
         }
 
-        protected float GetAttribute (GameObject obj, string key) {
+        public static float GetAttribute (GameObject obj, string key) {
             Info info = GetInfo(obj);
             if (info != null) {
                 return info.GetAttribute(key);
@@ -49,20 +49,20 @@ namespace Gj
             return 0;
         }
 
-        protected void SetAttribute(GameObject obj, string key, float value)
+        public static void SetAttribute(GameObject obj, string key, float value)
         {
             Info info = GetInfo(obj);
             if (info != null)
             {
-                Info.SetAttribute(key, value);
+                info.SetAttribute(key, value);
             }
         }
 
-        protected float GetAttribute (string key) {
+        public float GetAttribute (string key) {
             return Info.GetAttribute(key);
         }
 
-        protected void SetAttribute (string key, float value) {
+        public void SetAttribute (string key, float value) {
             Info.SetAttribute(key, value);
         }
 
