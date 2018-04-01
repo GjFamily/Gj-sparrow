@@ -24,7 +24,7 @@ namespace Gj
         {
             if (followDirection)
             {
-                Model.transform.rotation = Quaternion.Euler(Model.transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, Model.transform.rotation.eulerAngles.z);
+                Feature.transform.rotation = Quaternion.Euler(Feature.transform.rotation.eulerAngles.x, transform.rotation.eulerAngles.y, Feature.transform.rotation.eulerAngles.z);
             }
         }
 

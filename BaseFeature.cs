@@ -32,33 +32,33 @@ namespace Gj
                 return _featureInfo;
             }
         }
-        private GameObject _model;
-        public GameObject Model
+        private GameObject _feature;
+        public GameObject Feature
         {
             get
             {
-                return _model;
+                return _feature;
             }
             set
             {
-                _model = value;
-                CoreTools.BindPart(this, _model);
+                _feature = value;
+                CoreTools.BindPart(this, _feature);
                 GetFeatureComponent<BeLongPart>().SetMaster(gameObject);
             }
         }
 
         protected T GetFeatureComponent<T>() {
-            return Model.GetComponent<T>();
+            return Feature.GetComponent<T>();
         }
 
         protected T[] GetFeatureComponents<T>()
         {
-            return Model.GetComponents<T>();
+            return Feature.GetComponents<T>();
         }
 
         protected T AddFeatureComponent<T>() where T : Component
         {
-            return Model.AddComponent<T>();
+            return Feature.AddComponent<T>();
         }
 
         protected Info GetInfo(GameObject obj)
@@ -107,12 +107,12 @@ namespace Gj
 
         public void Show()
         {
-            Model.SetActive(true);
+            Feature.SetActive(true);
         }
 
         public void Hide()
         {
-            Model.SetActive(false);
+            Feature.SetActive(false);
         }
     }
 }

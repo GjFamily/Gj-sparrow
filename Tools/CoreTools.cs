@@ -59,7 +59,7 @@ namespace Gj
 
                                 if (obj != null)
                                 {
-                                    baseFeature.Model = obj;
+                                    baseFeature.Feature = obj;
                                 }
                             }
                         }
@@ -84,7 +84,7 @@ namespace Gj
                         if (obj != null)
                         {
                             obj.name = requireFeature.feature.Name;
-                            baseFeature.Model = obj;
+                            baseFeature.Feature = obj;
                         }
                     }
                 }
