@@ -674,7 +674,7 @@ namespace Gj.Galaxy.Logic
                 return ;
             }
 
-            Component[] entitys = (Component[])prefabGo.GetEntitysInChildren();
+            var entitys = prefabGo.GetEntitysInChildren();
             int playerId = 0;
             int[] entityIds = null;
             if (relation == InstanceRelation.Scene)
@@ -946,6 +946,7 @@ namespace Gj.Galaxy.Logic
                 instantiateEvent[(byte)3] = group;
             }
 
+            Debug.Log(viewIDs.Length);
             // send the list of viewIDs only if there are more than one. else the instantiateId is the viewID
             if (viewIDs.Length > 1)
             {
@@ -1308,7 +1309,11 @@ namespace Gj.Galaxy.Logic
             int[] viewsIDs;
             if (evData.ContainsKey((byte)4))
             {
-                viewsIDs = (int[])evData[(byte)4];
+                object[] v = (object[])evData[(byte)4];
+                viewsIDs = new int[v.Length];
+                for (var i = 0; i < v.Length; i++){
+                    viewsIDs[i] = (int)v[i];
+                }
             }
             else
             {
@@ -2024,9 +2029,7 @@ namespace Gj.Galaxy.Logic
             // read view ID from key (byte)0: a int-array (PUN 1.17++)
             int entityId = (int)data[SyncViewId];
 
-
-            // debug:
-            //LogObjectArray(data);
+            Debug.Log(entityId);
             NetworkEntity entity = GetEntity(entityId);
             if (entity == null)
             {

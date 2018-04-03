@@ -32,9 +32,8 @@ namespace Gj
             }
         }
 
-        public void SetSyncParam(byte param)
+        public void BindEntity(NetworkEntity entity)
         {
-            this.flag = param == 0 ? false : true;
         }
     }
 }

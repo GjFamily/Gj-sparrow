@@ -10,7 +10,7 @@ namespace Gj.Galaxy.Logic{
     {
         void OnSerializeEntity(StreamBuffer stream, MessageInfo info);
         void OnDeserializeEntity(StreamBuffer stream, MessageInfo info);
-        void SetSyncParam(byte param);
+        void BindEntity(NetworkEntity entity);
     }
 
     public interface PrefabPool

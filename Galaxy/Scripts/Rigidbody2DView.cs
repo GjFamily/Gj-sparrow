@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 
 namespace Gj.Galaxy.Logic{
+    
     [RequireComponent(typeof(Rigidbody2D))]
     public class Rigidbody2DView : MonoBehaviour, GameObservable
     {
@@ -47,9 +48,9 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public void SetSyncParam(byte param)
+        public void BindEntity(NetworkEntity entity)
         {
-            this.rigidBodyParam = (RigidBodyParam)param;
+            throw new System.NotImplementedException();
         }
     }
 }

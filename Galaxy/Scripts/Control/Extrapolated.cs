@@ -83,7 +83,7 @@ namespace Gj.Galaxy.Scripts
                     extrapolatePosition = moveDirection * (speed * timePassed);
                     break;
                 case ExtrapolatedParam.FixedSpeed:
-                    extrapolatePosition = moveDirection * options.extrapolatedSpeed * timePassed;
+                    extrapolatePosition = moveDirection * options.extrapolatedPositionSpeed * timePassed;
                     break;
                 case ExtrapolatedParam.EstimateSpeed:
                     Vector3 moveDelta = (m_LastPosition - oldPosition) * PeerClient.sendRateOnSerialize;
@@ -115,21 +115,20 @@ namespace Gj.Galaxy.Scripts
             {
                 return extrapolateQuaternion;
             }
-            //Quaternion turnDirection = Quaternion.Angle();
-            //switch (Option)
-            //{
-            //    case ExtrapolatedParam.SynchronizeValues:
-            //        Quaternion turnRotation = Quaternion.Euler(0, speed * timePassed, 0);
-            //        extrapolateQuaternion = turnDirection * turnRotation;
-            //        break;
-            //    case ExtrapolatedParam.FixedSpeed:
-            //        extrapolateQuaternion = turnDirection * Speed * timePassed;
-            //        break;
-            //    case ExtrapolatedParam.EstimateSpeed:
-            //        Vector3 moveDelta = (m_LastRotation - oldPosition) * PeerClient.sendRateOnSerialize;
-            //        extrapolateQuaternion = moveDelta * timePassed;
-            //        break;
-            //}
+            switch (options.extrapolatedParam)
+            {
+                case ExtrapolatedParam.SynchronizeValues:
+                    Quaternion turnRotation = Quaternion.Euler(0, speed * timePassed, 0);
+                    extrapolateQuaternion = turnRotation;
+                    break;
+                case ExtrapolatedParam.FixedSpeed:
+                    extrapolateQuaternion = Quaternion.Euler(0, options.extrapolatedRatationSpeed * timePassed, 0);
+                    break;
+                //case ExtrapolatedParam.EstimateSpeed:
+                    //Vector3 moveDelta = (m_LastRotation - oldRotation) * PeerClient.sendRateOnSerialize;
+                    //extrapolateQuaternion = moveDelta * timePassed;
+                    //break;
+            }
 
             return extrapolateQuaternion;
         }
