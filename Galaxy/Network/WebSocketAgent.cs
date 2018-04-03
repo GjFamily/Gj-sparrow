@@ -17,6 +17,12 @@ namespace Gj.Galaxy.Network
     public class WebSocketAgent:ProtocolConn
     {
         private Uri mUrl;
+        private Action message;
+        private SwitchQueue<byte[]> m_Messages = new SwitchQueue<byte[]>(128);
+
+        WebSocket m_Socket;
+        bool m_IsConnected = false;
+        string m_Error = null;
 
         public WebSocketAgent(Uri url)
         {
@@ -31,94 +37,6 @@ namespace Gj.Galaxy.Network
             Close();
         }
 
-        public void SendString(string str)
-        {
-            Send(Encoding.UTF8.GetBytes (str));
-        }
-
-        public string RecvString()
-        {
-            byte[] retval = Recv();
-            if (retval == null)
-                return null;
-            return Encoding.UTF8.GetString (retval);
-        }
-
-#if UNITY_WEBGL && !UNITY_EDITOR
-        [DllImport("__Internal")]
-        private static extern int SocketCreate (string url);
-
-        [DllImport("__Internal")]
-        private static extern int SocketState (int socketInstance);
-
-        [DllImport("__Internal")]
-        private static extern void SocketSend (int socketInstance, byte[] ptr, int length);
-
-        [DllImport("__Internal")]
-        private static extern void SocketRecv (int socketInstance, byte[] ptr, int length);
-
-        [DllImport("__Internal")]
-        private static extern int SocketRecvLength (int socketInstance);
-
-        [DllImport("__Internal")]
-        private static extern void SocketClose (int socketInstance);
-
-        [DllImport("__Internal")]
-        private static extern int SocketError (int socketInstance, byte[] ptr, int length);
-
-        int m_NativeRef = 0;
-
-        public void Send(byte[] buffer)
-        {
-            SocketSend (m_NativeRef, buffer, buffer.Length);
-        }
-
-        public byte[] Recv()
-        {
-            int length = SocketRecvLength (m_NativeRef);
-            if (length == 0)
-                return null;
-            byte[] buffer = new byte[length];
-            SocketRecv (m_NativeRef, buffer, length);
-            return buffer;
-        }
-
-        public void Connect()
-        {
-            m_NativeRef = SocketCreate (mUrl.ToString());
-        Debug.Log(m_NativeRef);
-            //while (SocketState(m_NativeRef) == 0)
-            //    yield return 0;
-        }
-
-        public void Close()
-        {
-            m_IsConnected = false;
-            SocketClose(m_NativeRef);
-        }
-
-        public bool Connected()
-        {
-            return SocketState(m_NativeRef) != 0;
-        }
-
-        public string Error()
-        {
-            if(!m_IsConnected) return "";
-            const int bufsize = 1024;
-            byte[] buffer = new byte[bufsize];
-            int result = SocketError (m_NativeRef, buffer, bufsize);
-
-            if (result == 0)
-                return null;
-
-            return Encoding.UTF8.GetString (buffer);
-        }
-#else
-        WebSocket m_Socket;
-        Queue<byte[]> m_Messages = new Queue<byte[]>();
-        bool m_IsConnected = false;
-        string m_Error = null;
 
         public void Connect(Action open, Action close, Action message, Action<Exception> error)
         {
@@ -127,8 +45,7 @@ namespace Gj.Galaxy.Network
             //m_Socket.SslConfiguration.EnabledSslProtocols = m_Socket.SslConfiguration.EnabledSslProtocols | (SslProtocols)(3072| 768);
             m_Socket.OnMessage += (sender, e) =>
             {
-                m_Messages.Enqueue(e.RawData);
-                message();
+                m_Messages.Push(e.RawData);
             };
             m_Socket.OnOpen += (sender, e) =>
             {
@@ -148,12 +65,16 @@ namespace Gj.Galaxy.Network
                 close();
             };
             m_Socket.Connect();
+            this.message = message;
         }
 
         public bool Connected(){
             return m_IsConnected;
         }
 
+        public bool Connecting(){
+            return m_Socket != null;
+        }
 
         public void Send(byte[] buffer)
         {
@@ -162,9 +83,9 @@ namespace Gj.Galaxy.Network
 
         public byte[] Recv()
         {
-            if (m_Messages.Count == 0)
+            if (m_Messages.Empty())
                 return null;
-            return m_Messages.Dequeue();
+            return m_Messages.Pop();
         }
 
         public void Close()
@@ -172,6 +93,7 @@ namespace Gj.Galaxy.Network
             m_IsConnected = false;
             if(m_Socket != null)
                 m_Socket.Close();
+            m_Socket = null;
         }
 
         public string Error()
@@ -180,7 +102,6 @@ namespace Gj.Galaxy.Network
             m_Error = null;
             return result;
         }
-        #endif
 
         public Stream Read(int head, out byte[] headB)
         {
@@ -190,6 +111,7 @@ namespace Gj.Galaxy.Network
                 return null;
             }
             var s = new MemoryStream(b, head, b.Length - head, false);
+
             headB = new byte[head];
             for (var i = 0; i < head; i++){
                 headB[i] = b[i];
@@ -204,18 +126,18 @@ namespace Gj.Galaxy.Network
             int length = head.Length + rl;
             byte[] sum = new byte[length];
             head.CopyTo(sum, 0);
-            //Debug.Log(new StreamReader(reader).ReadToEnd());
             int result = reader.Read(sum, head.Length, rl);
-            //Debug.Log(length);
-            //Debug.Log(head[0]);
-            //Debug.Log(result);
-            //if(rl > 0){
-            //    Debug.Log(sum[9]);
-            //    Debug.Log(sum[10]);
-            //    Debug.Log(sum[11]);
-            //}
             Send(sum);
             return true;
+        }
+
+        public void Accept()
+        {
+            m_Messages.Switch();
+            while(!m_Messages.Empty())
+            {
+                message();
+            }
         }
     }
 }
