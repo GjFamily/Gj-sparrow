@@ -28,7 +28,7 @@ namespace Gj.Galaxy.Scripts{
         MoveTowards,
         Lerp,
     }
-
+    [RequireComponent(typeof(NetworkEntity))]
     public class TransformView : MonoBehaviour, GameObservable
     {
         public TransformParam transformParam = TransformParam.PositionAndRotation;
@@ -213,9 +213,9 @@ namespace Gj.Galaxy.Scripts{
             Debug.DrawLine(targetPosition, targetPosition + Vector3.up, Color.red, 2f);
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void SetSyncParam(byte param)
         {
-            this.entity = entity;
+            this.transformParam = (TransformParam)param;
         }
     }
 
@@ -245,9 +245,7 @@ namespace Gj.Galaxy.Scripts{
         public float scaleSpeed = 1f;
 
         public ExtrapolatedParam extrapolatedParam = ExtrapolatedParam.SynchronizeValues;
-        public float extrapolatedPositionSpeed = 3f;
-        public float extrapolatedRatationSpeed = 180f;
-
+        public float extrapolatedSpeed = 1f;
         public bool IncludingRoundTripTime = true;
         public int NumberOfStoredPositions = 1;
         public int IfTimeLesserThan = 2;

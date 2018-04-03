@@ -47,7 +47,7 @@ namespace Gj.Galaxy.Network
         }
         public bool Connected(){
             //return socket ? true : false;
-            return state != null && state.Connect;
+            return mTcpClient.Client != null;
         }
 
         public bool Connecting(){
@@ -56,7 +56,11 @@ namespace Gj.Galaxy.Network
 
         public void Close()
         {
-            state.Close();
+            if (Connected())
+            {
+                mTcpClient.Close();
+            }
+            state.close();
             state = null;
         }
 
@@ -74,7 +78,6 @@ namespace Gj.Galaxy.Network
         public Action<Exception> error;
         public readonly byte[] Buffer;
         public readonly int BufferSize = 2;
-        public bool Connect = false;
 
         public TcpStateObject(TcpClient client)
         {
@@ -126,7 +129,6 @@ namespace Gj.Galaxy.Network
                 if (tcpClient.Client != null)
                 {
                     tcpClient.EndConnect(ar);
-                    Connect = true;
                     open();
                     var stream = tcpClient.GetStream();
                     stream.BeginRead(Buffer, 0, BufferSize, new AsyncCallback(EndReadCallback), this);
@@ -134,15 +136,9 @@ namespace Gj.Galaxy.Network
             }
             catch (Exception ex)
             {
-                Close();
-            }
-        }
-
-        public void Close(){
-            if (Connect){
                 tcpClient.Close();
+                close();
             }
-            close();
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Gj.Galaxy.Scripts{
 
         public Quaternion UpdateRotation(Quaternion currentRotation)
         {
-            Quaternion targetRotation = GetNetworkRotation() * extrapolated.GetQuaternion(m_SynchronizedTurnSpeed);
+            Quaternion targetRotation = GetNetworkRotation(); //  * extrapolated.GetQuaternion(m_SynchronizedTurnSpeed)
             switch (options.rotationParam)
             {
                 default:

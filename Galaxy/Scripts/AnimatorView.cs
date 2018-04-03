@@ -87,6 +87,7 @@ namespace Gj.Galaxy.Scripts{
 
         private void Awake()
         {
+            this.m_entity = GetComponent<NetworkEntity>();
             this.m_StreamQueue = new StreamQueue(120);
 
             this.m_Animator = GetComponent<Animator>();
@@ -507,7 +508,7 @@ namespace Gj.Galaxy.Scripts{
             }
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void SetSyncParam(byte param)
         {
             throw new System.NotImplementedException();
         }

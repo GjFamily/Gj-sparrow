@@ -117,7 +117,7 @@ namespace Gj
                         InfoSync infoSync = attributes as InfoSync;
                         if (null != infoSync)
                         {
-                            infoSync.Register(c, t, obj);
+                            infoSync.Register(c, t);
                         }
                     }
                 }

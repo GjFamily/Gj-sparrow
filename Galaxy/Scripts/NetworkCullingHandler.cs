@@ -212,11 +212,10 @@ namespace Gj.Galaxy.Scripts{
             
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void SetSyncParam(byte param)
         {
-            throw new System.NotImplementedException();
+            
         }
-
 
         #endregion
     }

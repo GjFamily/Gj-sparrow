@@ -49,9 +49,9 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void SetSyncParam(byte param)
         {
-            throw new System.NotImplementedException();
+            this.rigidBodyParam = (RigidBodyParam)param;
         }
     }
 }

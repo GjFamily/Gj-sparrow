@@ -38,11 +38,11 @@ namespace Gj.Galaxy.Logic{
 
         public delegate void OnJoinedGameDelegate(string token);
         public delegate void OnInvitedTeamDelegate(string userId, string teamId);
-        public delegate void OnPlayerInitDelegate(GamePlayer player);
+        public delegate void OnPlayInitDelegate(GamePlayer player);
 
         public event OnJoinedGameDelegate OnJoinedGame;
         public event OnInvitedTeamDelegate OnInvitedTeam;
-        public event OnPlayerInitDelegate OnPlayerInit;
+        public event OnPlayInitDelegate OnPlayInit;
 
         private Action<bool> OnConnectAction;
 
@@ -150,7 +150,6 @@ namespace Gj.Galaxy.Logic{
                     player = new GamePlayer(true, -1, userId);
                     player.AttachInfo(((Dictionary<object, object>)param[1]).ConverString());
                     player.InternalProperties(((Dictionary<object, object>)param[2]).ConverString());
-                    if (OnPlayerInit != null) OnPlayerInit(player);
                     break;
 
             }

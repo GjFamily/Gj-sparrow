@@ -20,6 +20,7 @@ namespace Gj
 
         private Component c;
         private GameObject o;
+        private TransformView tv;
 
         //
         // Constructors
@@ -44,35 +45,25 @@ namespace Gj
             {
                 var gameObservable = o.AddComponent(typeof(TransformView));
                 entity.ObservedComponents.Add(gameObservable);
-                var ob = gameObservable as TransformView;
-                if (ob != null){
-                    ob.transformParam = transform;
-                    if (options != null) ob.options = options;
-                    o.AddComponent(typeof(SyncSpeed));
-                    ob.BindEntity(entity);
-                }
+                tv = gameObservable as TransformView;
+                if (tv != null) tv.SetSyncParam((byte)transform);
+                if (options != null) tv.options = options;
+                o.AddComponent(typeof(SyncSpeedScript));
             }
             if (rigid != RigidBodyParam.Off)
             {
                 var gameObservable = o.AddComponent(typeof(RigidbodyView));
                 entity.ObservedComponents.Add(gameObservable);
                 var ob = gameObservable as RigidbodyView;
-                if (ob != null){
-                    ob.rigidBodyParam = rigid;
-                    ob.BindEntity(entity);
-                }
+                if (ob != null) ob.SetSyncParam((byte)rigid);
             }
             if (infoList != null && infoList.Length > 0)
             {
                 var gameObservable = o.AddComponent(typeof(InfoView));
                 entity.ObservedComponents.Add(gameObservable);
                 var ob = gameObservable as InfoView;
-                if (ob != null)
-                {
-                    ob.infoList = infoList;
-                    ob.flag = true;
-                    ob.BindEntity(entity);
-                }
+                ob.infoList = infoList;
+                ob.SetSyncParam(1);
             }
             this.c = c;
             this.o = o;
@@ -103,5 +94,27 @@ namespace Gj
             GameConnect.RelationInstance(o.name, relation, o, 0, null);
         }
 
+        public void SyncSpeed(float speed, float turnSpeed)
+        {
+            if (tv == null) return;
+            tv.SetSynchronizedValues(speed, turnSpeed);
+        }
+
     }
+    [RequireComponent(typeof(Info))]
+    [RequireComponent(typeof(TransformView))]
+    public class SyncSpeedScript:MonoBehaviour{
+        Info info;
+        TransformView tv;
+		void Awake()
+		{
+            info = GetComponent<Info>() as Info;
+            tv = GetComponent<TransformView>() as TransformView;
+		}
+
+		void Update()
+		{
+            tv.SetSynchronizedValues(info.GetAttribute("moveSpeed"), info.GetAttribute("rotateSpeed"));
+		}
+	}
 }
