@@ -9,130 +9,245 @@ using System.Collections;
 namespace Gj.Galaxy.Network
 {
     // 客户端随机生成conv并作为后续与服务器通信
-    public class UdpSocket
+    public class UdpSocket: ProtocolConn
     {
-        private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
-
-        public static UInt32 iclock()
-        {
-            return (UInt32)(Convert.ToInt64(DateTime.UtcNow.Subtract(utc_time).TotalMilliseconds) & 0xffffffff);
-        }
 
         private UdpClient mUdpClient;
-        private IPEndPoint mIPEndPoint;
         private IPEndPoint mSvrEndPoint;
-        private Action<byte[]> evHandler;
-        private Kcp mKcp;
-        private bool mNeedUpdateFlag;
-        private UInt32 mNextUpdateTime;
 
-        private SwitchQueue<byte[]> mRecvQueue = new SwitchQueue<byte[]>(128);
+        private KcpStateObject state;
 
         public UdpSocket(IPEndPoint point)
         {
             mSvrEndPoint = point;
-            mUdpClient = new UdpClient(mSvrEndPoint);
-            //mUdpClient.Connect(mSvrEndPoint);
-
-            init_kcp((UInt32)new Random((int)DateTime.Now.Ticks).Next(1, Int32.MaxValue));
+            mUdpClient = new UdpClient();
+        }
+        ~UdpSocket()
+        {
+            Close();
         }
 
-        public void Connect(Action<byte[]> handler)
+        public void Connect(Action open, Action close, Action message, Action<Exception> error)
         {
-            evHandler = handler;
-
-            mUdpClient.BeginReceive(ReceiveCallback, this);
+            state = new KcpStateObject(mUdpClient);
+            state.open = open;
+            state.close = close;
+            state.message = message;
+            state.error = error;
+            state.Start(mSvrEndPoint);
         }
 
-        void init_kcp(UInt32 conv)
+        public Stream Read(int head, out byte[] headB)
         {
-            mKcp = new Kcp(conv, (byte[] buf, int size) =>
-            {
-                mUdpClient.Send(buf, size);
-            });
-
-            // fast mode.
-            mKcp.NoDelay(1, 10, 2, 1);
-            mKcp.WndSize(128, 128);
+            headB = new byte[head];
+            Stream stream = state.GetStream();
+            stream.Read(headB, 0, head);
+            return stream;
         }
 
-        void ReceiveCallback(IAsyncResult ar)
+        public bool Write(byte[] head, Stream reader)
         {
-            Byte[] data = (mIPEndPoint == null) ?
-                mUdpClient.Receive(ref mIPEndPoint) :
-                mUdpClient.EndReceive(ar, ref mIPEndPoint);
-
-            if (null != data)
-            {
-                // push udp packet to switch queue.
-                mRecvQueue.Push(data);
-            }
-
-            if (mUdpClient != null)
-            {
-                // try to receive again.
-                mUdpClient.BeginReceive(ReceiveCallback, this);
-            }
-        }
-
-        public void Send(byte[] buf)
-        {
-            mKcp.Send(buf);
-            mNeedUpdateFlag = true;
-        }
-
-        public void Send(string str)
-        {
-            Send(System.Text.ASCIIEncoding.ASCII.GetBytes(str));
-        }
-
-        public void Update()
-        {
-            update(iclock());
+            int rl = Convert.ToInt32(reader.Length);
+            byte[] sum = new byte[rl];
+            int result = reader.Read(sum, 0, rl);
+            return state.Send(head, sum);
         }
 
         public void Close()
         {
-            mUdpClient.Close();
+            if(Connected())
+            {
+                mUdpClient.Close();
+            }
+
+            state.close();
+            state = null;
+        }
+
+        public bool Connected()
+        {
+            //return socket ? true : false;
+            return mUdpClient.Available > 0;
+        }
+
+        public bool Connecting()
+        {
+            return state != null;
+        }
+
+        public void Accept()
+        {
+            state.Update();
+        }
+    }
+
+    internal class KcpStateObject
+    {
+        public Kcp kcp;
+        private UdpClient client;
+        private IPEndPoint mIPEndPoint;
+        public Action open;
+        public Action close;
+        public Action message;
+        public Action<Exception> error;
+        public readonly byte[] protocolBuffer;
+        public readonly int protocolSize = 2;
+
+        private ByteBuf writeBuf;
+        private ByteBuf readBuf;
+        private ByteBuf receiveBuf;
+        //private byte[] buffer;
+        private int bufferSize = 1024;
+        private int position;
+        private int length;
+        private int messageNumber = 0;
+
+        private bool mNeedUpdateFlag;
+        private int mNextUpdateTime;
+        private SwitchQueue<byte[]> mRecvQueue = new SwitchQueue<byte[]>(128);
+
+        private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
+
+        public static long iclock()
+        {
+            return DateTime.UtcNow.Subtract(utc_time).Milliseconds;
+        }
+
+        public Stream GetStream()
+        {
+            return readBuf;
+        }
+
+        public KcpStateObject(UdpClient client)
+        {
+            this.client = client;
+            this.protocolBuffer = new byte[this.protocolSize];
+            this.writeBuf = new ByteBuf(this.bufferSize);
+            this.readBuf = new ByteBuf(this.bufferSize);
+            this.receiveBuf = new ByteBuf(this.bufferSize);
+        }
+
+        void init_kcp(int conv, IPEndPoint point)
+        {
+            kcp = new Kcp(conv, (ByteBuf buffer, Kcp kcp, object user) =>
+            {
+                //UnityEngine.Debug.Log("send:" + messageNumber + ":" + buffer.ReadableBytes());
+                //messageNumber += 1;
+                client.Send(buffer.GetRaw(), buffer.ReadableBytes());
+            }, null);
+
+            kcp.SetStream(true);
+            kcp.SetACKNoDelay(true);
+            // fast mode.
+            kcp.NoDelay(1, 10, 2, 1);
+            //kcp.SetMtu(1024); 
+            kcp.WndSize(128, 128);
+
+            writeBuf.SetKcp(kcp);
+            readBuf.SetKcp(kcp);
+            receiveBuf.SetKcp(kcp);
         }
 
         void process_recv_queue()
         {
             mRecvQueue.Switch();
 
+            receiveBuf.Clear();
             while (!mRecvQueue.Empty())
             {
-                var buf = mRecvQueue.Pop();
-
-                mKcp.Input(buf);
+                var data = mRecvQueue.Pop();
+                receiveBuf.WriteBytes(data);
                 mNeedUpdateFlag = true;
-
-                for (var size = mKcp.PeekSize(); size > 0; size = mKcp.PeekSize())
-                {
-                    var buffer = new byte[size];
-                    if (mKcp.Recv(buffer) > 0)
-                    {
-                        evHandler(buffer);
-                    }
-                }
             }
+            kcp.Input(receiveBuf);
+            ReadTest();
         }
 
-        void update(UInt32 current)
+        void update(long current)
         {
             process_recv_queue();
 
             if (mNeedUpdateFlag || current >= mNextUpdateTime)
             {
-                mKcp.Update(current);
-                mNextUpdateTime = mKcp.Check(current);
+                kcp.Update(current);
+                mNextUpdateTime = kcp.Check(current);
                 mNeedUpdateFlag = false;
             }
         }
+
+        public void Start(IPEndPoint point){
+            client.Connect(point);
+            client.BeginReceive(ReceiveCallback, this);
+
+            init_kcp(new Random((int)DateTime.Now.Ticks).Next(1, Int32.MaxValue), point);
+            open();
+        }
+
+        public void Update(){
+            update(iclock());
+        }
+
+        public bool Send(byte[] head, byte[] body)
+        {
+            writeBuf.Clear();
+            writeBuf.WriteBytes(new byte[] { 0x08, 0x21 });
+            writeBuf.WriteBytes(head);
+            writeBuf.WriteBytes(body);
+            kcp.Send(writeBuf);
+            kcp.Flush(false);
+            mNeedUpdateFlag = true;
+            return true;
+        }
+
+        public void ReadTest()
+        {
+            var result = readBuf.Read(protocolBuffer, 0, protocolSize);
+            //UnityEngine.Debug.Log("test");
+            if (result == 2 && protocolBuffer[0] == 0x08 && protocolBuffer[1] == 0x21)
+            {
+                message();
+            }
+            else if(result > 0)
+            {
+                ReadTest();
+            }
+        }
+
+        void ReceiveCallback(IAsyncResult ar)
+        {
+            Byte[] data = (mIPEndPoint == null) ?
+                client.Receive(ref mIPEndPoint) :
+                      client.EndReceive(ar, ref mIPEndPoint);
+
+            //UnityEngine.Debug.Log("receive:" + messageNumber+":"+data.Length);
+            //messageNumber -= 1;
+            if (null != data)
+            {
+                // push udp packet to switch queue.
+                mRecvQueue.Push(data);
+
+            }
+
+            if (client != null)
+            {
+                // try to receive again.
+                client.BeginReceive(ReceiveCallback, this);
+            }
+        }
+
     }
 
+    /**
+ *  KCP - A Better ARQ Protocol Implementation
+ *  skywind3000 (at) gmail.com, 2010-2011
+ *  Features:
+ *  + Average RTT reduce 30% - 40% vs traditional ARQ like tcp.
+ *  + Maximum RTT reduce three times vs tcp.
+ *  + Lightweight, distributed as a single source file.
+ */
     public class Kcp
     {
+
         public const int IKCP_RTO_NDL = 30;  // no delay min rto
         public const int IKCP_RTO_MIN = 100; // normal min rto
         public const int IKCP_RTO_DEF = 200;
@@ -155,504 +270,509 @@ namespace Gj.Galaxy.Network
         public const int IKCP_PROBE_INIT = 7000;   // 7 secs to probe window size
         public const int IKCP_PROBE_LIMIT = 120000; // up to 120 secs to probe window
 
+        private int conv;
+        private int mtu;
+        private int mss;
+        private int state;
+        private int snd_una;
+        private int snd_nxt;
+        private int rcv_nxt;
+        private int ts_recent;
+        private int ts_lastack;
+        private int ssthresh;
+        private int rx_rttval;
+        private int rx_srtt;
+        private int rx_rto;
+        private int rx_minrto;
+        private int snd_wnd;
+        private int rcv_wnd;
+        private int rmt_wnd;
+        private int cwnd;
+        private int probe;
+        private int current;
+        private int interval;
+        private int ts_flush;
+        private int xmit;
+        private int nodelay;
+        private int updated;
+        private int ts_probe;
+        private int probe_wait;
+        private int dead_link;
+        private int incr;
+        private List<Segment> snd_queue = new List<Segment>();
+        private List<Segment> rcv_queue = new List<Segment>();
+        private List<Segment> snd_buf = new List<Segment>();
+        private List<Segment> rcv_buf = new List<Segment>();
+        private List<int> acklist = new List<int>();
+        private ByteBuf buffer;
+        private int fastresend;
+        private int nocwnd;
+        private bool stream;
+        private bool ackNoDelay;
+        private int logmask;
+        private Action<ByteBuf, Kcp, Object> output;
+        private Object user;
+        private int nextUpdate;//the next update time.
 
-        // encode 8 bits unsigned int
-        public static int ikcp_encode8u(byte[] p, int offset, byte c)
+        private static int _ibound_(int lower, int middle, int upper)
         {
-            p[0 + offset] = c;
-            return 1;
+            return Math.Min(Math.Max(lower, middle), upper);
         }
 
-        // decode 8 bits unsigned int
-        public static int ikcp_decode8u(byte[] p, int offset, ref byte c)
+        private static int _itimediff(int later, int earlier)
         {
-            c = p[0 + offset];
-            return 1;
+            return later - earlier;
         }
 
-        /* encode 16 bits unsigned int (lsb) */
-        public static int ikcp_encode16u(byte[] p, int offset, UInt16 w)
+        /**
+         * SEGMENT
+         */
+        class Segment
         {
-            p[0 + offset] = (byte)(w >> 0);
-            p[1 + offset] = (byte)(w >> 8);
-            return 2;
-        }
 
-        /* decode 16 bits unsigned int (lsb) */
-        public static int ikcp_decode16u(byte[] p, int offset, ref UInt16 c)
-        {
-            UInt16 result = 0;
-            result |= (UInt16)p[0 + offset];
-            result |= (UInt16)(p[1 + offset] << 8);
-            c = result;
-            return 2;
-        }
+            public int conv = 0;
+            public byte cmd = 0;
+            public int frg = 0;
+            public int wnd = 0;
+            public int ts = 0;
+            public int sn = 0;
+            public int una = 0;
+            public int resendts = 0;
+            public int rto = 0;
+            public int fastack = 0;
+            public int xmit = 0;
+            public ByteBuf data;
 
-        /* encode 32 bits unsigned int (lsb) */
-        public static int ikcp_encode32u(byte[] p, int offset, UInt32 l)
-        {
-            p[0 + offset] = (byte)(l >> 0);
-            p[1 + offset] = (byte)(l >> 8);
-            p[2 + offset] = (byte)(l >> 16);
-            p[3 + offset] = (byte)(l >> 24);
-            return 4;
-        }
-
-        /* decode 32 bits unsigned int (lsb) */
-        public static int ikcp_decode32u(byte[] p, int offset, ref UInt32 c)
-        {
-            UInt32 result = 0;
-            result |= (UInt32)p[0 + offset];
-            result |= (UInt32)(p[1 + offset] << 8);
-            result |= (UInt32)(p[2 + offset] << 16);
-            result |= (UInt32)(p[3 + offset] << 24);
-            c = result;
-            return 4;
-        }
-
-        public static byte[] slice(byte[] p, int start, int stop)
-        {
-            var bytes = new byte[stop - start];
-            Array.Copy(p, start, bytes, 0, bytes.Length);
-            return bytes;
-        }
-
-        public static T[] slice<T>(T[] p, int start, int stop)
-        {
-            var arr = new T[stop - start];
-            var index = 0;
-            for (var i = start; i < stop; i++)
+            public Segment(int size)
             {
-                arr[index] = p[i];
-                index++;
+                if (size > 0)
+                {
+                    this.data = new ByteBuf(size);
+                }
             }
 
-            return arr;
-        }
-
-        public static byte[] append(byte[] p, byte c)
-        {
-            var bytes = new byte[p.Length + 1];
-            Array.Copy(p, bytes, p.Length);
-            bytes[p.Length] = c;
-            return bytes;
-        }
-
-        public static T[] append<T>(T[] p, T c)
-        {
-            var arr = new T[p.Length + 1];
-            for (var i = 0; i < p.Length; i++)
-                arr[i] = p[i];
-            arr[p.Length] = c;
-            return arr;
-        }
-
-        public static T[] append<T>(T[] p, T[] cs)
-        {
-            var arr = new T[p.Length + cs.Length];
-            for (var i = 0; i < p.Length; i++)
-                arr[i] = p[i];
-            for (var i = 0; i < cs.Length; i++)
-                arr[p.Length + i] = cs[i];
-            return arr;
-        }
-
-        static UInt32 _imin_(UInt32 a, UInt32 b)
-        {
-            return a <= b ? a : b;
-        }
-
-        static UInt32 _imax_(UInt32 a, UInt32 b)
-        {
-            return a >= b ? a : b;
-        }
-
-        static UInt32 _ibound_(UInt32 lower, UInt32 middle, UInt32 upper)
-        {
-            return _imin_(_imax_(lower, middle), upper);
-        }
-
-        static Int32 _itimediff(UInt32 later, UInt32 earlier)
-        {
-            return ((Int32)(later - earlier));
-        }
-
-        // KCP Segment Definition
-        internal class Segment
-        {
-            internal UInt32 conv = 0;
-            internal UInt32 cmd = 0;
-            internal UInt32 frg = 0;
-            internal UInt32 wnd = 0;
-            internal UInt32 ts = 0;
-            internal UInt32 sn = 0;
-            internal UInt32 una = 0;
-            internal UInt32 resendts = 0;
-            internal UInt32 rto = 0;
-            internal UInt32 fastack = 0;
-            internal UInt32 xmit = 0;
-            internal byte[] data;
-
-            internal Segment(int size)
+            /**
+             * encode a segment into buffer
+             *
+             * @param buf
+             * @param offset
+             * @return
+             */
+            public int Encode(ByteBuf buf)
             {
-                this.data = new byte[size];
-            }
-
-            // encode a segment into buffer
-            internal int encode(byte[] ptr, int offset)
-            {
-
-                var offset_ = offset;
-
-                offset += ikcp_encode32u(ptr, offset, conv);
-                offset += ikcp_encode8u(ptr, offset, (byte)cmd);
-                offset += ikcp_encode8u(ptr, offset, (byte)frg);
-                offset += ikcp_encode16u(ptr, offset, (UInt16)wnd);
-                offset += ikcp_encode32u(ptr, offset, ts);
-                offset += ikcp_encode32u(ptr, offset, sn);
-                offset += ikcp_encode32u(ptr, offset, una);
-                offset += ikcp_encode32u(ptr, offset, (UInt32)data.Length);
-
-                return offset - offset_;
+                int off = buf.WriterIndex();
+                buf.WriteIntLE(conv);
+                buf.WriteByte(cmd);
+                buf.WriteByte((byte)frg);
+                buf.WriteShortLE((short)wnd);
+                buf.WriteIntLE(ts);
+                buf.WriteIntLE(sn);
+                buf.WriteIntLE(una);
+                buf.WriteIntLE(data == null ? 0 : data.ReadableBytes());
+                return buf.WriterIndex() - off;
             }
         }
 
-        // kcp members.
-        UInt32 conv; UInt32 mtu; UInt32 mss; UInt32 state;
-        UInt32 snd_una; UInt32 snd_nxt; UInt32 rcv_nxt;
-        UInt32 ts_recent; UInt32 ts_lastack; UInt32 ssthresh;
-        UInt32 rx_rttval; UInt32 rx_srtt; UInt32 rx_rto; UInt32 rx_minrto;
-        UInt32 snd_wnd; UInt32 rcv_wnd; UInt32 rmt_wnd; UInt32 cwnd; UInt32 probe;
-        UInt32 current; UInt32 interval; UInt32 ts_flush; UInt32 xmit;
-        UInt32 nodelay; UInt32 updated;
-        UInt32 ts_probe; UInt32 probe_wait;
-        UInt32 dead_link; UInt32 incr;
-
-        Segment[] snd_queue = new Segment[0];
-        Segment[] rcv_queue = new Segment[0];
-        Segment[] snd_buf = new Segment[0];
-        Segment[] rcv_buf = new Segment[0];
-
-        UInt32[] acklist = new UInt32[0];
-
-        byte[] buffer;
-        Int32 fastresend;
-        Int32 nocwnd;
-        Int32 logmask;
-        // buffer, size
-        Action<byte[], int> output;
-
-        // create a new kcp control object, 'conv' must equal in two endpoint
-        // from the same connection.
-        public Kcp(UInt32 conv_, Action<byte[], int> output_)
+        /**
+         * create a new kcpcb
+         *
+         * @param conv
+         * @param output
+         * @param user
+         */
+        public Kcp(int conv, Action<ByteBuf, Kcp, Object> output, Object user)
         {
-            conv = conv_;
+            this.conv = conv;
             snd_wnd = IKCP_WND_SND;
             rcv_wnd = IKCP_WND_RCV;
             rmt_wnd = IKCP_WND_RCV;
             mtu = IKCP_MTU_DEF;
             mss = mtu - IKCP_OVERHEAD;
-
             rx_rto = IKCP_RTO_DEF;
             rx_minrto = IKCP_RTO_MIN;
             interval = IKCP_INTERVAL;
             ts_flush = IKCP_INTERVAL;
             ssthresh = IKCP_THRESH_INIT;
             dead_link = IKCP_DEADLINK;
-            buffer = new byte[(mtu + IKCP_OVERHEAD) * 3];
-            output = output_;
+            rcv_nxt = 0;
+            buffer = new ByteBuf((mtu + IKCP_OVERHEAD) * 3);
+            this.output = output;
+            this.user = user;
         }
 
-        // check the size of next message in the recv queue
+        /**
+         * check the size of next message in the recv queue
+         *
+         * @return
+         */
         public int PeekSize()
         {
-
-            if (0 == rcv_queue.Length) return -1;
-
-            var seq = rcv_queue[0];
-
-            if (0 == seq.frg) return seq.data.Length;
-
-            if (rcv_queue.Length < seq.frg + 1) return -1;
-
-            int length = 0;
-
-            foreach (var item in rcv_queue)
+            if (rcv_queue.Count <= 0)
             {
-                length += item.data.Length;
-                if (0 == item.frg)
-                    break;
+                return -1;
             }
-
+            Segment seq = rcv_queue.First();
+            if (seq.frg == 0)
+            {
+                return seq.data.ReadableBytes();
+            }
+            if (rcv_queue.Count < seq.frg + 1)
+            {
+                return -1;
+            }
+            int length = 0;
+            for (int i = 0; i < rcv_queue.Count; i++)
+            {
+                Segment item = rcv_queue[i];
+                length += item.data.ReadableBytes();
+                if (item.frg == 0)
+                {
+                    break;
+                }
+            }
             return length;
         }
 
-        // user/upper level recv: returns size, returns below zero for EAGAIN
-        public int Recv(byte[] buffer)
+        /**
+         * user/upper level recv: returns size, returns below zero for EAGAIN
+         *
+         * @param buffer
+         * @return
+         */
+        public int Receive(ByteBuf buffer)
         {
-
-            if (0 == rcv_queue.Length) return -1;
-
-            var peekSize = PeekSize();
-            if (0 > peekSize) return -2;
-
-            if (peekSize > buffer.Length) return -3;
-
-            var fast_recover = false;
-            if (rcv_queue.Length >= rcv_wnd) fast_recover = true;
-
+            if (rcv_queue.Count <= 0)
+            {
+                return -1;
+            }
+            int peekSize = PeekSize();
+            if (peekSize < 0)
+            {
+                return -2;
+            }
+            bool recover = rcv_queue.Count >= rcv_wnd;
             // merge fragment.
-            var count = 0;
-            var n = 0;
-            foreach (var seg in rcv_queue)
+            int c = 0;
+            int len = 0;
+            for (int i = 0; i < rcv_queue.Count; i++)
             {
-                Array.Copy(seg.data, 0, buffer, n, seg.data.Length);
-                n += seg.data.Length;
-                count++;
-                if (0 == seg.frg) break;
-            }
-
-            if (0 < count)
-            {
-                rcv_queue = slice<Segment>(rcv_queue, count, rcv_queue.Length);
-            }
-
-            // move available data from rcv_buf -> rcv_queue
-            count = 0;
-            foreach (var seg in rcv_buf)
-            {
-                if (seg.sn == rcv_nxt && rcv_queue.Length < rcv_wnd)
+                Segment seg = rcv_queue[i];
+                len += seg.data.ReadableBytes();
+                buffer.WriteBytes(seg.data);
+                c++;
+                if (seg.frg == 0)
                 {
-                    rcv_queue = append<Segment>(rcv_queue, seg);
+                    break;
+                }
+            }
+            if (c > 0)
+                rcv_queue.RemoveRange(0, c);
+            if (len != peekSize)
+            {
+                throw new Exception("数据异常.");
+            }
+            // move available data from rcv_buf -> rcv_queue
+            c = 0;
+            for (int i = 0; i < rcv_buf.Count; i++)
+            {
+                Segment seg = rcv_buf[i];
+                if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
+                {
+                    rcv_queue.Add(seg);
                     rcv_nxt++;
-                    count++;
+                    c++;
                 }
                 else
                 {
                     break;
                 }
             }
-
-            if (0 < count) rcv_buf = slice<Segment>(rcv_buf, count, rcv_buf.Length);
-
+            if (c > 0)
+                rcv_buf.RemoveRange(0, c);
             // fast recover
-            if (rcv_queue.Length < rcv_wnd && fast_recover)
+            if (rcv_queue.Count < rcv_wnd && recover)
             {
                 // ready to send back IKCP_CMD_WINS in ikcp_flush
                 // tell remote my window size
                 probe |= IKCP_ASK_TELL;
             }
-
-            return n;
+            return len;
         }
 
-        // user/upper level send, returns below zero for error
-        public int Send(byte[] buffer)
+        /**
+         * user/upper level send, returns below zero for error
+         *
+         * @param buffer
+         * @return
+         */
+        public int Send(ByteBuf buffer)
         {
-
-            if (0 == buffer.Length) return -1;
-
-            var count = 0;
-
-            if (buffer.Length < mss)
-                count = 1;
-            else
-                count = (int)(buffer.Length + mss - 1) / (int)mss;
-
-            if (255 < count) return -2;
-
-            if (0 == count) count = 1;
-
-            var offset = 0;
-
-            for (var i = 0; i < count; i++)
+            if (buffer.ReadableBytes() == 0)
             {
-                var size = 0;
-                if (buffer.Length - offset > mss)
-                    size = (int)mss;
-                else
-                    size = buffer.Length - offset;
-
-                var seg = new Segment(size);
-                Array.Copy(buffer, offset, seg.data, 0, size);
-                offset += size;
-                seg.frg = (UInt32)(count - i - 1);
-                snd_queue = append<Segment>(snd_queue, seg);
+                return -1;
             }
-
+            // append to previous segment in streaming mode (if possible)
+            if (this.stream && this.snd_queue.Count > 0)
+            {
+                Segment seg = snd_queue.Last();
+                if (seg.data != null && seg.data.ReadableBytes() < mss)
+                {
+                    int capacity = mss - seg.data.ReadableBytes();
+                    int extend = (buffer.ReadableBytes() < capacity) ? buffer.ReadableBytes() : capacity;
+                    seg.data.WriteBytes(buffer, extend);
+                    if (buffer.ReadableBytes() == 0)
+                    {
+                        return 0;
+                    }
+                }
+            }
+            int count;
+            if (buffer.ReadableBytes() <= mss)
+            {
+                count = 1;
+            }
+            else
+            {
+                count = (buffer.ReadableBytes() + mss - 1) / mss;
+            }
+            if (count > 255)
+            {
+                return -2;
+            }
+            if (count == 0)
+            {
+                count = 1;
+            }
+            //fragment
+            for (int i = 0; i < count; i++)
+            {
+                int size = buffer.ReadableBytes() > mss ? mss : buffer.ReadableBytes();
+                Segment seg = new Segment(size);
+                seg.data.WriteBytes(buffer, size);
+                seg.frg = this.stream ? 0 : count - i - 1;
+                snd_queue.Add(seg);
+            }
             return 0;
         }
 
-        // update ack.
-        void update_ack(Int32 rtt)
+        /**
+         * update ack.
+         *
+         * @param rtt
+         */
+        private void Update_ack(int rtt)
         {
-            if (0 == rx_srtt)
+            if (rx_srtt == 0)
             {
-                rx_srtt = (UInt32)rtt;
-                rx_rttval = (UInt32)rtt / 2;
+                rx_srtt = rtt;
+                rx_rttval = rtt / 2;
             }
             else
             {
-                Int32 delta = (Int32)((UInt32)rtt - rx_srtt);
-                if (0 > delta) delta = -delta;
-
-                rx_rttval = (3 * rx_rttval + (uint)delta) / 4;
-                rx_srtt = (UInt32)((7 * rx_srtt + rtt) / 8);
-                if (rx_srtt < 1) rx_srtt = 1;
+                int delta = rtt - rx_srtt;
+                if (delta < 0)
+                {
+                    delta = -delta;
+                }
+                rx_rttval = (3 * rx_rttval + delta) / 4;
+                rx_srtt = (7 * rx_srtt + rtt) / 8;
+                if (rx_srtt < 1)
+                {
+                    rx_srtt = 1;
+                }
             }
-
-            var rto = (int)(rx_srtt + _imax_(1, 4 * rx_rttval));
-            rx_rto = _ibound_(rx_minrto, (UInt32)rto, IKCP_RTO_MAX);
+            int rto = rx_srtt + Math.Max(interval, 4 * rx_rttval);
+            rx_rto = _ibound_(rx_minrto, rto, IKCP_RTO_MAX);
         }
 
-        void shrink_buf()
+        private void Shrink_buf()
         {
-            if (snd_buf.Length > 0)
-                snd_una = snd_buf[0].sn;
+            if (snd_buf.Count > 0)
+            {
+                snd_una = snd_buf.First().sn;
+            }
             else
+            {
                 snd_una = snd_nxt;
+            }
         }
 
-        void parse_ack(UInt32 sn)
+        private void Parse_ack(int sn)
         {
-
-            if (_itimediff(sn, snd_una) < 0 || _itimediff(sn, snd_nxt) >= 0) return;
-
-            var index = 0;
-            foreach (var seg in snd_buf)
+            if (_itimediff(sn, snd_una) < 0 || _itimediff(sn, snd_nxt) >= 0)
             {
+                return;
+            }
+            for (int i = 0; i < snd_buf.Count; i++)
+            {
+                Segment seg = snd_buf[i];
                 if (sn == seg.sn)
                 {
-                    snd_buf = append<Segment>(slice<Segment>(snd_buf, 0, index), slice<Segment>(snd_buf, index + 1, snd_buf.Length));
+                    snd_buf.RemoveAt(i);
                     break;
                 }
+                if (_itimediff(sn, seg.sn) < 0)
+                {
+                    break;
+                }
+            }
+        }
+
+        private void Parse_una(int una)
+        {
+            int c = 0;
+            for (int i = 0; i < snd_buf.Count; i++)
+            {
+                Segment seg = snd_buf[i];
+                if (_itimediff(una, seg.sn) > 0)
+                {
+                    c++;
+                }
                 else
+                {
+                    break;
+                }
+            }
+            if (c > 0)
+                snd_buf.RemoveRange(0, c);
+        }
+
+        private void Parse_fastack(int sn)
+        {
+            if (_itimediff(sn, snd_una) < 0 || _itimediff(sn, snd_nxt) >= 0)
+            {
+                return;
+            }
+            for (int i = 0; i < snd_buf.Count; i++)
+            {
+                Segment seg = snd_buf[i];
+                if (_itimediff(sn, seg.sn) < 0)
+                {
+                    break;
+                }
+                else if (sn != seg.sn)
                 {
                     seg.fastack++;
                 }
-
-                index++;
             }
         }
 
-        void parse_una(UInt32 una)
+        /**
+         * ack append
+         *
+         * @param sn
+         * @param ts
+         */
+        private void Ack_push(int sn, int ts)
         {
-            var count = 0;
-            foreach (var seg in snd_buf)
+            acklist.Add(sn);
+            acklist.Add(ts);
+        }
+
+        private void Parse_data(Segment newseg)
+        {
+            int sn = newseg.sn;
+            if (_itimediff(sn, rcv_nxt + rcv_wnd) >= 0 || _itimediff(sn, rcv_nxt) < 0)
             {
-                if (_itimediff(una, seg.sn) > 0)
-                    count++;
-                else
-                    break;
+                return;
             }
-
-            if (0 < count) snd_buf = slice<Segment>(snd_buf, count, snd_buf.Length);
-        }
-
-        void ack_push(UInt32 sn, UInt32 ts)
-        {
-            acklist = append<UInt32>(acklist, new UInt32[2] { sn, ts });
-        }
-
-        void ack_get(int p, ref UInt32 sn, ref UInt32 ts)
-        {
-            sn = acklist[p * 2 + 0];
-            ts = acklist[p * 2 + 1];
-        }
-
-        void parse_data(Segment newseg)
-        {
-            var sn = newseg.sn;
-            if (_itimediff(sn, rcv_nxt + rcv_wnd) >= 0 || _itimediff(sn, rcv_nxt) < 0) return;
-
-            var n = rcv_buf.Length - 1;
-            var after_idx = -1;
-            var repeat = false;
-            for (var i = n; i >= 0; i--)
+            int n = rcv_buf.Count - 1;
+            int temp = -1;
+            bool repeat = false;
+            for (int i = n; i >= 0; i--)
             {
-                var seg = rcv_buf[i];
+                Segment seg = rcv_buf[i];
                 if (seg.sn == sn)
                 {
                     repeat = true;
                     break;
                 }
-
                 if (_itimediff(sn, seg.sn) > 0)
                 {
-                    after_idx = i;
+                    temp = i;
                     break;
                 }
             }
-
             if (!repeat)
             {
-                if (after_idx == -1)
-                    rcv_buf = append<Segment>(new Segment[1] { newseg }, rcv_buf);
-                else
-                    rcv_buf = append<Segment>(slice<Segment>(rcv_buf, 0, after_idx + 1), append<Segment>(new Segment[1] { newseg }, slice<Segment>(rcv_buf, after_idx + 1, rcv_buf.Length)));
-            }
-
-            // move available data from rcv_buf -> rcv_queue
-            var count = 0;
-            foreach (var seg in rcv_buf)
-            {
-                if (seg.sn == rcv_nxt && rcv_queue.Length < rcv_wnd)
+                if (temp == -1)
                 {
-                    rcv_queue = append<Segment>(rcv_queue, seg);
+                    rcv_buf.Insert(0, newseg);
+                }
+                else
+                {
+                    rcv_buf.Insert(temp + 1, newseg);
+                }
+            }
+            // move available data from rcv_buf -> rcv_queue
+            int c = 0;
+            for (int i = 0; i < rcv_buf.Count; i++)
+            {
+                Segment seg = rcv_buf[i];
+                if (seg.sn == rcv_nxt && rcv_queue.Count < rcv_wnd)
+                {
+                    rcv_queue.Add(seg);
                     rcv_nxt++;
-                    count++;
+                    c++;
                 }
                 else
                 {
                     break;
                 }
             }
-
-            if (0 < count)
+            if (c > 0)
             {
-                rcv_buf = slice<Segment>(rcv_buf, count, rcv_buf.Length);
+                rcv_buf.RemoveRange(0, c);
             }
         }
 
-        // when you received a low level packet (eg. UDP packet), call it
-        public int Input(byte[] data)
+        /**
+         *
+         * when you received a low level packet (eg. UDP packet), call it
+         *
+         * @param data
+         * @return
+         */
+        public int Input(ByteBuf data)
         {
-
-            var s_una = snd_una;
-            if (data.Length < IKCP_OVERHEAD) return 0;
-
-            var offset = 0;
-
+            int una_temp = snd_una;
+            int flag = 0, maxack = 0;
+            if (data == null || data.ReadableBytes() < IKCP_OVERHEAD)
+            {
+                return -1;
+            }
             while (true)
             {
-                UInt32 ts = 0;
-                UInt32 sn = 0;
-                UInt32 length = 0;
-                UInt32 una = 0;
-                UInt32 conv_ = 0;
-
-                UInt16 wnd = 0;
-
-                byte cmd = 0;
-                byte frg = 0;
-
-                if (data.Length - offset < IKCP_OVERHEAD) break;
-
-                offset += ikcp_decode32u(data, offset, ref conv_);
-
-                if (conv != conv_) return -1;
-
-                offset += ikcp_decode8u(data, offset, ref cmd);
-                offset += ikcp_decode8u(data, offset, ref frg);
-                offset += ikcp_decode16u(data, offset, ref wnd);
-                offset += ikcp_decode32u(data, offset, ref ts);
-                offset += ikcp_decode32u(data, offset, ref sn);
-                offset += ikcp_decode32u(data, offset, ref una);
-                offset += ikcp_decode32u(data, offset, ref length);
-
-                if (data.Length - offset < length) return -2;
-
-                switch (cmd)
+                bool readed = false;
+                int ts;
+                int sn;
+                int len;
+                int una;
+                int conv_;
+                int wnd;
+                byte cmd;
+                byte frg;
+                if (data.ReadableBytes() < IKCP_OVERHEAD)
+                {
+                    break;
+                }
+                conv_ = data.ReadIntLE();
+                if (this.conv != conv_)
+                {
+                    return -1;
+                }
+                cmd = data.ReadByte();
+                frg = data.ReadByte();
+                wnd = data.ReadShortLE();
+                ts = data.ReadIntLE();
+                sn = data.ReadIntLE();
+                una = data.ReadIntLE();
+                len = data.ReadIntLE();
+                if (data.ReadableBytes() < len)
+                {
+                    return -2;
+                }
+                switch ((int)cmd)
                 {
                     case IKCP_CMD_PUSH:
                     case IKCP_CMD_ACK:
@@ -662,149 +782,175 @@ namespace Gj.Galaxy.Network
                     default:
                         return -3;
                 }
-
-                rmt_wnd = (UInt32)wnd;
-                parse_una(una);
-                shrink_buf();
-
-                if (IKCP_CMD_ACK == cmd)
+                rmt_wnd = wnd & 0x0000ffff;
+                Parse_una(una);
+                Shrink_buf();
+                switch (cmd)
                 {
-                    if (_itimediff(current, ts) >= 0)
-                    {
-                        update_ack(_itimediff(current, ts));
-                    }
-                    parse_ack(sn);
-                    shrink_buf();
-                }
-                else if (IKCP_CMD_PUSH == cmd)
-                {
-                    if (_itimediff(sn, rcv_nxt + rcv_wnd) < 0)
-                    {
-                        ack_push(sn, ts);
-                        if (_itimediff(sn, rcv_nxt) >= 0)
+                    case IKCP_CMD_ACK:
+                        if (_itimediff(current, ts) >= 0)
                         {
-                            var seg = new Segment((int)length);
-                            seg.conv = conv_;
-                            seg.cmd = (UInt32)cmd;
-                            seg.frg = (UInt32)frg;
-                            seg.wnd = (UInt32)wnd;
-                            seg.ts = ts;
-                            seg.sn = sn;
-                            seg.una = una;
-
-                            if (length > 0) Array.Copy(data, offset, seg.data, 0, length);
-
-                            parse_data(seg);
+                            Update_ack(_itimediff(current, ts));
                         }
-                    }
+                        Parse_ack(sn);
+                        Shrink_buf();
+                        if (flag == 0)
+                        {
+                            flag = 1;
+                            maxack = sn;
+                        }
+                        else if (_itimediff(sn, maxack) > 0)
+                        {
+                            maxack = sn;
+                        }
+                        break;
+                    case IKCP_CMD_PUSH:
+                        if (_itimediff(sn, rcv_nxt + rcv_wnd) < 0)
+                        {
+                            Ack_push(sn, ts);
+                            if (_itimediff(sn, rcv_nxt) >= 0)
+                            {
+                                Segment seg = new Segment(len);
+                                seg.conv = conv_;
+                                seg.cmd = cmd;
+                                seg.frg = frg & 0x000000ff;
+                                seg.wnd = wnd;
+                                seg.ts = ts;
+                                seg.sn = sn;
+                                seg.una = una;
+                                if (len > 0)
+                                {
+                                    seg.data.WriteBytes(data, len);
+                                    readed = true;
+                                }
+                                Parse_data(seg);
+                            }
+                        }
+                        break;
+                    case IKCP_CMD_WASK:
+                        // ready to send back IKCP_CMD_WINS in Ikcp_flush
+                        // tell remote my window size
+                        probe |= IKCP_ASK_TELL;
+                        break;
+                    case IKCP_CMD_WINS:
+                        // do nothing
+                        break;
+                    default:
+                        return -3;
                 }
-                else if (IKCP_CMD_WASK == cmd)
+                if (!readed)
                 {
-                    // ready to send back IKCP_CMD_WINS in Ikcp_flush
-                    // tell remote my window size
-                    probe |= IKCP_ASK_TELL;
+                    data.SkipBytes(len);
                 }
-                else if (IKCP_CMD_WINS == cmd)
-                {
-                    // do nothing
-                }
-                else
-                {
-                    return -3;
-                }
-
-                offset += (int)length;
             }
-
-            if (_itimediff(snd_una, s_una) > 0)
+            if (flag != 0)
             {
-                if (cwnd < rmt_wnd)
+                Parse_fastack(maxack);
+            }
+            if (_itimediff(snd_una, una_temp) > 0)
+            {
+                if (this.cwnd < this.rmt_wnd)
                 {
-                    var mss_ = mss;
-                    if (cwnd < ssthresh)
+                    if (this.cwnd < this.ssthresh)
                     {
-                        cwnd++;
-                        incr += mss_;
+                        this.cwnd++;
+                        this.incr += mss;
                     }
                     else
                     {
-                        if (incr < mss_)
+                        if (this.incr < mss)
                         {
-                            incr = mss_;
+                            this.incr = mss;
                         }
-                        incr += (mss_ * mss_) / incr + (mss_ / 16);
-                        if ((cwnd + 1) * mss_ <= incr) cwnd++;
+                        this.incr += (mss * mss) / this.incr + (mss / 16);
+                        if ((this.cwnd + 1) * mss <= this.incr)
+                        {
+                            this.cwnd++;
+                        }
                     }
-                    if (cwnd > rmt_wnd)
+                    if (this.cwnd > this.rmt_wnd)
                     {
-                        cwnd = rmt_wnd;
-                        incr = rmt_wnd * mss_;
+                        this.cwnd = this.rmt_wnd;
+                        this.incr = this.rmt_wnd * mss;
                     }
                 }
             }
-
+            if (ackNoDelay && acklist.Count > 0) { // ack immediately
+                Flush(true);
+            }
             return 0;
         }
 
-        Int32 wnd_unused()
+        private int wnd_unused()
         {
-            if (rcv_queue.Length < rcv_wnd)
-                return (Int32)(int)rcv_wnd - rcv_queue.Length;
+            if (rcv_queue.Count < rcv_wnd)
+            {
+                return rcv_wnd - rcv_queue.Count;
+            }
             return 0;
         }
 
-        // flush pending data
-        void flush()
+        /**
+         * flush pending data
+         */
+        public void Flush(bool ackOnly)
         {
-            var current_ = current;
-            var buffer_ = buffer;
-            var change = 0;
-            var lost = 0;
-
-            if (0 == updated) return;
-
-            var seg = new Segment(0);
+            int cur = current;
+            int change = 0;
+            int lost = 0;
+            if (updated == 0)
+            {
+                return;
+            }
+            Segment seg = new Segment(0);
             seg.conv = conv;
             seg.cmd = IKCP_CMD_ACK;
-            seg.wnd = (UInt32)wnd_unused();
+            seg.wnd = wnd_unused();
             seg.una = rcv_nxt;
-
             // flush acknowledges
-            var count = acklist.Length / 2;
-            var offset = 0;
-            for (var i = 0; i < count; i++)
+            int c = acklist.Count / 2;
+            for (int i = 0; i < c; i++)
             {
-                if (offset + IKCP_OVERHEAD > mtu)
+                if (buffer.ReadableBytes() + IKCP_OVERHEAD > mtu)
                 {
-                    output(buffer, offset);
-                    //Array.Clear(buffer, 0, offset);
-                    offset = 0;
+                    this.output(buffer, this, user);
+                    buffer = new ByteBuf((mtu + IKCP_OVERHEAD) * 3);
                 }
-                ack_get(i, ref seg.sn, ref seg.ts);
-                offset += seg.encode(buffer, offset);
+                seg.sn = acklist[i * 2 + 0];
+                seg.ts = acklist[i * 2 + 1];
+                seg.Encode(buffer);
             }
-            acklist = new UInt32[0];
+            acklist.Clear();
 
+            if (ackOnly) { // flash remain ack segments
+                var size = buffer.ReadableBytes();
+                
+                if (size > 0) {
+                    this.output(buffer, this, user);
+                }
+                return;
+            }
             // probe window size (if remote window size equals zero)
-            if (0 == rmt_wnd)
+            if (rmt_wnd == 0)
             {
-                if (0 == probe_wait)
+                if (probe_wait == 0)
                 {
                     probe_wait = IKCP_PROBE_INIT;
                     ts_probe = current + probe_wait;
                 }
-                else
+                else if (_itimediff(current, ts_probe) >= 0)
                 {
-                    if (_itimediff(current, ts_probe) >= 0)
+                    if (probe_wait < IKCP_PROBE_INIT)
                     {
-                        if (probe_wait < IKCP_PROBE_INIT)
-                            probe_wait = IKCP_PROBE_INIT;
-                        probe_wait += probe_wait / 2;
-                        if (probe_wait > IKCP_PROBE_LIMIT)
-                            probe_wait = IKCP_PROBE_LIMIT;
-                        ts_probe = current + probe_wait;
-                        probe |= IKCP_ASK_SEND;
+                        probe_wait = IKCP_PROBE_INIT;
                     }
+                    probe_wait += probe_wait / 2;
+                    if (probe_wait > IKCP_PROBE_LIMIT)
+                    {
+                        probe_wait = IKCP_PROBE_LIMIT;
+                    }
+                    ts_probe = current + probe_wait;
+                    probe |= IKCP_ASK_SEND;
                 }
             }
             else
@@ -812,81 +958,91 @@ namespace Gj.Galaxy.Network
                 ts_probe = 0;
                 probe_wait = 0;
             }
-
             // flush window probing commands
             if ((probe & IKCP_ASK_SEND) != 0)
             {
                 seg.cmd = IKCP_CMD_WASK;
-                if (offset + IKCP_OVERHEAD > (int)mtu)
+                if (buffer.ReadableBytes() + IKCP_OVERHEAD > mtu)
                 {
-                    output(buffer, offset);
-                    //Array.Clear(buffer, 0, offset);
-                    offset = 0;
+                    this.output(buffer, this, user);
+                    buffer = new ByteBuf((mtu + IKCP_OVERHEAD) * 3);
                 }
-                offset += seg.encode(buffer, offset);
+                seg.Encode(buffer);
             }
-
-            probe = 0;
-
-            // calculate window size
-            var cwnd_ = _imin_(snd_wnd, rmt_wnd);
-            if (0 == nocwnd)
-                cwnd_ = _imin_(cwnd, cwnd_);
-
-            count = 0;
-            for (var k = 0; k < snd_queue.Length; k++)
+            // flush window probing commands
+            if ((probe & IKCP_ASK_TELL) != 0)
             {
-                if (_itimediff(snd_nxt, snd_una + cwnd_) >= 0) break;
-
-                var newseg = snd_queue[k];
+                seg.cmd = IKCP_CMD_WINS;
+                if (buffer.ReadableBytes() + IKCP_OVERHEAD > mtu)
+                {
+                    this.output(buffer, this, user);
+                    buffer = new ByteBuf((mtu + IKCP_OVERHEAD) * 3);
+                }
+                seg.Encode(buffer);
+            }
+            probe = 0;
+            // calculate window size
+            int cwnd_temp = Math.Min(snd_wnd, rmt_wnd);
+            if (nocwnd == 0)
+            {
+                cwnd_temp = Math.Min(cwnd, cwnd_temp);
+            }
+            // move data from snd_queue to snd_buf
+            c = 0;
+            for (int i = 0; i < snd_queue.Count; i++)
+            {
+                Segment item = snd_queue[i];
+                if (_itimediff(snd_nxt, snd_una + cwnd_temp) >= 0)
+                {
+                    break;
+                }
+                Segment newseg = item;
                 newseg.conv = conv;
                 newseg.cmd = IKCP_CMD_PUSH;
                 newseg.wnd = seg.wnd;
-                newseg.ts = current_;
-                newseg.sn = snd_nxt;
+                newseg.ts = cur;
+                newseg.sn = snd_nxt++;
                 newseg.una = rcv_nxt;
-                newseg.resendts = current_;
+                newseg.resendts = cur;
                 newseg.rto = rx_rto;
                 newseg.fastack = 0;
                 newseg.xmit = 0;
-                snd_buf = append<Segment>(snd_buf, newseg);
-                snd_nxt++;
-                count++;
+                snd_buf.Add(newseg);
+                c++;
             }
-
-            if (0 < count)
+            if (c > 0)
             {
-                snd_queue = slice<Segment>(snd_queue, count, snd_queue.Length);
+                snd_queue.RemoveRange(0, c);
             }
-
             // calculate resent
-            var resent = (UInt32)fastresend;
-            if (fastresend <= 0) resent = 0xffffffff;
-            var rtomin = rx_rto >> 3;
-            if (nodelay != 0) rtomin = 0;
-
+            int resent = (fastresend > 0) ? fastresend : int.MaxValue;
+            int rtomin = (nodelay == 0) ? (rx_rto >> 3) : 0;
             // flush data segments
-            foreach (var segment in snd_buf)
+            for (int i = 0; i < snd_buf.Count; i++)
             {
-                var needsend = false;
-                var debug = _itimediff(current_, segment.resendts);
-                if (0 == segment.xmit)
+                Segment segment = snd_buf[i];
+                bool needsend = false;
+                if (segment.xmit == 0)
                 {
                     needsend = true;
                     segment.xmit++;
                     segment.rto = rx_rto;
-                    segment.resendts = current_ + segment.rto + rtomin;
+                    segment.resendts = cur + segment.rto + rtomin;
                 }
-                else if (_itimediff(current_, segment.resendts) >= 0)
+                else if (_itimediff(cur, segment.resendts) >= 0)
                 {
                     needsend = true;
                     segment.xmit++;
                     xmit++;
-                    if (0 == nodelay)
+                    if (nodelay == 0)
+                    {
                         segment.rto += rx_rto;
+                    }
                     else
+                    {
                         segment.rto += rx_rto / 2;
-                    segment.resendts = current_ + segment.rto;
+                    }
+                    segment.resendts = cur + segment.rto;
                     lost = 1;
                 }
                 else if (segment.fastack >= resent)
@@ -894,66 +1050,59 @@ namespace Gj.Galaxy.Network
                     needsend = true;
                     segment.xmit++;
                     segment.fastack = 0;
-                    segment.resendts = current_ + segment.rto;
+                    segment.resendts = cur + segment.rto;
                     change++;
                 }
-
                 if (needsend)
                 {
-                    segment.ts = current_;
+                    segment.ts = cur;
                     segment.wnd = seg.wnd;
                     segment.una = rcv_nxt;
-
-                    var need = IKCP_OVERHEAD + segment.data.Length;
-                    if (offset + need > mtu)
+                    int need = IKCP_OVERHEAD + segment.data.ReadableBytes();
+                    if (buffer.ReadableBytes() + need > mtu)
                     {
-                        output(buffer, offset);
-                        //Array.Clear(buffer, 0, offset);
-                        offset = 0;
+                        this.output(buffer, this, user);
+                        buffer = new ByteBuf((mtu + IKCP_OVERHEAD) * 3);
                     }
-
-                    offset += segment.encode(buffer, offset);
-                    if (segment.data.Length > 0)
+                    segment.Encode(buffer);
+                    if (segment.data.ReadableBytes() > 0)
                     {
-                        Array.Copy(segment.data, 0, buffer, offset, segment.data.Length);
-                        offset += segment.data.Length;
+                        buffer.WriteBytes(segment.data.Duplicate());
                     }
-
                     if (segment.xmit >= dead_link)
                     {
-                        state = 0;
+                        state = -1;
                     }
                 }
             }
-
             // flash remain segments
-            if (offset > 0)
+            if (buffer.ReadableBytes() > 0)
             {
-                output(buffer, offset);
-                //Array.Clear(buffer, 0, offset);
-                offset = 0;
+                this.output(buffer, this, user);
+                buffer = new ByteBuf((mtu + IKCP_OVERHEAD) * 3);
             }
-
             // update ssthresh
             if (change != 0)
             {
-                var inflight = snd_nxt - snd_una;
+                int inflight = snd_nxt - snd_una;
                 ssthresh = inflight / 2;
                 if (ssthresh < IKCP_THRESH_MIN)
+                {
                     ssthresh = IKCP_THRESH_MIN;
+                }
                 cwnd = ssthresh + resent;
                 incr = cwnd * mss;
             }
-
             if (lost != 0)
             {
                 ssthresh = cwnd / 2;
                 if (ssthresh < IKCP_THRESH_MIN)
+                {
                     ssthresh = IKCP_THRESH_MIN;
+                }
                 cwnd = 1;
                 incr = mss;
             }
-
             if (cwnd < 1)
             {
                 cwnd = 1;
@@ -961,158 +1110,961 @@ namespace Gj.Galaxy.Network
             }
         }
 
-        // update state (call it repeatedly, every 10ms-100ms), or you can ask
-        // ikcp_check when to call it again (without ikcp_input/_send calling).
-        // 'current' - current timestamp in millisec.
-        public void Update(UInt32 current_)
+        /**
+         * update state (call it repeatedly, every 10ms-100ms), or you can ask
+         * ikcp_check when to call it again (without ikcp_input/_send calling).
+         *
+         * @param current current timestamp in millisec.
+         */
+        public void Update(long current)
         {
-
-            current = current_;
-
-            if (0 == updated)
+            this.current = (int)current;
+            if (updated == 0)
             {
                 updated = 1;
-                ts_flush = current;
+                ts_flush = this.current;
             }
-
-            var slap = _itimediff(current, ts_flush);
-
+            int slap = _itimediff(this.current, ts_flush);
             if (slap >= 10000 || slap < -10000)
             {
-                ts_flush = current;
+                ts_flush = this.current;
                 slap = 0;
             }
-
             if (slap >= 0)
             {
                 ts_flush += interval;
-                if (_itimediff(current, ts_flush) >= 0)
-                    ts_flush = current + interval;
-                flush();
+                if (_itimediff(this.current, ts_flush) >= 0)
+                {
+                    ts_flush = this.current + interval;
+                }
+                Flush(false);
             }
         }
 
-        // Determine when should you invoke ikcp_update:
-        // returns when you should invoke ikcp_update in millisec, if there
-        // is no ikcp_input/_send calling. you can call ikcp_update in that
-        // time, instead of call update repeatly.
-        // Important to reduce unnacessary ikcp_update invoking. use it to
-        // schedule ikcp_update (eg. implementing an epoll-like mechanism,
-        // or optimize ikcp_update when handling massive kcp connections)
-        public UInt32 Check(UInt32 current_)
+        /**
+         * Determine when should you invoke ikcp_update: returns when you should
+         * invoke ikcp_update in millisec, if there is no ikcp_input/_send calling.
+         * you can call ikcp_update in that time, instead of call update repeatly.
+         * Important to reduce unnacessary ikcp_update invoking. use it to schedule
+         * ikcp_update (eg. implementing an epoll-like mechanism, or optimize
+         * ikcp_update when handling massive kcp connections)
+         *
+         * @param current
+         * @return
+         */
+        public int Check(long current)
         {
-
-            if (0 == updated) return current_;
-
-            var ts_flush_ = ts_flush;
-            var tm_flush_ = 0x7fffffff;
-            var tm_packet = 0x7fffffff;
-            var minimal = 0;
-
-            if (_itimediff(current_, ts_flush_) >= 10000 || _itimediff(current_, ts_flush_) < -10000)
+            int cur = (int)current;
+            if (updated == 0)
             {
-                ts_flush_ = current_;
+                return cur;
             }
-
-            if (_itimediff(current_, ts_flush_) >= 0) return current_;
-
-            tm_flush_ = (int)_itimediff(ts_flush_, current_);
-
-            foreach (var seg in snd_buf)
+            int ts_flush_temp = this.ts_flush;
+            int tm_packet = 0x7fffffff;
+            if (_itimediff(cur, ts_flush_temp) >= 10000 || _itimediff(cur, ts_flush_temp) < -10000)
             {
-                var diff = _itimediff(seg.resendts, current_);
-                if (diff <= 0) return current_;
-                if (diff < tm_packet) tm_packet = (int)diff;
+                ts_flush_temp = cur;
             }
-
-            minimal = (int)tm_packet;
-            if (tm_packet >= tm_flush_) minimal = (int)tm_flush_;
-            if (minimal >= interval) minimal = (int)interval;
-
-            return current_ + (UInt32)minimal;
+            if (_itimediff(cur, ts_flush_temp) >= 0)
+            {
+                return cur;
+            }
+            int tm_flush = _itimediff(ts_flush_temp, cur);
+            for (int i = 0; i < snd_buf.Count; i++)
+            {
+                Segment seg = snd_buf[i];
+                int diff = _itimediff(seg.resendts, cur);
+                if (diff <= 0)
+                {
+                    return cur;
+                }
+                if (diff < tm_packet)
+                {
+                    tm_packet = diff;
+                }
+            }
+            int minimal = tm_packet < tm_flush ? tm_packet : tm_flush;
+            if (minimal >= interval)
+            {
+                minimal = interval;
+            }
+            return cur + minimal;
         }
 
-        // change MTU size, default is 1400
-        public int SetMtu(Int32 mtu_)
+        /**
+         * change MTU size, default is 1400
+         *
+         * @param mtu
+         * @return
+         */
+        public int SetMtu(int mtu)
         {
-            if (mtu_ < 50 || mtu_ < (Int32)IKCP_OVERHEAD) return -1;
-
-            var buffer_ = new byte[(mtu_ + IKCP_OVERHEAD) * 3];
-            if (null == buffer_) return -2;
-
-            mtu = (UInt32)mtu_;
+            if (mtu < 50 || mtu < IKCP_OVERHEAD)
+            {
+                return -1;
+            }
+            ByteBuf buf = new ByteBuf((mtu + IKCP_OVERHEAD) * 3);
+            this.mtu = mtu;
             mss = mtu - IKCP_OVERHEAD;
-            buffer = buffer_;
+            this.buffer = buf;
             return 0;
         }
 
-        public int Interval(Int32 interval_)
+        /**
+         * interval per update
+         *
+         * @param interval
+         * @return
+         */
+        public int Interval(int interval)
         {
-            if (interval_ > 5000)
+            if (interval > 5000)
             {
-                interval_ = 5000;
+                interval = 5000;
             }
-            else if (interval_ < 10)
+            else if (interval < 10)
             {
-                interval_ = 10;
+                interval = 10;
             }
-            interval = (UInt32)interval_;
+            this.interval = interval;
             return 0;
         }
 
-        // fastest: ikcp_nodelay(kcp, 1, 20, 2, 1)
-        // nodelay: 0:disable(default), 1:enable
-        // interval: internal update timer interval in millisec, default is 100ms
-        // resend: 0:disable fast resend(default), 1:enable fast resend
-        // nc: 0:normal congestion control(default), 1:disable congestion control
-        public int NoDelay(int nodelay_, int interval_, int resend_, int nc_)
+        /**
+         * fastest: ikcp_nodelay(kcp, 1, 20, 2, 1) nodelay: 0:disable(default),
+         * 1:enable interval: internal update timer interval in millisec, default is
+         * 100ms resend: 0:disable fast resend(default), 1:enable fast resend nc:
+         * 0:normal congestion control(default), 1:disable congestion control
+         *
+         * @param nodelay
+         * @param interval
+         * @param resend
+         * @param nc
+         * @return
+         */
+        public int NoDelay(int nodelay, int interval, int resend, int nc)
         {
-
-            if (nodelay_ > 0)
+            if (nodelay >= 0)
             {
-                nodelay = (UInt32)nodelay_;
-                if (nodelay_ != 0)
+                this.nodelay = nodelay;
+                if (nodelay != 0)
+                {
                     rx_minrto = IKCP_RTO_NDL;
+                }
                 else
+                {
                     rx_minrto = IKCP_RTO_MIN;
+                }
             }
-
-            if (interval_ >= 0)
+            if (interval >= 0)
             {
-                if (interval_ > 5000)
+                if (interval > 5000)
                 {
-                    interval_ = 5000;
+                    interval = 5000;
                 }
-                else if (interval_ < 10)
+                else if (interval < 10)
                 {
-                    interval_ = 10;
+                    interval = 10;
                 }
-                interval = (UInt32)interval_;
+                this.interval = interval;
             }
-
-            if (resend_ >= 0) fastresend = resend_;
-
-            if (nc_ >= 0) nocwnd = nc_;
-
+            if (resend >= 0)
+            {
+                fastresend = resend;
+            }
+            if (nc >= 0)
+            {
+                nocwnd = nc;
+            }
             return 0;
         }
 
-        // set maximum window size: sndwnd=32, rcvwnd=32 by default
+        /**
+         * set maximum window size: sndwnd=32, rcvwnd=32 by default
+         *
+         * @param sndwnd
+         * @param rcvwnd
+         * @return
+         */
         public int WndSize(int sndwnd, int rcvwnd)
         {
             if (sndwnd > 0)
-                snd_wnd = (UInt32)sndwnd;
-
+            {
+                snd_wnd = sndwnd;
+            }
             if (rcvwnd > 0)
-                rcv_wnd = (UInt32)rcvwnd;
+            {
+                rcv_wnd = rcvwnd;
+            }
             return 0;
         }
 
-        // get how many packet is waiting to be sent
+        /**
+         * get how many packet is waiting to be sent
+         *
+         * @return
+         */
         public int WaitSnd()
         {
-            return snd_buf.Length + snd_queue.Length;
+            return snd_buf.Count + snd_queue.Count;
         }
+
+        public void SetNextUpdate(int nextUpdate)
+        {
+            this.nextUpdate = nextUpdate;
+        }
+
+        public int GetNextUpdate()
+        {
+            return nextUpdate;
+        }
+
+        public Object GetUser()
+        {
+            return user;
+        }
+        public bool IsStream()
+        {
+            return stream;
+        }
+
+        public void SetStream(bool stream)
+        {
+            this.stream = stream;
+        }
+
+        public void SetACKNoDelay(bool ackNoDelay)
+        {
+            this.ackNoDelay = ackNoDelay;
+        }
+
+        public void SetMinRto(int min)
+        {
+            rx_minrto = min;
+        }
+        public void SetConv(int conv)
+        {
+            this.conv = conv;
+        }
+    }
+    public class ByteBuf:Stream
+    {
+        private byte[] data;
+        private Kcp kcp;
+        private int readerIndex;
+        private int writerIndex;
+        private int markReader;
+        private int markWriter;
+
+        /**
+                 * 初始化
+                 **/
+        public ByteBuf(int capacity)
+        {
+            this.data = new byte[capacity];
+            readerIndex = 0;
+            writerIndex = 0;
+            markReader = 0;
+            markWriter = 0;
+        }
+        public ByteBuf(byte[] content)
+        {
+            this.data = content;
+            readerIndex = 0;
+            writerIndex = content.Length;
+            markReader = 0;
+            markWriter = 0;
+        }
+        private ByteBuf()
+        {
+
+        }
+        public void SetKcp(Kcp kcp){
+            this.kcp = kcp;
+        }
+        /**
+         *  容量
+         **/
+        public int Capacity()
+        {
+            return data.Length;
+        }
+
+        /**
+         * 扩容
+         */
+        public ByteBuf Capacity(int nc)
+        {
+            if (nc > data.Length)
+            {
+                byte[] old = data;
+                data = new byte[nc];
+                Array.Copy(old, data, old.Length);
+            }
+            return this;
+        }
+
+        /**
+         * 清除掉所有标记
+         * @return 
+        **/
+        public ByteBuf Clear()
+        {
+            readerIndex = 0;
+            writerIndex = 0;
+            markReader = 0;
+            markWriter = 0;
+            return this;
+        }
+        /**
+         * 拷贝
+         **/
+        public ByteBuf Copy()
+        {
+            ByteBuf item = new ByteBuf(data.Length);
+            Array.Copy(this.data, item.data, data.Length);
+            item.readerIndex = readerIndex;
+            item.writerIndex = writerIndex;
+            item.markReader = markReader;
+            item.markWriter = markWriter;
+            return item;
+        }
+        /// <summary>
+        /// 浅拷贝
+        /// </summary>
+        /// <returns></returns>
+        public ByteBuf Duplicate()
+        {
+            ByteBuf item = new ByteBuf();
+            item.readerIndex = readerIndex;
+            item.writerIndex = writerIndex;
+            item.markReader = markReader;
+            item.markWriter = markWriter;
+            item.data = data;
+            return item;
+        }
+        /**
+         * 获取一个字节
+         **/
+        public byte GetByte(int index)
+        {
+            if (index < data.Length)
+            {
+                return data[index];
+            }
+            return (byte)0;
+        }
+        /// <summary>
+        /// 读取四字节整形
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public int GetInt(int index)
+        {
+            if (index + 3 < data.Length)
+            {
+                int ret = ((int)data[index]) << 24;
+                ret |= ((int)data[index + 1]) << 16;
+                ret |= ((int)data[index + 2]) << 8;
+                ret |= ((int)data[index + 3]);
+                return ret;
+            }
+            return 0;
+        }
+        /// <summary>
+        /// 小头的读取
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public int GetIntLE(int index)
+        {
+            if (index + 3 < data.Length)
+            {
+                int ret = ((int)data[index]);
+                ret |= ((int)data[index + 1]) << 8;
+                ret |= ((int)data[index + 2]) << 16;
+                ret |= ((int)data[index + 3]) << 24;
+                return ret;
+            }
+            return 0;
+        }
+        /**
+         * 读取两字节整形
+         **/
+        public short GetShort(int index)
+        {
+            if (index + 1 < data.Length)
+            {
+                short r1 = (short)(data[index] << 8);
+                short r2 = (short)(data[index + 1]);
+                short ret = (short)(r1 | r2);
+                return ret;
+            }
+            return 0;
+        }
+        /// <summary>
+        /// 读取两字节整形
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public short GetShortLE(int index)
+        {
+            if (index + 1 < data.Length)
+            {
+                short r1 = (short)(data[index]);
+                short r2 = (short)(data[index + 1] << 8);
+                short ret = (short)(r1 | r2);
+                return ret;
+            }
+            return 0;
+        }
+        /**
+         * 标记读
+         **/
+        public ByteBuf MarkReaderIndex()
+        {
+            markReader = readerIndex;
+            return this;
+        }
+        /**
+         * 标记写
+         **/
+        public ByteBuf MarkWriterIndex()
+        {
+            markWriter = writerIndex;
+            return this;
+        }
+        /**
+         * 可写长度
+         **/
+        public int MaxWritableBytes()
+        {
+            return data.Length - writerIndex;
+        }
+        /**
+         * 读取一个字节
+         **/
+        public byte ReadByte()
+        {
+            if (readerIndex < writerIndex)
+            {
+                byte ret = data[readerIndex++];
+                return ret;
+            }
+            return (byte)0;
+        }
+        /**
+         * 读取四字节整形
+         **/
+        public int ReadInt()
+        {
+            if (readerIndex + 3 < writerIndex)
+            {
+                int ret = (int)(((data[readerIndex++]) << 24) & 0xff000000);
+                ret |= (((data[readerIndex++]) << 16) & 0x00ff0000);
+                ret |= (((data[readerIndex++]) << 8) & 0x0000ff00);
+                ret |= (((data[readerIndex++])) & 0x000000ff);
+                return ret;
+            }
+            return 0;
+        }
+        /// <summary>
+        /// 小头读取
+        /// </summary>
+        /// <returns></returns>
+        public int ReadIntLE()
+        {
+            if (readerIndex + 3 < writerIndex)
+            {
+                int ret = (((data[readerIndex++])) & 0x000000ff);
+                ret |= (((data[readerIndex++]) << 8) & 0x0000ff00);
+                ret |= (((data[readerIndex++]) << 16) & 0x00ff0000);
+                ret |= (int)(((data[readerIndex++]) << 24) & 0xff000000);
+                return ret;
+            }
+            return 0;
+        }
+        /// <summary>
+        /// 读取两个字节的整形
+        /// </summary>
+        /// <returns></returns>
+        public short ReadShort()
+        {
+            if (readerIndex + 1 < writerIndex)
+            {
+                int h = data[readerIndex++];
+                int l = data[readerIndex++] & 0x000000ff;
+                int len = ((h << 8) & 0x0000ff00) | (l);
+                return (short)len;
+            }
+            return 0;
+        }
+        /// <summary>
+        /// 小头读取
+        /// </summary>
+        /// <returns></returns>
+        public short ReadShortLE()
+        {
+            if (readerIndex + 1 < writerIndex)
+            {
+                int l = data[readerIndex++];
+                int h = data[readerIndex++] & 0x000000ff;
+                int len = ((h << 8) & 0x0000ff00) | (l);
+                return (short)len;
+            }
+            return 0;
+        }
+        /// <summary>
+        /// 可读字节数
+        /// </summary>
+        /// <returns></returns>
+        public int ReadableBytes()
+        {
+            return writerIndex - readerIndex;
+        }
+        /**
+         * 读指针
+         **/
+        public int ReaderIndex()
+        {
+            return readerIndex;
+        }
+        /**
+         * 移动读指针
+         **/
+        public ByteBuf ReaderIndex(int readerIndex)
+        {
+            if (readerIndex <= writerIndex)
+            {
+                this.readerIndex = readerIndex;
+            }
+            return this;
+        }
+        /**
+         * 重置读指针
+         **/
+        public ByteBuf ResetReaderIndex()
+        {
+            if (markReader <= writerIndex)
+            {
+                this.readerIndex = markReader;
+            }
+            return this;
+        }
+        /**
+         * 重置写指针
+         **/
+        public ByteBuf ResetWriterIndex()
+        {
+            if (markWriter >= readerIndex)
+            {
+                writerIndex = markWriter;
+            }
+            return this;
+        }
+        /**
+         * 设置字节
+         **/
+        public ByteBuf SetByte(int index, byte value)
+        {
+            if (index < data.Length)
+            {
+                data[index] = value;
+            }
+            return this;
+        }
+
+
+        /**
+         * 设置字节
+         **/
+        public ByteBuf SetBytes(int index, byte[] src, int from, int len)
+        {
+            if (index + len <= len)
+            {
+                Array.Copy(src, from, data, index, len);
+            }
+            return this;
+        }
+        /**
+         * 设置读写指针
+         **/
+        public ByteBuf SetIndex(int readerIndex, int writerIndex)
+        {
+            if (readerIndex >= 0 && readerIndex <= writerIndex && writerIndex <= data.Length)
+            {
+                this.readerIndex = readerIndex;
+                this.writerIndex = writerIndex;
+            }
+            return this;
+        }
+        /**
+         * 设置四字节整形
+         **/
+        public ByteBuf SetInt(int index, int value)
+        {
+            if (index + 4 <= data.Length)
+            {
+                data[index++] = (byte)((value >> 24) & 0xff);
+                data[index++] = (byte)((value >> 16) & 0xff);
+                data[index++] = (byte)((value >> 8) & 0xff);
+                data[index++] = (byte)(value & 0xff);
+            }
+            return this;
+        }
+        /// <summary>
+        /// 设置小头整形
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ByteBuf SetIntLE(int index, int value)
+        {
+            if (index + 4 <= data.Length)
+            {
+                data[index++] = (byte)(value & 0xff);
+                data[index++] = (byte)((value >> 8) & 0xff);
+                data[index++] = (byte)((value >> 16) & 0xff);
+                data[index++] = (byte)((value >> 24) & 0xff);
+            }
+            return this;
+        }
+        /**
+         * 设置两字节整形
+         **/
+        public ByteBuf SetShort(int index, short value)
+        {
+            if (index + 2 <= data.Length)
+            {
+                data[index++] = (byte)((value >> 8) & 0xff);
+                data[index++] = (byte)(value & 0xff);
+            }
+            return this;
+        }
+        /// <summary>
+        /// 小头整形
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ByteBuf SetShortLE(int index, short value)
+        {
+            if (index + 2 <= data.Length)
+            {
+                data[index++] = (byte)(value & 0xff);
+                data[index++] = (byte)((value >> 8) & 0xff);
+            }
+            return this;
+        }
+        /**
+         * 略过一些字节
+         **/
+        public ByteBuf SkipBytes(int length)
+        {
+            if (readerIndex + length <= writerIndex)
+            {
+                readerIndex += length;
+            }
+            return this;
+        }
+        /**
+         * 剩余的可写字节数
+         **/
+        public int WritableBytes()
+        {
+            return data.Length - writerIndex;
+        }
+        /**
+         * 写入一个字节
+         * 
+         **/
+        public ByteBuf WriteByte(byte value)
+        {
+            this.Capacity(writerIndex + 1);
+            this.data[writerIndex++] = value;
+            return this;
+        }
+        /**
+         * 写入四字节整形
+         **/
+        public ByteBuf WriteInt(int value)
+        {
+            Capacity(writerIndex + 4);
+            data[writerIndex++] = (byte)((value >> 24) & 0xff);
+            data[writerIndex++] = (byte)((value >> 16) & 0xff);
+            data[writerIndex++] = (byte)((value >> 8) & 0xff);
+            data[writerIndex++] = (byte)(value & 0xff);
+            return this;
+        }
+        /// <summary>
+        /// 写入四字节小头
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ByteBuf WriteIntLE(int value)
+        {
+            Capacity(writerIndex + 4);
+            data[writerIndex++] = (byte)(value & 0xff);
+            data[writerIndex++] = (byte)((value >> 8) & 0xff);
+            data[writerIndex++] = (byte)((value >> 16) & 0xff);
+            data[writerIndex++] = (byte)((value >> 24) & 0xff);
+            return this;
+        }
+        /**
+         * 写入两字节整形
+         **/
+        public ByteBuf WriteShort(short value)
+        {
+            Capacity(writerIndex + 2);
+            data[writerIndex++] = (byte)((value >> 8) & 0xff);
+            data[writerIndex++] = (byte)(value & 0xff);
+            return this;
+        }
+        /// <summary>
+        /// 两字节小头
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ByteBuf WriteShortLE(short value)
+        {
+            Capacity(writerIndex + 2);
+            data[writerIndex++] = (byte)(value & 0xff);
+            data[writerIndex++] = (byte)((value >> 8) & 0xff);
+            return this;
+        }
+        /**
+         * 写入一部分字节
+         **/
+        public ByteBuf WriteBytes(ByteBuf src)
+        {
+            int sum = src.writerIndex - src.readerIndex;
+            Capacity(writerIndex + sum);
+            if (sum > 0)
+            {
+                Array.Copy(src.data, src.readerIndex, data, writerIndex, sum);
+                writerIndex += sum;
+                src.readerIndex += sum;
+            }
+            return this;
+        }
+        /**
+         * 写入一部分字节
+         **/
+        public ByteBuf WriteBytes(ByteBuf src, int len)
+        {
+            if (len > 0)
+            {
+                Capacity(writerIndex + len);
+                Array.Copy(src.data, src.readerIndex, data, writerIndex, len);
+                writerIndex += len;
+                src.readerIndex += len;
+            }
+            return this;
+        }
+        /**
+         * 写入一部分字节
+         **/
+        public ByteBuf WriteBytes(byte[] src)
+        {
+            int sum = src.Length;
+            Capacity(writerIndex + sum);
+            if (sum > 0)
+            {
+                Array.Copy(src, 0, data, writerIndex, sum);
+                writerIndex += sum;
+            }
+            return this;
+        }
+        /**
+         * 写入一部分字节
+         **/
+        public ByteBuf WriteBytes(byte[] src, int off, int len)
+        {
+            int sum = len;
+            if (sum > 0)
+            {
+                Capacity(writerIndex + sum);
+                Array.Copy(src, off, data, writerIndex, sum);
+                writerIndex += sum;
+            }
+            return this;
+        }
+        /**
+         * 读取utf字符串（大头）
+         **/
+        public string ReadUTF8()
+        {
+            short len = ReadShort(); // 字节数
+            byte[] charBuff = new byte[len]; //
+            Array.Copy(data, readerIndex, charBuff, 0, len);
+            readerIndex += len;
+            return Encoding.UTF8.GetString(charBuff);
+        }
+        /// <summary>
+        /// 读取utf8（小头）
+        /// </summary>
+        /// <returns></returns>
+        public string ReadUTF8LE()
+        {
+            short len = ReadShortLE(); // 字节数
+            byte[] charBuff = new byte[len]; //
+            Array.Copy(data, readerIndex, charBuff, 0, len);
+            readerIndex += len;
+            return Encoding.UTF8.GetString(charBuff);
+        }
+        /**
+         * 写入utf字符串
+         * 
+         **/
+        public ByteBuf WriteUTF8(string value)
+        {
+            byte[] content = Encoding.UTF8.GetBytes(value.ToCharArray());
+            int len = content.Length;
+            Capacity(writerIndex + len + 2);
+            WriteShort((short)len);
+            Array.Copy(content, 0, data, writerIndex, len);
+            writerIndex += len;
+            return this;
+        }
+        /// <summary>
+        /// 写入utf8（小头）
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public ByteBuf WriteUTF8LE(string value)
+        {
+            byte[] content = Encoding.UTF8.GetBytes(value.ToCharArray());
+            int len = content.Length;
+            Capacity(writerIndex + len + 2);
+            WriteShortLE((short)len);
+            Array.Copy(content, 0, data, writerIndex, len);
+            writerIndex += len;
+            return this;
+        }
+        /**
+         * 写指针
+         **/
+        public int WriterIndex()
+        {
+            return writerIndex;
+        }
+        /**
+         * 移动写指针
+         **/
+        public ByteBuf WriterIndex(int writerIndex)
+        {
+            if (writerIndex >= readerIndex && writerIndex <= data.Length)
+            {
+                this.writerIndex = writerIndex;
+            }
+            return this;
+        }
+        /**
+         * 原始字节数组
+         **/
+        public byte[] GetRaw()
+        {
+            return data;
+        }
+
+
+        public override bool CanRead
+        {
+            get
+            {
+                return ReadableBytes() > 0;
+            }
+        }
+
+        public override bool CanSeek
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        public override bool CanWrite
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        public override long Length
+        {
+            get
+            {
+                return ReadableBytes();
+            }
+        }
+
+        public override long Position
+        {
+            get
+            {
+                return readerIndex;
+            }
+            set
+            {
+                ReaderIndex((int)value);
+            }
+        }
+
+        public override void Flush()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int size = 0;
+            int all = 0;
+            while (count > 0)
+            {
+                if (writerIndex <= readerIndex)
+                {
+                    if(kcp.PeekSize() > 0)
+                    {
+                        kcp.Receive(this);
+                    }
+                    else
+                    {
+                        // 没有数据，wait？
+                        break;
+                    }
+                }
+                size = writerIndex - readerIndex;
+                if (size > count)
+                {
+                    size = count;
+                }
+                count -= size;
+
+                Array.Copy(data, readerIndex, buffer, offset, size);
+                readerIndex += size;
+                offset += size;
+                all += size;
+            }
+            return all;
+        }
+
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void SetLength(long value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            throw new NotImplementedException();
+        }
+
     }
 
     public class Utility
@@ -1124,63 +2076,6 @@ namespace Gj.Galaxy.Network
             QT temp = t1;
             t1 = t2;
             t2 = temp;
-        }
-    }
-
-    public class SwitchQueue<T> where T : class
-    {
-
-        private Queue mConsumeQueue;
-        private Queue mProduceQueue;
-
-        public SwitchQueue()
-        {
-            mConsumeQueue = new Queue(16);
-            mProduceQueue = new Queue(16);
-        }
-
-        public SwitchQueue(int capcity)
-        {
-            mConsumeQueue = new Queue(capcity);
-            mProduceQueue = new Queue(capcity);
-        }
-
-        // producer
-        public void Push(T obj)
-        {
-            lock (mProduceQueue)
-            {
-                mProduceQueue.Enqueue(obj);
-            }
-        }
-
-        // consumer.
-        public T Pop()
-        {
-
-            return (T)mConsumeQueue.Dequeue();
-        }
-
-        public bool Empty()
-        {
-            return 0 == mConsumeQueue.Count;
-        }
-
-        public void Switch()
-        {
-            lock (mProduceQueue)
-            {
-                Utility.Swap(ref mConsumeQueue, ref mProduceQueue);
-            }
-        }
-
-        public void Clear()
-        {
-            lock (mProduceQueue)
-            {
-                mConsumeQueue.Clear();
-                mProduceQueue.Clear();
-            }
         }
     }
 }

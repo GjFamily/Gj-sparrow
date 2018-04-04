@@ -82,6 +82,22 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
+        public static bool connecting
+        {
+            get
+            {
+                if (offlineMode)
+                {
+                    return true;
+                }
+
+                if (client == null)
+                {
+                    return false;
+                }
+                return client.IsRuning;
+            }
+        }
 
         public static bool offlineMode
         {
@@ -97,7 +113,7 @@ namespace Gj.Galaxy.Logic{
                     return;
                 }
 
-                if (value && connected)
+                if (value && connecting)
                 {
                     Debug.LogError("Can't start OFFLINE mode while connected!");
                     return;
@@ -197,24 +213,6 @@ namespace Gj.Galaxy.Logic{
         }
 
         private static bool m_isMessageQueueRunning = false;
-
-        //public static int unreliableCommandsLimit
-        //{
-        //    get
-        //    {
-        //        return client.LimitOfUnreliableCommands;
-        //    }
-
-        //    set
-        //    {
-        //        client.LimitOfUnreliableCommands = value;
-        //    }
-        //}
-
-        //public static int ResentReliableCommands
-        //{
-        //    get { return client.ResentReliableCommands; }
-        //}
 
         private static bool UsePreciseTimer = true;
         static Stopwatch startupStopwatch;
@@ -445,17 +443,16 @@ namespace Gj.Galaxy.Logic{
             GameConnect.Update();
         }
 
+        internal static void ClientUpdate(){
+            client.Update();
+        }
+
         internal static void Stat(){
             if (!is_stat) return;
             Debug.Log(String.Format("All: {0}, in: {1}, out: {2}", inDataLength + outDataLength, preInDataLength, preOutDataLength));
             preInDataLength = 0;
             preOutDataLength = 0;
         }
-
-        //public static void Wait(){
-        //    if (client.IsRuning)
-        //        client.WaitConnect();
-        //}
 
         internal static bool DispatchIncomingCommands(){
             return client.ReadQueue(10);

@@ -92,6 +92,12 @@ namespace Gj.Galaxy.Logic{
 
         protected void Update()
         {
+            if (PeerClient.connecting)
+            {
+                // 提供client内部更新
+                PeerClient.ClientUpdate();
+            }
+
             if (!PeerClient.connected)
             {
                 //PeerClient.Wait();
