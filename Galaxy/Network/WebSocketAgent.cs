@@ -24,6 +24,36 @@ namespace Gj.Galaxy.Network
         bool m_IsConnected = false;
         string m_Error = null;
 
+        private bool available = false;
+        public bool Available
+        {
+            get
+            {
+                return available;
+            }
+
+            set
+            {
+                available = value;
+            }
+        }
+
+        public bool Connecting
+        {
+            get
+            {
+                return m_Socket != null;
+            }
+        }
+
+        public bool Connected
+        {
+            get
+            {
+                //return socket ? true : false;
+                return m_IsConnected;
+            }
+        }
         public WebSocketAgent(Uri url)
         {
             mUrl = url;
@@ -68,14 +98,6 @@ namespace Gj.Galaxy.Network
             this.message = message;
         }
 
-        public bool Connected(){
-            return m_IsConnected;
-        }
-
-        public bool Connecting(){
-            return m_Socket != null;
-        }
-
         public void Send(byte[] buffer)
         {
             m_Socket.Send(buffer);
@@ -90,6 +112,7 @@ namespace Gj.Galaxy.Network
 
         public void Close()
         {
+            available = false;
             m_IsConnected = false;
             if(m_Socket != null)
                 m_Socket.Close();
@@ -121,7 +144,7 @@ namespace Gj.Galaxy.Network
 
         public bool Write(byte[] head, Stream reader)
         {
-            if (!Connected()) return false;
+            if (!Connected) return false;
             int rl = Convert.ToInt32(reader.Length);
             int length = head.Length + rl;
             byte[] sum = new byte[length];

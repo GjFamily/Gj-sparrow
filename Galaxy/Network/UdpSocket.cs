@@ -17,6 +17,37 @@ namespace Gj.Galaxy.Network
 
         private KcpStateObject state;
 
+        private bool available = false;
+        public bool Available
+        {
+            get
+            {
+                return available;
+            }
+
+            set
+            {
+                available = value;
+            }
+        }
+
+        public bool Connecting
+        {
+            get
+            {
+                return state != null;
+            }
+        }
+
+        public bool Connected
+        {
+            get
+            {
+                //return socket ? true : false;
+                return mUdpClient.Available > 0;
+            }
+        }
+
         public UdpSocket(IPEndPoint point)
         {
             mSvrEndPoint = point;
@@ -55,29 +86,18 @@ namespace Gj.Galaxy.Network
 
         public void Close()
         {
-            if(Connected())
+            if(Connected)
             {
                 mUdpClient.Close();
             }
-
+            available = false;
             state.close();
             state = null;
         }
 
-        public bool Connected()
-        {
-            //return socket ? true : false;
-            return mUdpClient.Available > 0;
-        }
-
-        public bool Connecting()
-        {
-            return state != null;
-        }
-
         public void Accept()
         {
-            state.Update();
+            if(state != null) state.Update();
         }
     }
 

@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System;
 using Gj.Galaxy.Utils;
 
-namespace Gj.Galaxy.Logic{
+namespace Gj.Galaxy.Logic
+{
 
     internal class SceneEvent
     {
@@ -18,18 +19,20 @@ namespace Gj.Galaxy.Logic{
         public const byte GameConnect = 253;
         public const byte Prop = 252;
     }
-    public class LobbyType{
+    public class LobbyType
+    {
         public const string PVE = "pve";
         public const string PVP = "pvp";
     }
     // player 信息
     // lobby 信息
     // team和game接入信息
-    public class SceneConnect:NetworkListener, NamespaceListener
+    public class SceneConnect : NetworkListener, NamespaceListener
     {
         private static Namespace n;
         private static SceneConnect listener;
-        public static SceneConnect Listener{
+        public static SceneConnect Listener
+        {
             get
             {
                 return listener;
@@ -38,17 +41,18 @@ namespace Gj.Galaxy.Logic{
 
         public delegate void OnJoinedGameDelegate(string token);
         public delegate void OnInvitedTeamDelegate(string userId, string teamId);
-        public delegate void OnPlayInitDelegate(GamePlayer player);
+        public delegate void OnPlayerInitDelegate(GamePlayer player);
 
         public event OnJoinedGameDelegate OnJoinedGame;
         public event OnInvitedTeamDelegate OnInvitedTeam;
-        public event OnPlayInitDelegate OnPlayInit;
+        public event OnPlayerInitDelegate OnPlayerInit;
 
         private Action<bool> OnConnectAction;
 
         public static GamePlayer player;
 
-        static SceneConnect(){
+        static SceneConnect()
+        {
             n = PeerClient.Of(NamespaceId.Scene);
             listener = new SceneConnect();
             n.listener = listener;
@@ -58,11 +62,13 @@ namespace Gj.Galaxy.Logic{
             };
         }
 
-        public static Namespace Of(SceneRoom ns){
+        public static Namespace Of(SceneRoom ns)
+        {
             return n.Of((byte)ns);
         }
 
-        public static void Connect(Action<bool> a){
+        public static void Connect(Action<bool> a)
+        {
             Listener.OnConnectAction = a;
             n.Connect("abc=123");
         }
@@ -87,7 +93,7 @@ namespace Gj.Galaxy.Logic{
 
         public static void LeaveLobby()
         {
-            n.Emit(SceneEvent.LobbyLeave, new object[]{});
+            n.Emit(SceneEvent.LobbyLeave, new object[] { });
         }
 
         public static void ExistLobby(Action<bool> callback)
@@ -124,7 +130,8 @@ namespace Gj.Galaxy.Logic{
             emitPlayerProp(player.CustomProperties);
         }
 
-        internal static void emitPlayerProp(Dictionary<string, object> prop){
+        internal static void emitPlayerProp(Dictionary<string, object> prop)
+        {
             n.Emit(SceneEvent.PropChanged, new object[] { prop });
         }
 
@@ -150,6 +157,7 @@ namespace Gj.Galaxy.Logic{
                     player = new GamePlayer(true, -1, userId);
                     player.AttachInfo(((Dictionary<object, object>)param[1]).ConverString());
                     player.InternalProperties(((Dictionary<object, object>)param[2]).ConverString());
+                    if (OnPlayerInit != null) OnPlayerInit(player);
                     break;
 
             }

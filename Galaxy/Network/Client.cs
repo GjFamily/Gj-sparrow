@@ -11,7 +11,8 @@ using System.IO.Compression;
 using UnityEditor;
 #endif
 
-namespace Gj.Galaxy.Network{
+namespace Gj.Galaxy.Network
+{
     public delegate long TimestampDelegate();
     public delegate void OnDataLengthDelegate(long length);
     public enum ConnectionState
@@ -36,13 +37,15 @@ namespace Gj.Galaxy.Network{
         Server
     }
 
-    public interface ClientListener{
+    public interface ClientListener
+    {
         void OnConnect(bool success);
         void OnReconnect(bool success);
         void OnDisconnect();
     }
 
-    internal class QueueData{
+    internal class QueueData
+    {
         public Namespace ns;
         public NsData data;
     }
@@ -52,7 +55,8 @@ namespace Gj.Galaxy.Network{
         const int headLength = 6;
         public ClientListener listener;
         private ConnectionState state = ConnectionState.Disconnected;
-        public ConnectionState State{
+        public ConnectionState State
+        {
             get
             {
                 return state;
@@ -78,7 +82,8 @@ namespace Gj.Galaxy.Network{
         protected List<ProtocolType> acceptConn = new List<ProtocolType>();
         protected static Dictionary<CompressType, Func<Stream, Stream>> readerHandle = new Dictionary<CompressType, Func<Stream, Stream>>();
         protected static Dictionary<CompressType, Func<Stream, Stream>> writerHandle = new Dictionary<CompressType, Func<Stream, Stream>>();
-        static Client(){
+        static Client()
+        {
             MessagePack.Resolvers.CompositeResolver.RegisterAndSetAsDefault(
                 // use generated resolver first, and combine many other generated/custom resolvers
                 MessagePack.Resolvers.GeneratedResolver.Instance,
@@ -137,7 +142,7 @@ namespace Gj.Galaxy.Network{
         // 服务端的时间戳
         public int ServerTimestamp;
         public long LastPingTimestamp;
-        public int PingTime;
+        public long PingTime;
         // 最后次发送时间
         public long LastTimestamp;
 
@@ -180,7 +185,8 @@ namespace Gj.Galaxy.Network{
             Debug.Log("[ SOCKET ] disconnect");
             state = ConnectionState.Disconnecting;
             exitStatus = ExitStatus.Client;
-            if(IsRuning){
+            if (IsRuning)
+            {
                 SendByte(MessageType.Close, ProtocolType.Default, CompressType.None, null);
             }
             destroy("forced client close");
@@ -202,9 +208,11 @@ namespace Gj.Galaxy.Network{
         // 用于外部触发更新
         public void Update()
         {
-            try{
+            try
+            {
                 // 刷新需要更新的连接，避免刷新过程中变更
-                if(updateConn.Count != allowConn.Count){
+                if (updateConn.Count != allowConn.Count)
+                {
                     updateConn.Clear();
                     updateConn.AddRange(allowConn.Values);
                 }
@@ -214,7 +222,9 @@ namespace Gj.Galaxy.Network{
                     var _conn = enumerator.Current;
                     _conn.Accept();
                 }
-            }catch(Exception e){
+            }
+            catch (Exception e)
+            {
                 Debug.LogException(e);
             }
 
@@ -250,13 +260,14 @@ namespace Gj.Galaxy.Network{
             return true;
         }
 
-        internal void ResetReconnect(){
+        internal void ResetReconnect()
+        {
             ReconnectLast = LocalTimestamp();
             nowReconnectTimes = 0;
             ReconnectTimeout = 1;
         }
 
-        internal bool Reconnect(ProtocolType protocolType, bool force=false)
+        internal bool Reconnect(ProtocolType protocolType, bool force = false)
         {
             ProtocolConn conn;
             bool result;
@@ -264,7 +275,7 @@ namespace Gj.Galaxy.Network{
             if (result)
             {
                 // 正常的链接, 或者链接中
-                if (conn.Connected() || conn.Connecting()) return true;
+                if (conn.Connected || conn.Connecting) return true;
                 allowConn.Remove(protocolType);
             }
             Debug.Log("[ SOCKET ] Reconnect:" + protocolType);
@@ -274,7 +285,8 @@ namespace Gj.Galaxy.Network{
             if (state == ConnectionState.WaitReconnect)
                 state = ConnectionState.Reconnecting;
             // 开始重连
-            switch(protocolType){
+            switch (protocolType)
+            {
                 default:
                 case ProtocolType.Safe:
                     if (mWebSocket != "")
@@ -362,25 +374,30 @@ namespace Gj.Galaxy.Network{
         protected bool Accept(ProtocolType protocolType, ProtocolConn conn)
         {
             allowConn.Add(protocolType, conn);
-            Debug.Log("[ SOCKET ] accept conn"+ protocolType);
+            Debug.Log("[ SOCKET ] accept conn" + protocolType);
 
             var h = new byte[9];
             //Stream buffer;
             var length = 0;
             var multiplier = 1;
-            conn.Connect(()=>{
-                try{
+            conn.Connect(() => {
+                try
+                {
                     Debug.Log("[ SOCKET ] send open:" + sid);
                     //Debug.Log(sid.GetBytes().GetString());
                     SendByte(MessageType.Open, protocolType, CompressType.None, sid.GetBytes(), conn);
-                }catch(Exception e){
+                }
+                catch (Exception e)
+                {
                     Debug.LogException(e);
                 }
-            }, ()=>{
-                Debug.Log("[ SOCKET ] accept close:"+protocolType);
-                try{
+            }, () => {
+                Debug.Log("[ SOCKET ] accept close:" + protocolType);
+                try
+                {
                     allowConn.Remove(protocolType);
-                    if(state == ConnectionState.Connecting){
+                    if (state == ConnectionState.Connecting)
+                    {
                         listener.OnConnect(false);
                     }
 #if UNITY_EDITOR
@@ -389,12 +406,14 @@ namespace Gj.Galaxy.Network{
                         return;
                     }
 #endif
-                    if(IsRuning && UpdateState())
+                    if (IsRuning && UpdateState())
                         Reconnect(protocolType);
-                }catch(Exception e){
+                }
+                catch (Exception e)
+                {
                     Debug.LogException(e);
-                } 
-            }, ()=>{
+                }
+            }, () => {
                 try
                 {
                     var r = conn.Read(headLength, out h);
@@ -424,21 +443,25 @@ namespace Gj.Galaxy.Network{
                     if (compressType != CompressType.None)
                     {
                         message.reader = readerHandle[compressType](buffer);
-                    }else{
+                    }
+                    else
+                    {
                         message.reader = buffer;
                     }
 
                     //ServerTimestamp = message.time;
                     if (InData != null) InData(headLength + length);
                     dispatch(conn, protocolType, message);
-                }catch(Exception e){
+                }
+                catch (Exception e)
+                {
                     Debug.LogException(e);
                 }
-            }, (e)=>{
+            }, (e) => {
                 try
                 {
                     Debug.LogException(e);
-                    if (!conn.Connected())
+                    if (!conn.Connected)
                     {
                         Reconnect(protocolType);
                     }
@@ -473,18 +496,20 @@ namespace Gj.Galaxy.Network{
             do
             {
                 //Debug.Log(outQueue.Count);
-                if(outQueue.Count == 0){
+                if (outQueue.Count == 0)
+                {
                     break;
                 }
                 var data = outQueue.Dequeue();
                 if (data == null) break;
                 t++;
-                if (ns == null){
+                if (ns == null)
+                {
                     ns = data.ns;
                     compress = ns.compress;
                     protocol = ns.protocol;
                 }
-                if(a == null) a = new NsDataArray();
+                if (a == null) a = new NsDataArray();
                 if (ns != data.ns && l.Count > 0)
                 {
                     a.data = l.ToArray();
@@ -493,8 +518,9 @@ namespace Gj.Galaxy.Network{
                     a = new NsDataArray();
                 }
                 l.Add(data.data);
-            } while (t<=times);
-            if(l.Count > 0){
+            } while (t <= times);
+            if (l.Count > 0)
+            {
                 a.data = l.ToArray();
                 l.Clear();
                 Send(MessageType.Namespace, protocol, compress, a);
@@ -508,7 +534,8 @@ namespace Gj.Galaxy.Network{
             do
             {
                 t++;
-                if(inQueue.Count == 0){
+                if (inQueue.Count == 0)
+                {
                     return false;
                 }
                 var data = inQueue.Dequeue();
@@ -527,7 +554,7 @@ namespace Gj.Galaxy.Network{
             //Array.Copy(intBytes, 0, header, 1, intBytes.Length);
 
             Stream buffer = new MemoryStream();
-            if(compressType != CompressType.None)
+            if (compressType != CompressType.None)
             {
                 var w = writerHandle[compressType](buffer);
                 handler(w);
@@ -550,12 +577,13 @@ namespace Gj.Galaxy.Network{
             buffer.Position = 0;
             var length = buffer.Length;
 
-            for (var i = headLength - 4; length > 0;i++)
+            for (var i = headLength - 4; length > 0; i++)
             {
                 var b = length % 128;
                 length = length / 128;
 
-                if (length > 0) {
+                if (length > 0)
+                {
                     b = b | 128;
                 }
                 header[i] = (byte)(b & 0xff);
@@ -567,14 +595,17 @@ namespace Gj.Galaxy.Network{
 
         public void Protocol(ProtocolType protocolTmp, ProtocolType protocolType)
         {
-            switch(protocolType){
+            switch (protocolType)
+            {
                 case ProtocolType.Default:
-                    if (mTcp != null) {
+                    if (mTcp != null)
+                    {
                         return;
                     }
                     break;
                 case ProtocolType.Speed:
-                    if (mUdp != null) {
+                    if (mUdp != null)
+                    {
                         return;
                     }
                     break;
@@ -585,7 +616,7 @@ namespace Gj.Galaxy.Network{
             var result = acceptConn.IndexOf(protocolType);
             if (result >= 0) return;
             acceptConn.Add(protocolType);
-            Debug.Log("[ SOCKET ] send protocol:"+protocolType.Protocol());
+            Debug.Log("[ SOCKET ] send protocol:" + protocolType.Protocol());
             SendByte(MessageType.Protocol, protocolTmp, CompressType.None, protocolType.Protocol().GetBytes());
         }
 
@@ -599,7 +630,8 @@ namespace Gj.Galaxy.Network{
 
         internal void Packet(NsData data, Namespace n)
         {
-            if (n.messageQueue == MessageQueue.Off){
+            if (n.messageQueue == MessageQueue.Off)
+            {
                 CompressType compress = CompressType.None;
                 ProtocolType protocol = ProtocolType.Default;
                 if (n != null)
@@ -610,7 +642,9 @@ namespace Gj.Galaxy.Network{
                 var a = new NsDataArray();
                 a.data = new NsData[] { data };
                 Send(MessageType.Namespace, protocol, compress, a);
-            }else{
+            }
+            else
+            {
                 var p = new QueueData();
                 p.ns = n;
                 p.data = data;
@@ -625,20 +659,20 @@ namespace Gj.Galaxy.Network{
             bool flag = false;
             bool result = allowConn.TryGetValue(protocolType, out conn);
             if (!result) flag = true;
-            if (conn != null && !conn.Connected())
+            if (conn != null && !conn.Available)
             {
                 Reconnect(protocolType);
                 flag = true;
             }
 
-            if(flag)
+            if (flag)
             {
                 var enumerator = allowConn.GetEnumerator();
                 while (enumerator.MoveNext())
                 {
                     var _conn = enumerator.Current;
+                    if (!_conn.Value.Available) continue;
                     conn = _conn.Value;
-                    if (!conn.Connected()) continue;
                     Protocol(_conn.Key, protocolType);
                 }
             }
@@ -652,19 +686,23 @@ namespace Gj.Galaxy.Network{
             {
                 return;
             }
+            //Debug.Log(conn);
             Write(messageType, conn, compressType, data.Packet);
         }
 
         internal void SendByte(MessageType messageType, ProtocolType protocolType, CompressType compressType, byte[] data)
         {
             var conn = SelectConn(protocolType);
-            if(conn == null){
+            if (conn == null)
+            {
                 return;
             }
+            //Debug.Log(conn);
             SendByte(messageType, protocolType, compressType, data, conn);
         }
 
-        internal void SendByte(MessageType messageType, ProtocolType protocolType, CompressType compressType, byte[] data, ProtocolConn conn){
+        internal void SendByte(MessageType messageType, ProtocolType protocolType, CompressType compressType, byte[] data, ProtocolConn conn)
+        {
             Write(messageType, conn, compressType, (writer) =>
             {
                 if (data != null)
@@ -687,8 +725,8 @@ namespace Gj.Galaxy.Network{
                     OnClose();
                     break;
                 case MessageType.Pong:
-                    ServerTimestamp = new StreamReader(message.reader).Read();
-                    Debug.Log("[ SOCKET ] accept pong");
+                    //ServerTimestamp = new StreamReader(message.reader).ReadToEnd();
+                    Debug.Log("[ SOCKET ] accept pong:"+protocolType);
                     OnPong(conn, protocolType);
                     break;
                 case MessageType.Protocol:
@@ -717,6 +755,7 @@ namespace Gj.Galaxy.Network{
         }
         private void OnOpen(ProtocolConn conn, ProtocolType protocolType, string sid)
         {
+            conn.Available = true;
             // 确定连接后移除索引
             acceptConn.Remove(protocolType);
 
@@ -739,15 +778,17 @@ namespace Gj.Galaxy.Network{
 
         private void OnPong(ProtocolConn conn, ProtocolType protocolType)
         {
-            if(LastPingTimestamp > 0){
-                PingTime = (int)((LocalTimestamp() - LastPingTimestamp) / 2);
+            if (LastPingTimestamp > 0)
+            {
+                PingTime = (LocalTimestamp() - LastPingTimestamp) / 2;
             }
         }
 
         private void OnProtocol(string url)
         {
             var u = new Uri(url);
-            switch(u.Scheme.ToProtocol()){
+            switch (u.Scheme.ToProtocol())
+            {
                 case ProtocolType.Default:
                     Tcp(u.Host, u.Port);
                     break;
@@ -763,7 +804,8 @@ namespace Gj.Galaxy.Network{
         private void OnNamespace(Message message)
         {
             var nsData = NsDataArray.Unpack(message.reader);
-            for (var i = 0; i < nsData.Length; i++){
+            for (var i = 0; i < nsData.Length; i++)
+            {
                 var data = nsData[i];
                 var n = root;
                 if (data.nsp != null)
@@ -797,8 +839,9 @@ namespace Gj.Galaxy.Network{
         {
             var enumerator = allowConn.Values.GetEnumerator();
             var list = new List<ProtocolConn>(allowConn.Values);
-            foreach(var conn in list){
-                if(conn != null) conn.Close();
+            foreach (var conn in list)
+            {
+                if (conn != null) conn.Close();
             }
             allowConn.Clear();
             acceptConn.Clear();

@@ -60,10 +60,11 @@ namespace Gj.Galaxy.Network
         void Connect(Action open, Action close, Action message, Action<Exception> error);
         Stream Read(int head, out byte[] headB);
         bool Write(byte[] head, Stream reader);
-        bool Connected();
-        bool Connecting();
         void Accept();
         void Close();
+        bool Available { get; set; }
+        bool Connected { get; }
+        bool Connecting { get; }
     }
 
     public class SwitchQueue<T> where T : class

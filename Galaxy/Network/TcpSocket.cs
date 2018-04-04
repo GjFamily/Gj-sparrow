@@ -6,11 +6,41 @@ using System.Net.Sockets;
 
 namespace Gj.Galaxy.Network
 {
-    public class TcpSocket: ProtocolConn
+    public class TcpSocket : ProtocolConn
     {
         private IPEndPoint mSvrEndPoint;
         private TcpClient mTcpClient;
         private TcpStateObject state;
+
+        private bool available = false;
+        public bool Available
+        {
+            get
+            {
+                return available;
+            }
+
+            set
+            {
+                available = value;
+            }
+        }
+
+        public bool Connecting
+        {
+            get
+            {
+                return state != null;
+            }
+        }
+
+        public bool Connected
+        {
+            get
+            {
+                return mTcpClient != null && mTcpClient.Connected;
+            }
+        }
 
         public TcpSocket(IPEndPoint point)
         {
@@ -22,7 +52,8 @@ namespace Gj.Galaxy.Network
         {
             Close();
         }
-        public void Connect(Action open, Action close, Action message, Action<Exception> error){
+        public void Connect(Action open, Action close, Action message, Action<Exception> error)
+        {
             state = new TcpStateObject(mTcpClient);
             state.open = open;
             state.close = close;
@@ -31,40 +62,32 @@ namespace Gj.Galaxy.Network
             state.Start(mSvrEndPoint);
         }
 
-        public Stream Read(int head, out byte[] headB){
+        public Stream Read(int head, out byte[] headB)
+        {
             headB = new byte[head];
             Stream stream = state.GetStream();
             stream.Read(headB, 0, head);
             return stream;
         }
 
-        public bool Write(byte[] head, Stream reader){
-            if (!Connected()) return false;
+        public bool Write(byte[] head, Stream reader)
+        {
+            if (!Connected) return false;
             int rl = Convert.ToInt32(reader.Length);
             byte[] sum = new byte[rl];
             int result = reader.Read(sum, 0, rl);
             return state.Send(head, sum);
         }
-        public bool Connected(){
-            //return socket ? true : false;
-            return mTcpClient.Client != null;
-        }
-
-        public bool Connecting(){
-            return state != null;
-        }
 
         public void Close()
         {
-            if (Connected())
-            {
-                mTcpClient.Close();
-            }
-            state.close();
+            available = false;
+            state.Close();
             state = null;
         }
 
-        public void Accept(){
+        public void Accept()
+        {
             // pass, Tcp stream
         }
     }
@@ -85,7 +108,8 @@ namespace Gj.Galaxy.Network
             this.Buffer = new byte[this.BufferSize];
         }
 
-        public Stream GetStream(){
+        public Stream GetStream()
+        {
             return tcpClient.GetStream();
         }
 
@@ -94,7 +118,8 @@ namespace Gj.Galaxy.Network
             tcpClient.BeginConnect(point.Address, point.Port, new AsyncCallback(ConnectCallback), this);
         }
 
-        public bool Send(byte[] head, byte[] body){
+        public bool Send(byte[] head, byte[] body)
+        {
             NetworkStream stream = tcpClient.GetStream();
             if (stream.CanWrite)
             {
@@ -105,7 +130,7 @@ namespace Gj.Galaxy.Network
             }
             else
             {
-                return false;
+                throw new IOException();
             }
         }
 
@@ -119,6 +144,10 @@ namespace Gj.Galaxy.Network
             {
                 message();
             }
+            else
+            {
+                UnityEngine.Debug.Log("message error");
+            }
             stream.BeginRead(Buffer, 0, BufferSize, new AsyncCallback(EndReadCallback), this);
         }
 
@@ -129,16 +158,29 @@ namespace Gj.Galaxy.Network
                 if (tcpClient.Client != null)
                 {
                     tcpClient.EndConnect(ar);
-                    open();
-                    var stream = tcpClient.GetStream();
-                    stream.BeginRead(Buffer, 0, BufferSize, new AsyncCallback(EndReadCallback), this);
+                    if(tcpClient.Connected){
+                        open();
+                        var stream = tcpClient.GetStream();
+                        stream.BeginRead(Buffer, 0, BufferSize, new AsyncCallback(EndReadCallback), this);
+                    }else{
+                        Close();
+                    }
                 }
             }
             catch (Exception ex)
             {
-                tcpClient.Close();
-                close();
+                error(ex);
+                Close();
             }
+        }
+
+        public void Close()
+        {
+            if (tcpClient.Connected)
+            {
+                tcpClient.Close();
+            }
+            close();
         }
     }
 }

@@ -20,21 +20,22 @@ namespace Gj
 
         public void OnSerializeEntity(StreamBuffer stream, MessageInfo messageInfo)
         {
-            foreach(var attr in infoList){
+            foreach (var attr in infoList)
+            {
                 stream.SendNext(info.GetAttribute(attr));
             }
         }
 
         public void OnDeserializeEntity(StreamBuffer stream, MessageInfo messageInfo)
         {
-            foreach(var attr in infoList){
+            foreach (var attr in infoList)
+            {
                 info.SetAttribute(attr, stream.ReceiveNext<float>());
             }
         }
 
-        public void SetSyncParam(byte param)
+        public void BindEntity(NetworkEntity entity)
         {
-            this.flag = param == 0 ? false : true;
         }
     }
 }

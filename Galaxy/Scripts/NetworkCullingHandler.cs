@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Gj.Galaxy.Logic;
 
-namespace Gj.Galaxy.Scripts{
+namespace Gj.Galaxy.Scripts
+{
     [RequireComponent(typeof(NetworkEntity))]
     public class NetworkCullingHandler : MonoBehaviour, GameObservable
     {
@@ -209,13 +210,14 @@ namespace Gj.Galaxy.Scripts{
 
         public void OnDeserializeEntity(StreamBuffer stream, MessageInfo info)
         {
-            
+
         }
 
-        public void SetSyncParam(byte param)
+        public void BindEntity(NetworkEntity entity)
         {
-            
+            throw new System.NotImplementedException();
         }
+
 
         #endregion
     }

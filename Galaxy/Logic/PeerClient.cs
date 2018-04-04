@@ -219,16 +219,6 @@ namespace Gj.Galaxy.Logic{
 
         public static float BackgroundTimeout = 60.0f;
 
-        public static double time
-        {
-            get
-            {
-                uint u = (uint)LocalTimestamp;
-                double t = u;
-                return t / 1000;
-            }
-        }
-
         public static long ServerTimestamp
         {
             get

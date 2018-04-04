@@ -8,31 +8,71 @@ namespace Gj
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
     public sealed class InfoSync : Attribute
     {
-        //
-        // Fields
-        //
-        public Type observable;
-        public byte param = 0;
+        public TransformParam transform = TransformParam.Off;
+        public TransformOptions options;
+        public RigidBodyParam rigid = RigidBodyParam.Off;
+
+        public string[] infoList = null;
+
+        private Component c;
+        private GameObject o;
 
         //
         // Constructors
         //
-        public InfoSync(Type observable) {
-            this.observable = observable;
+        public InfoSync()
+        {
+
         }
 
-        public void Register(Component c, GameObject o)
+        public void Register(Component c, GameObject parent, GameObject o)
         {
             var entity = c.GetComponent<NetworkEntity>() as NetworkEntity;
             if (entity == null)
             {
-                Debug.LogError("GameObject need NetworkEntity Component");
+                Debug.LogError("GameObject not has NetworkEntity Component");
                 return;
             }
-            var gameObservable = o.AddComponent(observable);
-            entity.ObservedComponents.Add(gameObservable);
-            var ob = gameObservable as GameObservable;
-            if (ob != null) ob.SetSyncParam(param);
+
+            if (transform != TransformParam.Off)
+            {
+                var gameObservable = o.AddComponent(typeof(TransformView));
+                entity.ObservedComponents.Add(gameObservable);
+                var ob = gameObservable as TransformView;
+                if (ob != null)
+                {
+                    ob.transformParam = transform;
+                    if (options != null) ob.options = options;
+                    o.AddComponent(typeof(SyncSpeed));
+                    ob.BindEntity(entity);
+                }
+            }
+            if (rigid != RigidBodyParam.Off)
+            {
+                var gameObservable = o.AddComponent(typeof(RigidbodyView));
+                entity.ObservedComponents.Add(gameObservable);
+                var ob = gameObservable as RigidbodyView;
+                if (ob != null)
+                {
+                    ob.rigidBodyParam = rigid;
+                    ob.BindEntity(entity);
+                }
+            }
+            if (infoList != null && infoList.Length > 0)
+            {
+                var gameObservable = o.AddComponent(typeof(InfoView));
+                entity.ObservedComponents.Add(gameObservable);
+                var ob = gameObservable as InfoView;
+                if (ob != null)
+                {
+                    ob.infoList = infoList;
+                    ob.flag = true;
+                    ob.BindEntity(entity);
+                }
+            }
+            this.c = c;
+            this.o = o;
         }
     }
+
 }

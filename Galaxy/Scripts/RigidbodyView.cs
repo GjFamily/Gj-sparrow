@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 
-namespace Gj.Galaxy.Logic{
+namespace Gj.Galaxy.Logic
+{
     public enum RigidBodyParam : byte { Off, OnlyVelocity, OnlyAngularVelocity, All }
 
     [RequireComponent(typeof(Rigidbody))]
@@ -49,9 +50,9 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public void SetSyncParam(byte param)
+        public void BindEntity(NetworkEntity entity)
         {
-            this.rigidBodyParam = (RigidBodyParam)param;
+            throw new System.NotImplementedException();
         }
     }
 }

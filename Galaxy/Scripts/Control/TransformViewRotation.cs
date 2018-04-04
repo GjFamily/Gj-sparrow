@@ -30,7 +30,7 @@ namespace Gj.Galaxy.Scripts{
 
         public Quaternion UpdateRotation(Quaternion currentRotation)
         {
-            Quaternion targetRotation = GetNetworkRotation(); //  * extrapolated.GetQuaternion(m_SynchronizedTurnSpeed)
+            Quaternion targetRotation = GetNetworkRotation();// * extrapolated.GetQuaternion(m_SynchronizedTurnSpeed);
             switch (options.rotationParam)
             {
                 default:
@@ -45,7 +45,7 @@ namespace Gj.Galaxy.Scripts{
                     }
                     else
                     {
-                        return Quaternion.RotateTowards(currentRotation, targetRotation, m_SynchronizedTurnSpeed);
+                        return Quaternion.RotateTowards(currentRotation, targetRotation, m_SynchronizedTurnSpeed * Time.deltaTime);
                     }
                 case RotationParam.Lerp:
                     return Quaternion.Lerp(currentRotation, targetRotation, options.rotationSpeed * Time.deltaTime);

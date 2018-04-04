@@ -2,7 +2,8 @@
 using Gj.Galaxy.Logic;
 using UnityEngine;
 
-namespace Gj.Galaxy.Scripts{
+namespace Gj.Galaxy.Scripts
+{
     [RequireComponent(typeof(Animator))]
     public class AnimatorView : MonoBehaviour, GameObservable
     {
@@ -87,7 +88,6 @@ namespace Gj.Galaxy.Scripts{
 
         private void Awake()
         {
-            this.m_entity = GetComponent<NetworkEntity>();
             this.m_StreamQueue = new StreamQueue(120);
 
             this.m_Animator = GetComponent<Animator>();
@@ -488,15 +488,16 @@ namespace Gj.Galaxy.Scripts{
             this.SerializeDataDiscretly(stream);
         }
 
-        public void OnDeserializeEntity(StreamBuffer stream, MessageInfo info){
+        public void OnDeserializeEntity(StreamBuffer stream, MessageInfo info)
+        {
 
-            #if GALAXY_DEVELOP
+#if GALAXY_DEVELOP
             if( ReceivingSender != null )
             {
                 ReceivingSender.OnSerializeView( stream, info );
                 break;
             }
-            #endif
+#endif
             {
                 if (stream.PeekNext() is byte[])
                 {
@@ -508,7 +509,7 @@ namespace Gj.Galaxy.Scripts{
             }
         }
 
-        public void SetSyncParam(byte param)
+        public void BindEntity(NetworkEntity entity)
         {
             throw new System.NotImplementedException();
         }

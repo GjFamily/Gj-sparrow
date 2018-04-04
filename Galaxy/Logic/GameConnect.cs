@@ -64,7 +64,8 @@ namespace Gj.Galaxy.Logic
         Scene,
         OtherPlayer
     }
-    public interface GameListener{
+    public interface GameListener
+    {
         void OnFinish(bool exit, Dictionary<string, object> result);
         void OnStart();
         void OnLeaveGame();
@@ -72,7 +73,8 @@ namespace Gj.Galaxy.Logic
         GameObject OnInstance(string prefabName, GamePlayer player);
     }
 
-    public interface GameRoomListener{
+    public interface GameRoomListener
+    {
         void OnEnter();
         void OnFail(string reason);
         void OnRoomChange(Dictionary<string, object> props);
@@ -84,7 +86,7 @@ namespace Gj.Galaxy.Logic
         void OnReadyAll();
     }
 
-    public class GameDelegate:GameListener
+    public class GameDelegate : GameListener
     {
         public delegate void OnFinishDelegate(bool exit, Dictionary<string, object> result);
         public delegate void SceneInitDelegate(Action callback);
@@ -128,7 +130,7 @@ namespace Gj.Galaxy.Logic
             return null;
         }
     }
-    public class GameRoomDelegate:GameRoomListener
+    public class GameRoomDelegate : GameRoomListener
     {
         public delegate void OnEnterDelegate();
         public delegate void OnFailDelegate(string reason);
@@ -310,7 +312,8 @@ namespace Gj.Galaxy.Logic
         }
 
         //完成基础初始化，触发开始游戏
-        public static void FinishInitGame(){
+        public static void FinishInitGame()
+        {
             if (!Room.localPlayer.IsReady)
                 throw new Exception("local player need ready");
             if (stage != GameStage.Init)
@@ -342,7 +345,7 @@ namespace Gj.Galaxy.Logic
                 listener.OnDisconnect();
             }
             // 如果游戏还未开始，执行退出后直接退出
-            else if(stage == GameStage.Join
+            else if (stage == GameStage.Join
                     || stage == GameStage.Ready
                     || stage == GameStage.Connect)
             {
@@ -438,11 +441,13 @@ namespace Gj.Galaxy.Logic
                 case GameEvent.Join:
                     Room.OnJoin(param[0].ConverInt(), (string)param[1]);
                     //active
-                    if(!(bool)param[2]){
+                    if (!(bool)param[2])
+                    {
                         Room.OnLeave(param[0].ConverInt());
                     }
                     //ready
-                    if((bool)param[3]){
+                    if ((bool)param[3])
+                    {
                         Room.OnReady(param[0].ConverInt());
                     }
                     break;
@@ -450,7 +455,7 @@ namespace Gj.Galaxy.Logic
                     Room.OnLeave(param[0].ConverInt());
                     break;
                 default:
-                    Debug.Log("GameEvent is error:"+code);
+                    Debug.Log("GameEvent is error:" + code);
                     break;
             }
             return null;
@@ -475,6 +480,7 @@ namespace Gj.Galaxy.Logic
                     listener.OnRpc(sendId, value);
                     break;
                 case SyncEvent.Instance:
+                    Debug.Log(sendId);
                     listener.OnInstance(sendId, value, null);
                     break;
                 case SyncEvent.Destory:
@@ -487,13 +493,13 @@ namespace Gj.Galaxy.Logic
                 //    Room.OnChangeRoom(sendId, value.ConverString());
                 //    break;
                 //case SyncEvent.ChangePlayer:
-                    //Room.OnChangePlayer(sendId, value.ConverString());
-                    //break;
+                //Room.OnChangePlayer(sendId, value.ConverString());
+                //break;
                 default:
                     Debug.Log("GameEvent is error:");
                     break;
             }
-            
+
         }
         public static void EmitRoom(Dictionary<string, object> props)
         {
@@ -507,7 +513,7 @@ namespace Gj.Galaxy.Logic
 
         public static void Ownership(int entityId, Action<GamePlayer> callback)
         {
-            n.Emit(GameEvent.Ownership, new object[] { entityId },(object[] obj) => {
+            n.Emit(GameEvent.Ownership, new object[] { entityId }, (object[] obj) => {
                 listener.OnOwnership(entityId, (int)obj[0]);
                 callback(Room.GetPlayerWithId((int)obj[0]));
             });
@@ -665,16 +671,16 @@ namespace Gj.Galaxy.Logic
             if (!inRoom)
             {
                 Debug.LogError("Failed to Instantiate prefab: " + prefabName + ". Client should be in a room. Current connectionStateDetailed: " + PeerClient.connected);
-                return ;
+                return;
             }
             // a scene object instantiated with network visibility has to contain a PhotonView
             if (prefabGo.GetComponent<NetworkEntity>() == null)
             {
                 Debug.LogError("Failed to RelationInstance prefab:" + prefabName + ". Prefab must have a NetworkEntity component.");
-                return ;
+                return;
             }
 
-            Component[] entitys = (Component[])prefabGo.GetEntitysInChildren();
+            var entitys = prefabGo.GetEntitysInChildren();
             int playerId = 0;
             int[] entityIds = null;
             if (relation == InstanceRelation.Scene)
@@ -1308,7 +1314,12 @@ namespace Gj.Galaxy.Logic
             int[] viewsIDs;
             if (evData.ContainsKey((byte)4))
             {
-                viewsIDs = (int[])evData[(byte)4];
+                object[] v = (object[])evData[(byte)4];
+                viewsIDs = new int[v.Length];
+                for (var i = 0; i < v.Length; i++)
+                {
+                    viewsIDs[i] = (int)v[i];
+                }
             }
             else
             {
@@ -2024,9 +2035,6 @@ namespace Gj.Galaxy.Logic
             // read view ID from key (byte)0: a int-array (PUN 1.17++)
             int entityId = (int)data[SyncViewId];
 
-
-            // debug:
-            //LogObjectArray(data);
             NetworkEntity entity = GetEntity(entityId);
             if (entity == null)
             {
@@ -2278,19 +2286,24 @@ namespace Gj.Galaxy.Logic
                 }
 
                 newEntityId = newSubId + ownerIdOffset;
-                if (entityList.ContainsKey(newEntityId)){
+                if (entityList.ContainsKey(newEntityId))
+                {
                     continue;
                 }
-                if (manuallyAllocatedEntityIds.Contains(newEntityId)){
+                if (manuallyAllocatedEntityIds.Contains(newEntityId))
+                {
                     continue;
                 }
-                if(ownerId > 0){
+                if (ownerId > 0)
+                {
                     lastUsedViewSubId = newSubId;
-                }else{
+                }
+                else
+                {
                     lastUsedViewSubIdScene = newSubId;
                 }
-                Debug.Log(newEntityId);
-                Debug.Log(newSubId);
+                //Debug.Log(newEntityId);
+                //Debug.Log(newSubId);
                 return newEntityId;
             }
 
@@ -2308,18 +2321,26 @@ namespace Gj.Galaxy.Logic
         }
         #endregion
 
-        private static object[] SerializeStream(ref object[] data){
+        private static object[] SerializeStream(ref object[] data)
+        {
             SerializeFormatter formatter;
             var result = new object[data.Length];
-            for (var i = 0; i < data.Length; i++){
+            for (var i = 0; i < data.Length; i++)
+            {
                 var r = data[i];
-                if (r == null){
+                if (r == null)
+                {
                     result[i] = r;
-                }else{
+                }
+                else
+                {
                     formatter = SerializeTypes.GetFormatter(r.GetType());
-                    if (formatter == null){
+                    if (formatter == null)
+                    {
                         result[i] = r;
-                    }else{
+                    }
+                    else
+                    {
                         result[i] = formatter.Serialize(r);
                     }
                 }

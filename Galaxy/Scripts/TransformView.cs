@@ -3,10 +3,11 @@ using Gj.Galaxy.Logic;
 using Gj.Galaxy.Utils;
 using System.Collections.Generic;
 
-namespace Gj.Galaxy.Scripts{
+namespace Gj.Galaxy.Scripts
+{
     public enum TransformParam : byte { Off, OnlyPosition, OnlyRotation, OnlyScale, PositionAndRotation, All }
     public enum ExtrapolatedParam : byte { Disabled, SynchronizeValues, EstimateSpeed, FixedSpeed, }
-    public enum PositionParam : byte 
+    public enum PositionParam : byte
     {
         Disabled,
         FixedSpeed,
@@ -28,7 +29,7 @@ namespace Gj.Galaxy.Scripts{
         MoveTowards,
         Lerp,
     }
-    [RequireComponent(typeof(NetworkEntity))]
+
     public class TransformView : MonoBehaviour, GameObservable
     {
         public TransformParam transformParam = TransformParam.PositionAndRotation;
@@ -78,8 +79,6 @@ namespace Gj.Galaxy.Scripts{
         {
             if (this.receivedNetworkUpdate == false)
             {
-                UnityEngine.Debug.Log(this.receivedNetworkUpdate);
-                UnityEngine.Debug.Log(this.receivedNetworkUpdate);
                 return;
             }
             switch (this.transformParam)
@@ -213,13 +212,14 @@ namespace Gj.Galaxy.Scripts{
             Debug.DrawLine(targetPosition, targetPosition + Vector3.up, Color.red, 2f);
         }
 
-        public void SetSyncParam(byte param)
+        public void BindEntity(NetworkEntity entity)
         {
-            this.transformParam = (TransformParam)param;
+            this.entity = entity;
         }
     }
 
-    public class TransformOptions{
+    public class TransformOptions
+    {
 
         public bool TeleportEnabled = true;
         public float TeleportIfDistanceGreaterThan = 3f;
@@ -238,14 +238,16 @@ namespace Gj.Galaxy.Scripts{
             }
         );
 
-        public RotationParam rotationParam = RotationParam.SynchronizeValues;
+        public RotationParam rotationParam = RotationParam.RotateTowards;
         public float rotationSpeed = 180;
 
         public ScaleParam scaleParam = ScaleParam.Disabled;
         public float scaleSpeed = 1f;
 
         public ExtrapolatedParam extrapolatedParam = ExtrapolatedParam.SynchronizeValues;
-        public float extrapolatedSpeed = 1f;
+        public float extrapolatedPositionSpeed = 3f;
+        public float extrapolatedRatationSpeed = 180f;
+
         public bool IncludingRoundTripTime = true;
         public int NumberOfStoredPositions = 1;
         public int IfTimeLesserThan = 2;
