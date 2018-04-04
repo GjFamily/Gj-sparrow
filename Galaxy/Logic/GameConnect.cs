@@ -480,7 +480,6 @@ namespace Gj.Galaxy.Logic
                     listener.OnRpc(sendId, value);
                     break;
                 case SyncEvent.Instance:
-                    Debug.Log(sendId);
                     listener.OnInstance(sendId, value, null);
                     break;
                 case SyncEvent.Destory:
