@@ -56,6 +56,7 @@ namespace Gj
 
         public void Init(Action before, Action after, Action start, Action end, Action ready)
         {
+            Appear();
             beforeCast = before;
             afterCast = after;
             startCast = start;
@@ -76,7 +77,7 @@ namespace Gj
             readyCast();
             ReadyCast();
             waiting = true;
-            Invoke("Start", SkillInfo.waitTime);
+            Invoke("Now", SkillInfo.waitTime);
         }
 
         private void After()
@@ -118,7 +119,7 @@ namespace Gj
         public void Now()
         {
             waiting = false;
-            if (SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained || SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained)
+            if (SkillInfo.castType == SkillInfo.CastType.Ready || SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained)
             {
                 startCast();
                 Cast();
@@ -140,6 +141,7 @@ namespace Gj
 
         public void Set(Transform transform)
         {
+            Debug.Log(transform);
             targetTransform = transform;
         }
 

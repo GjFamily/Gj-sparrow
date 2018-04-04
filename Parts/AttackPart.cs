@@ -136,20 +136,14 @@ namespace Gj
 
         public void Cast(SkillInfo skillInfo, SkillEntity skillEntity, GameObject target)
         {
-            if (skillInfo.AllowTarget(gameObject, target) && skillInfo.IsAllowRange(gameObject, target))
-            {
-                skillEntity.Set(target);
-                Cast(skillInfo, skillEntity);
-            }
+            skillEntity.Set(target);
+            Cast(skillInfo, skillEntity);
         }
 
         public void Cast(SkillInfo skillInfo, SkillEntity skillEntity, Transform transform)
         {
-            if (skillInfo.IsAllowRange(gameObject, transform))
-            {
-                skillEntity.Set(transform);
-                Cast(skillInfo, skillEntity);
-            }
+            skillEntity.Set(transform);
+            Cast(skillInfo, skillEntity);
         }
 
         public void Cast(SkillInfo skillInfo, SkillEntity skillEntity)

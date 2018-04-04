@@ -85,9 +85,9 @@ namespace Gj
         public void Cast(string skillName)
         {
             SkillInfo skillInfo = GetSkillInfo(skillName);
-            SkillEntity skillEntity = GetSkillEntity(skillName);
-            if (IsEnoughConsume(skillInfo) && skillEntity != null)
+            if (IsEnoughConsume(skillInfo))
             {
+                SkillEntity skillEntity = GetSkillEntity(skillName);
                 GetComponent<AttackPart>().Cast(skillInfo, skillEntity);
             }
         }
@@ -95,9 +95,9 @@ namespace Gj
         public void Cast(string skillName, GameObject target)
         {
             SkillInfo skillInfo = GetSkillInfo(skillName);
-            SkillEntity skillEntity = GetSkillEntity(skillName);
-            if (IsEnoughConsume(skillInfo) && skillEntity != null)
+            if (IsEnoughConsume(skillInfo) && skillInfo.AllowTarget(gameObject, target) && skillInfo.IsAllowRange(gameObject, target))
             {
+                SkillEntity skillEntity = GetSkillEntity(skillName);
                 GetComponent<AttackPart>().Cast(skillInfo, skillEntity, target);
             }
         }
@@ -105,9 +105,9 @@ namespace Gj
         public void Cast(string skillName, Transform transform)
         {
             SkillInfo skillInfo = GetSkillInfo(skillName);
-            SkillEntity skillEntity = GetSkillEntity(skillName);
-            if (IsEnoughConsume(skillInfo) && skillEntity != null)
+            if (IsEnoughConsume(skillInfo) && skillInfo.IsAllowRange(gameObject, transform))
             {
+                SkillEntity skillEntity = GetSkillEntity(skillName);
                 GetComponent<AttackPart>().Cast(skillInfo, skillEntity, transform);
             }
         }
