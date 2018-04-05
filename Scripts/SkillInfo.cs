@@ -8,7 +8,6 @@ namespace Gj
         public float value;
         public float need;
         public float range;
-        public float waitTime;
         public float intervalTime;
         public RargetRelation targetRelation;
         public enum RargetRelation

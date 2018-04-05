@@ -77,7 +77,7 @@ namespace Gj
             readyCast();
             ReadyCast();
             waiting = true;
-            Invoke("Now", SkillInfo.waitTime);
+            Invoke("Now", SkillInfo.readyTime);
         }
 
         private void After()
