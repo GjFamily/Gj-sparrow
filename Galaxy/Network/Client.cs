@@ -330,7 +330,7 @@ namespace Gj.Galaxy.Network
 
         protected bool webSocket(string url)
         {
-            Debug.Log(url);
+            //Debug.Log(url);
             Uri uri = new Uri(url + "/galaxy.socket");
             var conn = new WebSocketAgent(uri);
 
@@ -373,8 +373,9 @@ namespace Gj.Galaxy.Network
 
         protected bool Accept(ProtocolType protocolType, ProtocolConn conn)
         {
+            if (allowConn.ContainsKey(protocolType)) allowConn.Remove(protocolType);
             allowConn.Add(protocolType, conn);
-            Debug.Log("[ SOCKET ] accept conn" + protocolType);
+            //Debug.Log("[ SOCKET ] accept conn" + protocolType);
 
             var h = new byte[6];
             //Stream buffer;
@@ -403,7 +404,7 @@ namespace Gj.Galaxy.Network
                     var b = new byte[length];
                     conn.Read(ref b, () => {
                         var buffer = new MemoryStream(b, false);
-                        Debug.Log("compress:" + compressType);
+                        //Debug.Log("compress:" + compressType);
                         if (compressType != CompressType.None)
                         {
                             message.reader = readerHandle[compressType](buffer);
@@ -429,7 +430,7 @@ namespace Gj.Galaxy.Network
             conn.Connect(() => {
                 try
                 {
-                    Debug.Log("[ SOCKET ] send open:" + sid);
+                    //Debug.Log("[ SOCKET ] send open:" + sid);
                     //Debug.Log(sid.GetBytes().GetString());
                     SendByte(MessageType.Open, protocolType, CompressType.None, sid.GetBytes(), conn);
                 }
@@ -438,7 +439,7 @@ namespace Gj.Galaxy.Network
                     Debug.LogException(e);
                 }
             }, () => {
-                Debug.Log("[ SOCKET ] accept close:" + protocolType);
+                //Debug.Log("[ SOCKET ] accept close:" + protocolType);
                 try
                 {
                     allowConn.Remove(protocolType);
@@ -618,13 +619,13 @@ namespace Gj.Galaxy.Network
             var result = acceptConn.IndexOf(protocolType);
             if (result >= 0) return;
             acceptConn.Add(protocolType);
-            Debug.Log("[ SOCKET ] send protocol:" + protocolType.Protocol());
+            //Debug.Log("[ SOCKET ] send protocol:" + protocolType.Protocol());
             SendByte(MessageType.Protocol, protocolTmp, CompressType.None, protocolType.Protocol().GetBytes());
         }
 
         public void Ping()
         {
-            Debug.Log("[ SOCKET ] send ping");
+            //Debug.Log("[ SOCKET ] send ping");
             LastPingTimestamp = LocalTimestamp();
             //todo reconnect
             SendByte(MessageType.Ping, ProtocolType.Default, CompressType.None, null);
@@ -688,7 +689,7 @@ namespace Gj.Galaxy.Network
             {
                 return;
             }
-            Debug.Log(conn);
+            //Debug.Log(conn);
             Write(messageType, conn, compressType, data.Packet);
         }
 
@@ -699,7 +700,7 @@ namespace Gj.Galaxy.Network
             {
                 return;
             }
-            Debug.Log(conn);
+            //Debug.Log(conn);
             SendByte(messageType, protocolType, compressType, data, conn);
         }
 
@@ -719,21 +720,21 @@ namespace Gj.Galaxy.Network
             {
                 case MessageType.Open:
                     v = new StreamReader(message.reader).ReadToEnd();
-                    Debug.Log("[ SOCKET ] accept open:" + v);
+                    //Debug.Log("[ SOCKET ] accept open:" + v);
                     OnOpen(conn, protocolType, v);
                     break;
                 case MessageType.Close:
-                    Debug.Log("[ SOCKET ] accept close");
+                    //Debug.Log("[ SOCKET ] accept close");
                     OnClose();
                     break;
                 case MessageType.Pong:
                     //ServerTimestamp = new StreamReader(message.reader).ReadToEnd();
-                    Debug.Log("[ SOCKET ] accept pong:"+protocolType);
+                    //Debug.Log("[ SOCKET ] accept pong:"+protocolType);
                     OnPong(conn, protocolType);
                     break;
                 case MessageType.Protocol:
                     v = new StreamReader(message.reader).ReadToEnd();
-                    Debug.Log("[ SOCKET ] accept Protocol:" + v);
+                    //Debug.Log("[ SOCKET ] accept Protocol:" + v);
                     OnProtocol(v);
                     break;
                 case MessageType.Namespace:
@@ -839,6 +840,7 @@ namespace Gj.Galaxy.Network
 
         private void destroy(string reason)
         {
+            Debug.Log(reason);
             var enumerator = allowConn.Values.GetEnumerator();
             var list = new List<ProtocolConn>(allowConn.Values);
             foreach (var conn in list)
