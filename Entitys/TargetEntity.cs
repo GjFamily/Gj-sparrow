@@ -112,7 +112,7 @@ namespace Gj
             }
         }
 
-        protected virtual void Die()
+        public virtual void Die()
         {
             Disappear();
         }

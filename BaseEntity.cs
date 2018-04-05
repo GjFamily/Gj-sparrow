@@ -32,8 +32,12 @@ namespace Gj
             CoreTools.InfoSync(this, gameObject);
         }
 
-        public void OpenSync(){
-            if (sync != null) sync.Sync();
+        public void SyncInit(){
+            if (sync != null) sync.Init();
+        }
+
+        public void SyncDestroy(){
+            if (sync != null) sync.Destroy();
         }
 
         public static Info GetInfo (GameObject obj) {

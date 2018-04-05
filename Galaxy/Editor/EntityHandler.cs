@@ -165,7 +165,7 @@ public class EntityHandler : EditorWindow
     // TODO look up lower numbers if offset hits max?!
     public static int GetID(int idOffset, HashSet<int> usedInstanceViewNumbers)
     {
-        while (idOffset < GameConnect.MAX_ENTITY_IDS)
+        while (true)
         {
             idOffset++;
             if (!usedInstanceViewNumbers.Contains(idOffset))

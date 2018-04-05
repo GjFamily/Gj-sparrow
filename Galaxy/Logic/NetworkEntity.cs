@@ -10,7 +10,10 @@ using UnityEditor;
 namespace Gj.Galaxy.Logic{
     public class NetworkEntity : MonoBehaviour
     {
+        // 拥有人id
         public int ownerId;
+        // 创建人id
+        public int creatorId;
 
         public byte group = 0;
         // NOTE: this is now an integer because unity won't serialize short (needed for instantiation). we SEND only a short though!
@@ -40,21 +43,21 @@ namespace Gj.Galaxy.Logic{
         /// <value><c>true</c> if owner ship was transfered; otherwise, <c>false</c>.</value>
         public bool OwnerShipWasTransfered;
 
-        public object[] instantiationData
-        {
-            get
-            {
-                if (!this.didAwake)
-                {
-                    // even though viewID and instantiationID are setup before the GO goes live, this data can't be set. as workaround: fetch it if needed
-                    this.instantiationDataField = GameConnect.FetchInstantiationData(this.instantiationId);
-                }
-                return this.instantiationDataField;
-            }
-            set { this.instantiationDataField = value; }
-        }
+        //public object[] instantiationData
+        //{
+        //    get
+        //    {
+        //        if (!this.didAwake)
+        //        {
+        //            // even though viewID and instantiationID are setup before the GO goes live, this data can't be set. as workaround: fetch it if needed
+        //            this.instantiationDataField = GameConnect.FetchInstantiationData(this.instantiationId);
+        //        }
+        //        return this.instantiationDataField;
+        //    }
+        //    set { this.instantiationDataField = value; }
+        //}
 
-        internal object[] instantiationDataField;
+        //internal object[] instantiationDataField;
 
         protected internal object[] lastOnSerializeDataSent = null;
 
@@ -94,7 +97,7 @@ namespace Gj.Galaxy.Logic{
         /// </remarks>
         public bool isScene
         {
-            get { return this.CreatorActorNr == 0; }
+            get { return this.creatorId < 0; }
         }
 
         public GamePlayer owner
@@ -105,26 +108,34 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public int OwnerActorNr
+        public int OwnerId
         {
             get { return this.ownerId; }
         }
 
         public bool isOwnerActive
         {
-            get { return this.ownerId != 0 && GameConnect.Room.mActors.ContainsKey(this.ownerId); }
+            get { return this.ownerId != 0 && GameConnect.Room.mPlayers.ContainsKey(this.ownerId); }
         }
 
-        public int CreatorActorNr
+        public int CreatorId
         {
-            get { return this.idField / GameConnect.MAX_ENTITY_IDS; }
+            get { return this.creatorId; }
         }
 
         public bool isMine
         {
             get
             {
-                return (this.ownerId == GameConnect.Room.LocalClientId) || (!this.isOwnerActive && GameConnect.isMasterClient);
+                return SyncId == GameConnect.Room.LocalClientId;
+            }
+        }
+
+        public int SyncId
+        {
+            get
+            {
+                return this.ownerId > 0 ? this.ownerId : Math.Abs(creatorId);
             }
         }
 
@@ -135,7 +146,7 @@ namespace Gj.Galaxy.Logic{
 
         protected internal bool removedFromLocalList;
 
-        internal MonoBehaviour[] RpcMonoBehaviours;
+        //internal MonoBehaviour[] RpcMonoBehaviours;
 
         protected internal void Awake()
         {
@@ -143,7 +154,7 @@ namespace Gj.Galaxy.Logic{
             {
                 // registration might be too late when some script (on this GO) searches this view BUT GetPhotonView() can search ALL in that case
                 GameConnect.RegisterEntity(this);
-                this.instantiationDataField = GameConnect.FetchInstantiationData(this.instantiationId);
+                //this.instantiationDataField = GameConnect.FetchInstantiationData(this.instantiationId);
             }
 
             this.didAwake = true;
@@ -243,15 +254,15 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public void RefreshRpcMonoBehaviourCache()
-        {
-            this.RpcMonoBehaviours = this.GetComponents<MonoBehaviour>();
-        }
+        //public void RefreshRpcMonoBehaviourCache()
+        //{
+        //    this.RpcMonoBehaviours = this.GetComponents<MonoBehaviour>();
+        //}
 
-        public void RPC(string methodName, SyncTargets target, params object[] parameters)
-        {
-            GameConnect.RPC(this, methodName, target, parameters);
-        }
+        //public void RPC(string methodName, SyncTargets target, params object[] parameters)
+        //{
+        //    GameConnect.RPC(this, methodName, target, parameters);
+        //}
 
         public static NetworkEntity Get(Component component)
         {
@@ -261,11 +272,6 @@ namespace Gj.Galaxy.Logic{
         public static NetworkEntity Get(GameObject gameObj)
         {
             return gameObj.GetComponent<NetworkEntity>();
-        }
-
-        public static NetworkEntity Find(int entityId)
-        {
-            return GameConnect.GetEntity(entityId);
         }
 
         public override string ToString()

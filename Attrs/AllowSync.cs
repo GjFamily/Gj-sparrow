@@ -80,7 +80,8 @@ namespace Gj
             this.o = o;
         }
 
-        public void Sync()
+        // Other Player执行不会生效
+        public void Init()
         {
             InstanceRelation relation;
             Info info = c.GetComponent<Info>();
@@ -103,6 +104,11 @@ namespace Gj
                 }
             }
             GameConnect.RelationInstance(o.name, relation, o, 0, null);
+        }
+
+        public void Destroy()
+        {
+            GameConnect.Destroy(o);
         }
 
     }

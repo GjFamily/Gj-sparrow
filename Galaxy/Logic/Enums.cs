@@ -66,13 +66,9 @@ namespace Gj.Galaxy.Logic{
     public enum OwnershipOption
     {
         /// <summary>
-        /// Ownership is fixed. Instantiated objects stick with their creator, scene objects always belong to the Master Client.
+        /// Ownership is fixed. Instantiated objects stick with their creator.
         /// </summary>
         Fixed,
-        /// <summary>
-        /// Ownership can be taken away from the current owner who can't object.
-        /// </summary>
-        Takeover,
         /// <summary>
         /// Ownership can be requested with PhotonView.RequestOwnership but the current owner has to agree to give up ownership.
         /// </summary>
