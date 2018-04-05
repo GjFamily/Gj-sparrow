@@ -11,7 +11,13 @@ namespace Gj
 
         private Dictionary<string, float> store;
 
-        private Dictionary<string, List<Action<float>>> notic;
+        private Dictionary<string, List<Notic>> noticDic;
+
+        private struct Notic
+        {
+            public Action<float> notic;
+            public Action<string, float> cateNotic;
+        }
 
         static StatisticsManage()
         {
@@ -21,23 +27,26 @@ namespace Gj
         public void Start()
         {
             store = new Dictionary<string, float>();
-            notic = new Dictionary<string, List<Action<float>>>();
+            noticDic = new Dictionary<string, List<Notic>>();
         }
 
         public void OnChange(string type, string category, Action<float> action)
         {
-            string key = GetKey(type, category);
-            OnChange(key, action);
+            OnChange(type, new Notic { notic = action });
         }
 
-        public void OnChange(string key, Action<float> action)
+        public void OnChange(string type, Action<string, float> action)
         {
-            if (!notic.ContainsKey(key))
+            OnChange(type, new Notic { cateNotic = action });
+        }
+
+        private void OnChange(string key, Notic n)
+        {
+            if (!noticDic.ContainsKey(key))
             {
-                notic.Add(key, new List<Action<float>>());
+                noticDic.Add(key, new List<Notic>());
             }
-            notic[key].Add(action);
-            action(LoadLog(key));
+            noticDic[key].Add(n);
         }
 
         public void Record(GameObject player, GameObject target, string type, string category, float value)
@@ -54,37 +63,13 @@ namespace Gj
 
         private void SaveLog(string type, string category, float value)
         {
-            if (type != null && category != null)
-            {
-                SaveLog(GetKey(type, category), value);
-            }
-            if (type != null)
-            {
-                SaveLog(type, value);
-            }
+            SaveLog(type, value);
+            SaveLog(GetKey(type, category), value);
+
+            Broadcast(type, category, value);
         }
 
-        private void Broadcast(string key, float value)
-        {
-            if (notic.ContainsKey(key))
-            {
-                List<Action<float>> noticList = notic[key];
-                foreach (Action<float> action in noticList)
-                {
-                    if (action != null)
-                    {
-                        action(value);
-                    }
-                    else
-                    {
-                        noticList.Remove(action);
-                    }
-                }
-            }
-        }
-
-        private void SaveLog(string key, float value)
-        {
+        private void SaveLog(string key, float value) {
             if (!store.ContainsKey(key))
             {
                 store.Add(key, value);
@@ -93,7 +78,55 @@ namespace Gj
             {
                 store[key] = store[key] + value;
             }
-            Broadcast(key, value);
+        }
+
+        private List<Notic> GetNoticList(string type)
+        {
+            if (noticDic.ContainsKey(type))
+            {
+                return noticDic[type];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private void Broadcast(string type, string category, float value)
+        {
+            List<Notic> noticList = GetNoticList(type);
+            if (noticList != null)
+            {
+                foreach (Notic n in noticList)
+                {
+                    if (n.cateNotic != null)
+                    {
+                        n.cateNotic(category, value);
+                    }
+                    else
+                    {
+                        noticList.Remove(n);
+                    }
+                }
+            }
+            if (category != null)
+            {
+                noticList = GetNoticList(GetKey(type, category));
+                if (noticList != null)
+                {
+                    foreach (Notic n in noticList)
+                    {
+                        if (n.notic != null)
+                        {
+                            n.notic(value);
+                        }
+                        else
+                        {
+                            noticList.Remove(n);
+                        }
+                    }
+                }
+            }
         }
 
         public float LoadLog(string type, string category)

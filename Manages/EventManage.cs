@@ -9,8 +9,10 @@ namespace Gj
         public static EventManage single;
         private Dictionary<string, List<Event>> eventDic = new Dictionary<string, List<Event>>();
 
-        private struct Event {
-            public Action<String[]> action;
+        private struct Event
+        {
+            public Action<float> action;
+            public Action<string, float> cateAction;
             public string key;
             public bool once;
         }
@@ -20,44 +22,85 @@ namespace Gj
             single = new EventManage();
         }
 
-        public string On(string eventName, Action<string[]> eventAction, bool once = false)
+        private string On(string key, Event e)
         {
-            List<Event> eventList = GetEventList(eventName);
+            List<Event> eventList = GetEventList(key);
             if (eventList == null)
             {
                 eventList = new List<Event>();
-                eventDic.Add(eventName, eventList);
+                eventDic.Add(key, eventList);
             }
+            eventList.Add(e);
+            return e.key;
+        }
+
+        public string On(string type, string category, Action<float> eventAction, bool once = false)
+        {
             Event e = new Event
             {
                 key = SimpleTools.GenerateStr(8),
                 action = eventAction,
                 once = once
             };
-            eventList.Add(e);
-            return e.key;
+            return On(GetKey(type, category), e);
         }
 
-        public string Once(string eventName, Action<string[]> eventAction) {
-            return On(eventName, eventAction, true);
+        public string On(string type, Action<string, float> eventAction, bool once = false)
+        {
+            Event e = new Event
+            {
+                key = SimpleTools.GenerateStr(8),
+                cateAction = eventAction,
+                once = once
+            };
+            return On(type, e);
         }
 
-        public void Off (string eventName, string key) {
-            List<Event> eventList = GetEventList(eventName);
-            if (eventList != null) {
-                foreach (Event e in eventList) {
-                    if (key.Equals(e.key)) {
+        public string Once(string type, Action<string, float> eventAction)
+        {
+            return On(type, eventAction, true);
+        }
+
+        public string Once(string type, string category, Action<float> eventAction)
+        {
+            return On(type, category, eventAction, true);
+        }
+
+        public void Off(string type, string key)
+        {
+            List<Event> eventList = GetEventList(type);
+            if (eventList != null)
+            {
+                foreach (Event e in eventList)
+                {
+                    if (key.Equals(e.key))
+                    {
                         eventList.Remove(e);
                     }
                 }
             }
         }
 
-        private List<Event> GetEventList(string eventName)
+        public void Off(string type, string category, string key)
         {
-            if (eventDic.ContainsKey(eventName))
+            List<Event> eventList = GetEventList(GetKey(type, category));
+            if (eventList != null)
             {
-                return eventDic[eventName];
+                foreach (Event e in eventList)
+                {
+                    if (key.Equals(e.key))
+                    {
+                        eventList.Remove(e);
+                    }
+                }
+            }
+        }
+
+        private List<Event> GetEventList(string type)
+        {
+            if (eventDic.ContainsKey(type))
+            {
+                return eventDic[type];
             }
             else
             {
@@ -65,45 +108,63 @@ namespace Gj
             }
         }
 
-        public void Emit(string eventName, string[] param)
+        public void Emit(string type, string category, float value)
         {
-            List<Event> eventList = GetEventList(eventName);
+            List<Event> eventList = GetEventList(type);
             if (eventList != null)
             {
                 foreach (Event e in eventList)
                 {
-                    if (e.action != null)
+                    if (e.cateAction != null)
                     {
-                        e.action(param);
+                        e.cateAction(category, value);
                         if (e.once)
                         {
                             eventList.Remove(e);
                         }
-                    } else {
+                    }
+                    else
+                    {
                         eventList.Remove(e);
+                    }
+                }
+            }
+            if (category != null) {
+                eventList = GetEventList(GetKey(type, category));
+                if (eventList != null)
+                {
+                    foreach (Event e in eventList)
+                    {
+                        if (e.action != null)
+                        {
+                            e.action(value);
+                            if (e.once)
+                            {
+                                eventList.Remove(e);
+                            }
+                        }
+                        else
+                        {
+                            eventList.Remove(e);
+                        }
                     }
                 }
             }
         }
 
-        public void Emit(string eventName)
+        public void Emit(string type)
         {
-            Emit(eventName, new string[] { });
+            Emit(type, null, 0);
         }
 
-        public void Emit(string eventName, string param1)
+        public void Emit(string type, string category)
         {
-            Emit(eventName, new string[] { param1 });
+            Emit(type, category, 0);
         }
 
-        public void Emit(string eventName, string param1, string param2)
+        private string GetKey(string type, string category)
         {
-            Emit(eventName, new string[] { param1, param2 });
-        }
-
-        public void Emit(string eventName, string param1, string param2, string param3)
-        {
-            Emit(eventName, new string[] { param1, param2, param3 });
+            return type + "-" + category;
         }
     }
 }

@@ -24,7 +24,6 @@ namespace Gj
 
         private AllowSync sync = null;
 
-
         void Awake ()
         {
             CoreTools.BindPart(this, gameObject);

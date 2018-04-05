@@ -150,7 +150,7 @@ namespace Gj
         {
             cSkillInfo = skillInfo;
             cSkillEntity = skillEntity;
-            cSkillEntity.Init(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast);
+            cSkillEntity.Init(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast, GetAttribute("auto") > 0);
         }
     }
 }

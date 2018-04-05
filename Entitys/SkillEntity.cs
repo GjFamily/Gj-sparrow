@@ -31,6 +31,7 @@ namespace Gj
 
         private bool waiting = false;
         private bool sustaining = false;
+        private bool auto = false;
 
         protected Transform targetTransform;
         protected GameObject targetObj;
@@ -54,7 +55,7 @@ namespace Gj
             return GetComponent<BeLongPart>().GetMaster();
         }
 
-        public void Init(Action before, Action after, Action start, Action end, Action ready)
+        public void Init(Action before, Action after, Action start, Action end, Action ready, bool auto)
         {
             Appear();
             beforeCast = before;
@@ -62,6 +63,7 @@ namespace Gj
             startCast = start;
             endCast = end;
             readyCast = ready;
+            this.auto = auto;
             if (SkillInfo.castType == SkillInfo.CastType.Now || SkillInfo.castType == SkillInfo.CastType.Sustained)
             {
                 Now();
@@ -77,7 +79,7 @@ namespace Gj
             readyCast();
             ReadyCast();
             waiting = true;
-            Invoke("Now", SkillInfo.readyTime);
+            if (auto) Invoke("Now", SkillInfo.readyTime);
         }
 
         private void After()
@@ -106,7 +108,7 @@ namespace Gj
         {
             if (waiting)
             {
-                CancelInvoke("Start");
+                if (auto) CancelInvoke("Now");
                 After();
             }
             else if (sustaining)
@@ -119,7 +121,7 @@ namespace Gj
         public void Now()
         {
             waiting = false;
-            if (SkillInfo.castType == SkillInfo.CastType.Ready || SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained)
+            if (SkillInfo.castType == SkillInfo.CastType.Sustained || SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained)
             {
                 startCast();
                 Cast();

@@ -26,6 +26,12 @@ namespace Gj
 
         public virtual void RightRockerExit(string key) { }
 
-        public virtual void Message(string key) { }
+        public void Message(string type) {
+            Message(type, "", 0);
+        }
+        public void Message(string type, string category) {
+            Message(type, category, 0);
+        }
+        public virtual void Message(string type, string category, float value) { }
     }
 }
