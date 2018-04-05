@@ -938,12 +938,12 @@ namespace Gj.Galaxy.Logic
 
             if (position != Vector3.zero)
             {
-                instantiateEvent[(byte)1] = position;
+                instantiateEvent[(byte)1] = Vector3SerializeFormatter.instance.Serialize(position);
             }
 
             if (rotation != Quaternion.identity)
             {
-                instantiateEvent[(byte)2] = rotation;
+                instantiateEvent[(byte)2] = QuaternionSerializeFormatter.instance.Serialize(rotation);
             }
 
             if (group != 0)
@@ -1285,7 +1285,8 @@ namespace Gj.Galaxy.Logic
             Vector3 position;
             if (evData.ContainsKey((byte)1))
             {
-                position = (Vector3)evData[(byte)1];
+                var positionBytes = (byte[])evData[(byte)1];
+                position = (Vector3)Vector3SerializeFormatter.instance.Deserialize(positionBytes);
             }
             else
             {
@@ -1295,7 +1296,8 @@ namespace Gj.Galaxy.Logic
             Quaternion rotation = Quaternion.identity;
             if (evData.ContainsKey((byte)2))
             {
-                rotation = (Quaternion)evData[(byte)2];
+                var ratationBytes = (byte[])evData[(byte)2];
+                rotation = (Quaternion)QuaternionSerializeFormatter.instance.Deserialize(ratationBytes);
             }
 
             byte group = 0;

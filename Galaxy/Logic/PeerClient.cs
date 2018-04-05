@@ -281,7 +281,7 @@ namespace Gj.Galaxy.Logic{
                 //Debug.Log(string.Format("Not playing {0} {1}", UnityEditor.EditorApplication.isPlaying, UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode));
                 return;
             }
-            Debug.Log("PeerClient");
+            //Debug.Log("PeerClient");
 
             InternalCleanMonoFromSceneIfStuck();
 #endif
