@@ -35,7 +35,7 @@ namespace Gj.Galaxy.Network
         {
             get
             {
-                return state != null;
+                return state != null && state.open != null;
             }
         }
 
@@ -52,18 +52,17 @@ namespace Gj.Galaxy.Network
         {
             mSvrEndPoint = point;
             mUdpClient = new UdpClient();
+            state = new KcpStateObject(mUdpClient);
         }
         ~UdpSocket()
         {
             Close();
         }
 
-        public void Connect(Action open, Action close, Action message, Action<Exception> error)
+        public void Connect(Action open, Action close, Action<Exception> error)
         {
-            state = new KcpStateObject(mUdpClient);
             state.open = open;
             state.close = close;
-            state.message = message;
             state.error = error;
             state.Start(mSvrEndPoint);
         }
@@ -95,9 +94,20 @@ namespace Gj.Galaxy.Network
             state = null;
         }
 
-        public void Accept()
+        public void Update()
         {
             if(state != null) state.Update();
+        }
+
+        public void Accept(ref byte[] head, Action callback)
+        {
+            state.tmp_head = head;
+            state.message = callback;
+        }
+
+        public void Read(ref byte[] content, Action callback)
+        {
+            state.Read(ref content, callback);
         }
     }
 
@@ -108,23 +118,21 @@ namespace Gj.Galaxy.Network
         private IPEndPoint mIPEndPoint;
         public Action open;
         public Action close;
-        public Action message;
         public Action<Exception> error;
-        public readonly byte[] protocolBuffer;
-        public readonly int protocolSize = 2;
+
+        public Action message;
+        public Action ReadCallback;
+        public byte[] tmp_head;
+        public byte[] content;
 
         private ByteBuf writeBuf;
         private ByteBuf readBuf;
         private ByteBuf receiveBuf;
-        //private byte[] buffer;
-        private int bufferSize = 1024;
-        private int position;
-        private int length;
-        private int messageNumber = 0;
 
         private bool mNeedUpdateFlag;
         private int mNextUpdateTime;
         private SwitchQueue<byte[]> mRecvQueue = new SwitchQueue<byte[]>(128);
+        private int bufferSize = 1024;
 
         private static readonly DateTime utc_time = new DateTime(1970, 1, 1);
 
@@ -141,10 +149,16 @@ namespace Gj.Galaxy.Network
         public KcpStateObject(UdpClient client)
         {
             this.client = client;
-            this.protocolBuffer = new byte[this.protocolSize];
             this.writeBuf = new ByteBuf(this.bufferSize);
             this.readBuf = new ByteBuf(this.bufferSize);
             this.receiveBuf = new ByteBuf(this.bufferSize);
+        }
+
+        public void Read(ref byte[] content, Action callback)
+        {
+            ReadCallback = callback;
+            this.content = content;
+            ReadTest();
         }
 
         void init_kcp(int conv, IPEndPoint point)
@@ -163,23 +177,24 @@ namespace Gj.Galaxy.Network
             //kcp.SetMtu(1024); 
             kcp.WndSize(128, 128);
 
-            writeBuf.SetKcp(kcp);
-            readBuf.SetKcp(kcp);
-            receiveBuf.SetKcp(kcp);
+            //writeBuf.SetKcp(kcp);
+            //readBuf.SetKcp(kcp);
+            //receiveBuf.SetKcp(kcp);
         }
 
         void process_recv_queue()
         {
             mRecvQueue.Switch();
 
-            receiveBuf.Clear();
             while (!mRecvQueue.Empty())
             {
                 var data = mRecvQueue.Pop();
                 receiveBuf.WriteBytes(data);
+                kcp.Input(receiveBuf);
+                receiveBuf.Clear();
                 mNeedUpdateFlag = true;
             }
-            kcp.Input(receiveBuf);
+            kcp.Receive(readBuf);
             ReadTest();
         }
 
@@ -210,7 +225,7 @@ namespace Gj.Galaxy.Network
         public bool Send(byte[] head, byte[] body)
         {
             writeBuf.Clear();
-            writeBuf.WriteBytes(new byte[] { 0x08, 0x21 });
+            //writeBuf.WriteBytes(new byte[] { 0x08, 0x21 });
             writeBuf.WriteBytes(head);
             writeBuf.WriteBytes(body);
             kcp.Send(writeBuf);
@@ -221,15 +236,19 @@ namespace Gj.Galaxy.Network
 
         public void ReadTest()
         {
-            var result = readBuf.Read(protocolBuffer, 0, protocolSize);
-            //UnityEngine.Debug.Log("test");
-            if (result == 2 && protocolBuffer[0] == 0x08 && protocolBuffer[1] == 0x21)
-            {
+            if(ReadCallback != null){
+                if(readBuf.ReadableBytes() >= content.Length){
+                    readBuf.Read(content, 0, content.Length);
+                    ReadCallback();
+                    this.ReadCallback = null;
+                    ReadTest();
+                }
+            }else if(readBuf.ReadableBytes()>=tmp_head.Length){
+                readBuf.Read(tmp_head, 0, tmp_head.Length);
+
                 message();
-            }
-            else if(result > 0)
-            {
-                ReadTest();
+            }else if(readBuf.ReadableBytes() == 0){
+                readBuf.Clear();
             }
         }
 

@@ -155,7 +155,7 @@ namespace Gj.Galaxy.Network
 
         internal void dispatch(NsData data){
 
-            //Debug.Log("[ SOCKET ] accept Namespace:" + BitConverter.ToString(data.nsp==null?new byte[]{} : data.nsp) + "," + data.type + "," + state);
+            Debug.Log("[ SOCKET ] accept Namespace:" + BitConverter.ToString(data.nsp==null?new byte[]{} : data.nsp) + "," + data.type + "," + state);
             //try{
                 switch (data.type)
                 {
@@ -238,7 +238,7 @@ namespace Gj.Galaxy.Network
             if(data.nsp == null || data.nsp.Length == 0){
                 data.nsp = nsp;
             }
-            //Debug.Log("[ SOCKET ] send Namespace:" + BitConverter.ToString(data.nsp) + "," + data.type + "," + state);
+            Debug.Log("[ SOCKET ] send Namespace:" + BitConverter.ToString(data.nsp) + "," + data.type + "," + state);
             client.Packet(data, this);
         }
 

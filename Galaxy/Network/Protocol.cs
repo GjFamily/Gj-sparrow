@@ -57,14 +57,16 @@ namespace Gj.Galaxy.Network
         }
     }
     public interface ProtocolConn{
-        void Connect(Action open, Action close, Action message, Action<Exception> error);
-        Stream Read(int head, out byte[] headB);
-        bool Write(byte[] head, Stream reader);
-        void Accept();
-        void Close();
         bool Available { get; set; }
         bool Connected { get; }
         bool Connecting { get; }
+
+        void Connect(Action open, Action close, Action<Exception> error);
+        void Accept(ref byte[] head, Action callback);
+        void Read(ref byte[] content, Action callback); // 触发accept的callback后，必须调用一次read
+        bool Write(byte[] head, Stream reader);
+        void Update();
+        void Close();
     }
 
     public class SwitchQueue<T> where T : class

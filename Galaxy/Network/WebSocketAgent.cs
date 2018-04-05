@@ -19,6 +19,8 @@ namespace Gj.Galaxy.Network
         private Uri mUrl;
         private Action message;
         private SwitchQueue<byte[]> m_Messages = new SwitchQueue<byte[]>(128);
+        private byte[] current_data;
+        private byte[] tmp_head;
 
         WebSocket m_Socket;
         bool m_IsConnected = false;
@@ -68,7 +70,7 @@ namespace Gj.Galaxy.Network
         }
 
 
-        public void Connect(Action open, Action close, Action message, Action<Exception> error)
+        public void Connect(Action open, Action close, Action<Exception> error)
         {
             m_Socket = new WebSocket(mUrl.ToString());// modified by TS
             m_Socket.EnableRedirection = true;
@@ -95,7 +97,6 @@ namespace Gj.Galaxy.Network
                 close();
             };
             m_Socket.Connect();
-            this.message = message;
         }
 
         public void Send(byte[] buffer)
@@ -105,8 +106,6 @@ namespace Gj.Galaxy.Network
 
         public byte[] Recv()
         {
-            if (m_Messages.Empty())
-                return null;
             return m_Messages.Pop();
         }
 
@@ -154,13 +153,32 @@ namespace Gj.Galaxy.Network
             return true;
         }
 
-        public void Accept()
+        public void Update()
         {
             m_Messages.Switch();
             while(!m_Messages.Empty())
             {
+                current_data = Recv();
+                for (var i = 0; i < tmp_head.Length; i++)
+                {
+                    tmp_head[i] = current_data[i];
+                }
                 message();
             }
+        }
+
+        public void Accept(ref byte[] head, Action callback)
+        {
+            tmp_head = head;
+            message = callback;
+        }
+
+        public void Read(ref byte[] content, Action callback)
+        {
+            if(content.Length > 0){
+                Array.Copy(current_data, tmp_head.Length, content, 0, content.Length);
+            }
+            callback();
         }
     }
 }
