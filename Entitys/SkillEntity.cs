@@ -32,6 +32,8 @@ namespace Gj
         private bool waiting = false;
         private bool sustaining = false;
         private bool auto = false;
+        protected float power = 0;
+        private float startTime = 0;
 
         protected Transform targetTransform;
         protected GameObject targetObj;
@@ -76,10 +78,20 @@ namespace Gj
 
         private void Ready()
         {
+            power = 0;
+            startTime = Time.time;
             readyCast();
             ReadyCast();
             waiting = true;
-            if (auto) Invoke("Now", SkillInfo.readyTime);
+            if (auto) Invoke("ReadyEnd", SkillInfo.readyTime);
+        }
+
+        public void ReadyEnd() {
+            if (auto) CancelInvoke("ReadyEnd");
+            power = (Time.time - startTime) / SkillInfo.readyTime;
+            if (power > 1) power = 1;
+            waiting = false;
+            Now();
         }
 
         private void After()
@@ -108,7 +120,7 @@ namespace Gj
         {
             if (waiting)
             {
-                if (auto) CancelInvoke("Now");
+                if (auto) CancelInvoke("ReadyEnd");
                 After();
             }
             else if (sustaining)
@@ -120,7 +132,6 @@ namespace Gj
 
         public void Now()
         {
-            waiting = false;
             if (SkillInfo.castType == SkillInfo.CastType.Sustained || SkillInfo.castType == SkillInfo.CastType.ReadyAndSustained)
             {
                 startCast();

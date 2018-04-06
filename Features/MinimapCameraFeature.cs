@@ -9,7 +9,6 @@ namespace Gj
         // Use this for initialization
         void Start()
         {
-            
         }
 
         // Update is called once per frame
@@ -19,6 +18,7 @@ namespace Gj
         }
 
         public void StartFollow(GameObject target) {
+            GetFeatureComponent<FollowPart>().SetOffset(new Vector3(0, 15, 0));
             GetFeatureComponent<FollowPart>().FollowTarget(target);
         }
 

@@ -83,10 +83,10 @@ namespace Gj
 
         public void Cast()
         {
-            if (cSkillEntity != null)
+            if (waitCast)
             {
-                cSkillEntity.Now();
                 waitCast = false;
+                cSkillEntity.ReadyEnd();
             }
         }
 

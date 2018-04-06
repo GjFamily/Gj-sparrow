@@ -41,7 +41,7 @@ namespace Gj
             {
                 transform.position = Vector3.Lerp(transform.position, target.transform.position + offsetPosition, Time.deltaTime * speed);
             } else if (target != null) {
-                transform.position = target.transform.position - offsetPosition;
+                transform.position = target.transform.position + offsetPosition;
             }
         }
     }
