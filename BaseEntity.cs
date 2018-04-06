@@ -45,6 +45,23 @@ namespace Gj
             if (sync != null) sync.Command(type, category, value);
         }
 
+        public void Takeover(Action<bool> callback)
+        {
+            if (sync != null)
+            {
+                sync.Takeover(callback);
+            }
+            else
+            {
+                callback(true);
+            }
+        }
+
+        public void Giveout()
+        {
+            if (sync != null) sync.Giveout();
+        }
+
         public static Info GetInfo (GameObject obj) {
             return obj.GetComponent<Info>();
         }

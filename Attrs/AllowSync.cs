@@ -11,6 +11,7 @@ namespace Gj
         //
         // Fields
         //
+        public OwnershipOption ownership = OwnershipOption.Fixed;
         public TransformParam transform = TransformParam.Off;
         public TransformOptions options;
         public RigidBodyParam rigid = RigidBodyParam.Off;
@@ -40,6 +41,7 @@ namespace Gj
 
             entity = o.AddComponent(typeof(NetworkEntity)) as NetworkEntity;
             entity.synchronization = sync;
+            entity.ownershipTransfer = ownership;
             if (transform != TransformParam.Off)
             {
                 var gameObservable = o.AddComponent(typeof(TransformView));
@@ -118,6 +120,27 @@ namespace Gj
             if (entity == null) return;
             GameConnect.Command(entity, type, category, value);
         }
+
+        public void Takeover(Action<bool> callback)
+        {
+            var entity = o.GetComponent<NetworkEntity>() as NetworkEntity;
+            if (entity == null) 
+            {
+                callback(true);
+            }
+            else
+            {
+                GameConnect.TakeOver(entity, callback);
+            }
+        }
+
+        public void Giveout()
+        {
+            var entity = o.GetComponent<NetworkEntity>() as NetworkEntity;
+            if (entity == null) return;
+            GameConnect.GiveBack(entity);
+        }
+
 
     }
 }

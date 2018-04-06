@@ -521,7 +521,7 @@ namespace Gj.Galaxy.Logic
             else
             {
                 n.Emit(GameEvent.OwnershipTakeover, new object[] { entity.creatorId, entity.entityId }, (object[] obj) => {
-                    listener.OnOwnership(entity, (int)obj[0]);
+                    listener.OnOwnership(entity, obj[0].ConverInt());
                     callback(entity.ownerId == Room.LocalClientId);
                 });
             }
