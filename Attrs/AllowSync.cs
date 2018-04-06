@@ -112,5 +112,12 @@ namespace Gj
             GameConnect.Destroy(o);
         }
 
+        public void Command(string type, string category, float value)
+        {
+            var entity = o.GetComponent<NetworkEntity>() as NetworkEntity;
+            if (entity == null) return;
+            GameConnect.Command(entity, type, category, value);
+        }
+
     }
 }

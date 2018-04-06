@@ -142,7 +142,7 @@ namespace Gj
 
         public void Command(string type, string category, float value, bool sync)
         {
-            if (sync) SyncDestroy();
+            if (sync) this.SyncCommand(type, category, value);
             ExecCommand(type, category, value);
         }
 

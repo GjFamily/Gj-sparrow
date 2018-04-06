@@ -40,6 +40,11 @@ namespace Gj
             if (sync != null) sync.Destroy();
         }
 
+        public void SyncCommand(string type, string category, float value)
+        {
+            if (sync != null) sync.Command(type, category, value);
+        }
+
         public static Info GetInfo (GameObject obj) {
             return obj.GetComponent<Info>();
         }
