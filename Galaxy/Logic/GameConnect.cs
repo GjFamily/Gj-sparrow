@@ -31,8 +31,7 @@ namespace Gj.Galaxy.Logic
     internal class SyncEvent
     {
         public const byte Init = 0;
-        public const byte InitAll = 1;
-        public const byte RPC = 2;
+        public const byte Command = 2;
         public const byte Instance = 3;
         public const byte Destory = 4;
         public const byte Serialize = 5;
@@ -65,7 +64,8 @@ namespace Gj.Galaxy.Logic
         void OnLeaveGame();
         void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer);
         GameObject OnInstance(string prefabName, GamePlayer player);
-        void OnDestroy(GameObject gameObject, GamePlayer player);
+        void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value);
+        void OnDestroyInstance(GameObject gameObject, GamePlayer player);
     }
 
     public interface GameRoomListener
@@ -87,15 +87,17 @@ namespace Gj.Galaxy.Logic
         public delegate void OnStartDelegate();
         public delegate void OnLeaveGameDelegate();
         public delegate void OnOwnershipDelegate(NetworkEntity entity, GamePlayer oldPlayer);
+        public delegate void OnCommandDelegate(NetworkEntity entity, GamePlayer player, string type, string category, float value);
         public delegate GameObject OnInstanceDelegate(string prefabName, GamePlayer player);
-        public delegate void OnDestroyDelegate(GameObject gameObject, GamePlayer player);
+        public delegate void OnDestroyInstanceDelegate(GameObject gameObject, GamePlayer player);
 
         public OnFinishDelegate OnFinish;
         public OnStartDelegate OnStart;
         public OnLeaveGameDelegate OnLeaveGame;
         public OnOwnershipDelegate OnOwnership;
+        public OnCommandDelegate OnCommand;
         public OnInstanceDelegate OnInstance;
-        public OnDestroyDelegate OnDestroy;
+        public OnDestroyInstanceDelegate OnDestroyInstance;
 
         void GameListener.OnFinish(bool exit, Dictionary<string, object> result)
         {
@@ -117,15 +119,20 @@ namespace Gj.Galaxy.Logic
             if (OnOwnership != null) OnOwnership(entity, oldPlayer);
         }
 
+        void GameListener.OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value)
+        {
+            if (OnCommand != null) OnCommand(entity, player, type, category, value);
+        }
+
         GameObject GameListener.OnInstance(string prefabName, GamePlayer player)
         {
             if (OnInstance != null) return OnInstance(prefabName, player);
             return null;
         }
 
-        void GameListener.OnDestroy(GameObject gameObject, GamePlayer player)
+        void GameListener.OnDestroyInstance(GameObject gameObject, GamePlayer player)
         {
-            if (OnDestroy != null) OnDestroy(gameObject, player);
+            if (OnDestroyInstance != null) OnDestroyInstance(gameObject, player);
         }
     }
     public class GameRoomDelegate : GameRoomListener
@@ -471,9 +478,9 @@ namespace Gj.Galaxy.Logic
                 case SyncEvent.Init:
                     Room.OnInit(sendId, value[0].ConverInt());
                     break;
-                //case SyncEvent.RPC:
-                    //listener.OnRpc(creatorId, value);
-                    //break;
+                case SyncEvent.Command:
+                    listener.OnCommand(sendId, value);
+                    break;
                 case SyncEvent.Instance:
                     listener.OnInstance(sendId, value, null);
                     break;
@@ -536,127 +543,6 @@ namespace Gj.Galaxy.Logic
             n.Emit(GameEvent.Members, null);
         }
 
-        public static void RegisterEntity(NetworkEntity netEntity)
-        {
-            if (!inRoom)
-            {
-                return;
-            }
-
-            if (netEntity.entityId == 0)
-            {
-                Debug.Log("NetworkEntity register is ignored, because entityId is 0. No id assigned yet to: " + netEntity);
-                return;
-            }
-
-            NetworkEntity entity = GetEntity(netEntity.creatorId, netEntity.entityId);
-            if(entity!=null)
-            {
-                if (netEntity != entity)
-                {
-                    Debug.LogError(string.Format("NetworkEntity ID duplicate found: {0}. New: {1} old: {2}. Maybe one wasn't destroyed on scene load?! Check for 'DontDestroyOnLoad'. Destroying old entry, adding new.", netEntity.entityId, netEntity, entity));
-                }
-                else
-                {
-                    return;
-                }
-
-                listener.RemoveInstantiatedGO(entity.gameObject, true);
-            }
-
-
-            // Debug.Log("adding view to known list: " + netView);
-            AddEntity(netEntity.creatorId, netEntity);
-            //Debug.LogError("view being added. " + netView);   // Exit Games internal log
-
-            if (PeerClient.logLevel >= LogLevel.Debug)
-            {
-                Debug.Log("Registered NetworkEntity: " + netEntity.entityId);
-            }
-        }
-
-        //public static GameObject Instantiate(string prefabName, Vector3 position, Quaternion rotation, byte group, object[] data)
-        //{
-        //    if (!inRoom)
-        //    {
-        //        Debug.LogError("Failed to Instantiate prefab: " + prefabName + ". Client should be in a room. Current connectionStateDetailed: " + PeerClient.connected);
-        //        return null;
-        //    }
-
-        //    GameObject prefabGo = Delegate.OnInstance(prefabName, Room.localPlayer);
-
-        //    if (prefabGo == null)
-        //    {
-        //        Debug.LogError("Failed to Instantiate prefab: " + prefabName + ". Verify the Prefab is in a Resources folder (and not in a subfolder)");
-        //        return null;
-        //    }
-
-        //    // a scene object instantiated with network visibility has to contain a PhotonView
-        //    if (prefabGo.GetComponent<NetworkEntity>() == null)
-        //    {
-        //        Debug.LogError("Failed to Instantiate prefab:" + prefabName + ". Prefab must have a PhotonView component.");
-        //        return null;
-        //    }
-
-        //    Component[] entitys = (Component[])prefabGo.GetEntitysInChildren();
-        //    int[] entityIds = new int[entitys.Length];
-        //    for (int i = 0; i < entityIds.Length; i++)
-        //    {
-        //        entityIds[i] = AllocateEntityId(Room.localPlayer.Id);
-        //    }
-
-        //    // Send to others, create info
-        //    Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(Room.localPlayer.Id, prefabName, position, rotation, group, entityIds, data, false);
-
-        //    // Instantiate the GO locally (but the same way as if it was done via event). This will also cache the instantiationId
-        //    return listener.OnInstance(Room.localPlayer.Id, instantiateEvent, prefabGo);
-        //}
-
-        //public static GameObject InstantiateSceneObject(string prefabName, Vector3 position, Quaternion rotation, byte group, object[] data)
-        //{
-        //    if (!inRoom)
-        //    {
-        //        Debug.LogError("Failed to InstantiateSceneObject prefab: " + prefabName + ". Client should be in a room. Current connectionStateDetailed: " + PeerClient.connected);
-        //        return null;
-        //    }
-
-        //    if (!isMasterClient)
-        //    {
-        //        Debug.LogError("Failed to InstantiateSceneObject prefab: " + prefabName + ". Client is not the MasterClient in this room.");
-        //        return null;
-        //    }
-
-        //    GameObject prefabGo = Delegate.OnInstance(prefabName, null);
-
-        //    if (prefabGo == null)
-        //    {
-        //        Debug.LogError("Failed to InstantiateSceneObject prefab: " + prefabName + ". Verify the Prefab is in a Resources folder (and not in a subfolder)");
-        //        return null;
-        //    }
-
-        //    // a scene object instantiated with network visibility has to contain a PhotonView
-        //    if (prefabGo.GetComponent<NetworkEntity>() == null)
-        //    {
-        //        Debug.LogError("Failed to InstantiateSceneObject prefab:" + prefabName + ". Prefab must have a NetworkEntity component.");
-        //        return null;
-        //    }
-
-        //    Component[] entitys = (Component[])prefabGo.GetEntitysInChildren();
-        //    int[] entityIds = AllocateSceneEntityIds(entitys.Length);
-
-        //    if (entityIds == null)
-        //    {
-        //        Debug.LogError("Failed to InstantiateSceneObject prefab: " + prefabName + ". No ViewIDs are free to use. Max is: " + MAX_ENTITY_IDS);
-        //        return null;
-        //    }
-
-        //    // Send to others, create info
-        //    Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(0, prefabName, position, rotation, group, entityIds, data, true);
-
-        //    // Instantiate the GO locally (but the same way as if it was done via event). This will also cache the instantiationId
-        //    return listener.OnInstance(0, instantiateEvent, prefabGo);
-        //}
-
         public static void RelationInstance(string prefabName, InstanceRelation relation, GameObject prefabGo, byte group, object[] data)
         {
             if (!inRoom)
@@ -695,11 +581,16 @@ namespace Gj.Galaxy.Logic
                 return;
             }
             Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(creatorId, prefabName, prefabGo.transform.position, prefabGo.transform.rotation, group, entityIds, data, true);
-            listener.OnInstance(creatorId, instantiateEvent, prefabGo);
+            listener.OnInstance(Room.localPlayer.Id, instantiateEvent, prefabGo);
         }
 
         public static void Destroy(NetworkEntity target)
         {
+            if (!inRoom)
+            {
+                Debug.LogError("Failed to Destroy Entity");
+                return;
+            }
             if (target != null)
             {
                 listener.RemoveInstantiatedGO(target.gameObject, false);
@@ -712,6 +603,11 @@ namespace Gj.Galaxy.Logic
 
         public static void Destroy(GameObject targetGo)
         {
+            if (!inRoom)
+            {
+                Debug.LogError("Failed to Destroy GameObject");
+                return;
+            }
             if (targetGo != null)
             {
                 listener.RemoveInstantiatedGO(targetGo, false);
@@ -722,45 +618,22 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        //public static void DestroyPlayerObjects(GamePlayer targetPlayer)
-        //{
-        //    if (targetPlayer == null)
-        //    {
-        //        Debug.LogError("DestroyPlayerObjects() failed, cause parameter 'targetPlayer' was null.");
-        //    }
-        //    else
-        //    {
-        //        DestroyPlayerObjects(targetPlayer.Id);
-        //    }
-        //}
+        public static void Command(NetworkEntity entity, string type, string category, float value)
+        {
+            if (!inRoom)
+            {
+                Debug.LogError("Failed to Send Command");
+                return;
+            }
+            Dictionary<byte, object> commandEvent = new Dictionary<byte, object>();
+            commandEvent[0] = entity.entityId;
+            commandEvent[1] = entity.creatorId;
 
-        //public static void DestroyPlayerObjects(int targetPlayerId)
-        //{
-        //    if (!inRoom)
-        //    {
-        //        return;
-        //    }
-        //    if (Room.isMasterClient || targetPlayerId == Room.localPlayer.Id)
-        //    {
-        //        listener.DestroyPlayerObjects(targetPlayerId, false);
-        //    }
-        //    else
-        //    {
-        //        Debug.LogError("DestroyPlayerObjects() failed, cause players can only destroy their own GameObjects. A Master Client can destroy anyone's. This is master: " + isMasterClient);
-        //    }
-        //}
-
-        //public static void DestroyAll()
-        //{
-        //    if (isMasterClient)
-        //    {
-        //        listener.DestroyAll(false);
-        //    }
-        //    else
-        //    {
-        //        Debug.LogError("Couldn't call DestroyAll() as only the master client is allowed to call this.");
-        //    }
-        //}
+            commandEvent[2] = type;
+            commandEvent[3] = category;
+            commandEvent[4] = value;
+            EmitSync(SyncEvent.Command, Room.LocalClientId, commandEvent, entity.group, true);
+        }
 
         //public static void RPC(NetworkEntity entity, string methodName, SyncTargets target, params object[] parameters)
         //{
@@ -974,21 +847,6 @@ namespace Gj.Galaxy.Logic
             EmitSync(SyncEvent.Destory, Room.LocalClientId, value);
         }
 
-        //private void EmitDestroyOfPlayer(int actorNr)
-        //{
-        //    Dictionary<byte, object> value = new Dictionary<byte, object>();
-        //    value[0] = 2;
-        //    value[1] = actorNr;
-        //    EmitSync(SyncEvent.Destory, 0, value);
-        //}
-
-        //private void EmitDestroyOfAll()
-        //{
-        //    Dictionary<byte, object> value = new Dictionary<byte, object>();
-        //    value[0] = 0;
-        //    value[1] = 0;
-        //    EmitSync(SyncEvent.Destory, 0, value);
-        //}
         #region OnEvent
 
         private void OnOwnership(NetworkEntity entity, int newOwnerId)
@@ -1009,7 +867,20 @@ namespace Gj.Galaxy.Logic
                 default:
                     break;
             }
+        }
 
+        private void OnCommand(int sendId, Dictionary<byte, object> data)
+        {
+            int instantiationId = (int)data[(byte)0];
+            int creatorId = (int)data[(byte)1];
+            NetworkEntity entity = GetEntity(creatorId, instantiationId);
+
+            if(entity == null){
+                Debug.LogWarning("Received OnCommand for view ID " + entity + ". We have no such NetworkEntity! Ignored this if you're leaving a room. State: " + PeerClient.connected);
+                return;
+            }
+
+            Delegate.OnCommand(entity, Room.GetPlayerWithId(sendId), (string)data[(byte)2],  (string)data[(byte)3], (float)data[(byte)4]);
         }
 
         ///// <summary>
@@ -1249,6 +1120,7 @@ namespace Gj.Galaxy.Logic
             //int serverTime = (int)evData[(byte)6];
             int instantiationId = (int)evData[(byte)1];
             int creatorId = (int)evData[(byte)2];
+            Debug.Log("instance:" + creatorId + "," + instantiationId);
             // 负数是该用户创建的场景物体
             var player = Room.GetPlayerWithId(creatorId);
 
@@ -1346,16 +1218,17 @@ namespace Gj.Galaxy.Logic
             {
                 throw new Exception("Error in Instantiation! The resource's Entity count is not the same as in incoming data.");
             }
-
+            //Debug.Log("OnInstance:" + creatorId+","+instantiationId);
             for (int i = 0; i < viewsIDs.Length; i++)
             {
                 // NOTE instantiating the loaded resource will keep the viewID but would not copy instantiation data, so it's set below
                 // so we only set the viewID and instantiationId now. the instantiationData can be fetched
-                resourcePVs[i].entityId = viewsIDs[i];
                 resourcePVs[i].prefix = objLevelPrefix;
                 resourcePVs[i].instantiationId = instantiationId;
                 resourcePVs[i].isRuntimeInstantiated = true;
                 resourcePVs[i].creatorId = creatorId;
+                // 注册entity
+                resourcePVs[i].entityId = viewsIDs[i];
             }
 
             //this.StoreInstantiationData(instantiationId, incomingInstantiationData);
@@ -1501,7 +1374,6 @@ namespace Gj.Galaxy.Logic
             NetworkEntity[] entitys = go.GetComponentsInChildren<NetworkEntity>(true);
             if (entitys == null || entitys.Length <= 0)
             {
-                Debug.LogError("Failed to 'network-remove' GameObject because has no PhotonView components: " + go);
                 return;
             }
 
@@ -1509,28 +1381,22 @@ namespace Gj.Galaxy.Logic
             int creatorId = viewZero.creatorId;            // creatorId of obj is needed to delete EvInstantiate (only if it's from that user)
             int instantiationId = viewZero.instantiationId;     // actual, live InstantiationIds start with 1 and go up
 
+            // Don't remove the Instantiation from the server, if it doesn't have a proper ID
+            if (instantiationId < 1)
+            {
+                Debug.LogError("Failed to 'network-remove' GameObject because it is missing a valid InstantiationId on view: " + viewZero + ". Not Destroying GameObject or PhotonViews!");
+                return;
+            }
+
             // Don't remove GOs that are owned by others (unless this is the master and the remote player left)
             if (!localOnly)
             {
-                if (!viewZero.isMine)
+                if (viewZero.isMine)
                 {
-                    Debug.LogError("Failed to 'network-remove' GameObject. Client is neither owner nor masterClient taking over for owner who left: " + viewZero);
-                    return;
-                }
-
-                // Don't remove the Instantiation from the server, if it doesn't have a proper ID
-                if (instantiationId < 1)
-                {
-                    Debug.LogError("Failed to 'network-remove' GameObject because it is missing a valid InstantiationId on view: " + viewZero + ". Not Destroying GameObject or PhotonViews!");
-                    return;
+                    EmitDestroyOfInstantiate(creatorId, instantiationId);
                 }
             }
 
-            // cleanup instantiation (event and local list)
-            if (!localOnly)
-            {
-                EmitDestroyOfInstantiate(creatorId, instantiationId);
-            }
 
             // cleanup PhotonViews and their RPCs events (if not localOnly)
             for (int j = entitys.Length - 1; j >= 0; j--)
@@ -1541,7 +1407,6 @@ namespace Gj.Galaxy.Logic
                     continue;
                 }
 
-                // we only destroy/clean PhotonViews that were created by PhotonNetwork.Instantiate (and those have an instantiationId!)
                 if (entity.instantiationId >= 1)
                 {
                     LocalCleanEntity(entity);
@@ -1554,7 +1419,7 @@ namespace Gj.Galaxy.Logic
             }
 
             // todo 通知用户
-            Delegate.OnDestroy(go, Room.GetPlayerWithId(creatorId));
+            Delegate.OnDestroyInstance(go, Room.GetPlayerWithId(creatorId));
         }
 
         public static bool LocalCleanEntity(NetworkEntity entity)
@@ -1572,11 +1437,11 @@ namespace Gj.Galaxy.Logic
         }
 
         //
-        public static NetworkEntity GetEntity(int sendId, int entityId)
+        public static NetworkEntity GetEntity(int creatorId, int entityId)
         {
             NetworkEntity result = null;
             Dictionary<int, NetworkEntity> list;
-            if(entityList.TryGetValue(sendId, out list)){
+            if(entityList.TryGetValue(creatorId, out list)){
                 list.TryGetValue(entityId, out result);
             }
 
@@ -1601,12 +1466,52 @@ namespace Gj.Galaxy.Logic
             return result;
         }
 
-        private static void AddEntity(int sendId, NetworkEntity entity)
+        public static void RegisterEntity(NetworkEntity netEntity)
+        {
+            if (!inRoom)
+            {
+                return;
+            }
+
+            if (netEntity.entityId == 0)
+            {
+                Debug.Log("NetworkEntity register is ignored, because entityId is 0. No id assigned yet to: " + netEntity);
+                return;
+            }
+
+            NetworkEntity entity = GetEntity(netEntity.creatorId, netEntity.entityId);
+            if (entity != null)
+            {
+                if (netEntity != entity)
+                {
+                    Debug.LogError(string.Format("NetworkEntity ID duplicate found: {0}. New: {1} old: {2}. Maybe one wasn't destroyed on scene load?! Check for 'DontDestroyOnLoad'. Destroying old entry, adding new.", netEntity.entityId, netEntity, entity));
+                }
+                else
+                {
+                    return;
+                }
+
+                listener.RemoveInstantiatedGO(entity.gameObject, true);
+            }
+
+            //Debug.Log("register:"+netEntity.creatorId+","+netEntity.entityId);
+            // Debug.Log("adding view to known list: " + netView);
+            AddEntity(netEntity.creatorId, netEntity);
+            //Debug.LogError("view being added. " + netView);   // Exit Games internal log
+
+            if (PeerClient.logLevel >= LogLevel.Debug)
+            {
+                Debug.Log("Registered NetworkEntity: " + netEntity.entityId);
+            }
+        }
+
+        private static void AddEntity(int creatorId, NetworkEntity entity)
         {
             Dictionary<int, NetworkEntity> list;
-            if (!entityList.TryGetValue(sendId, out list))
+            if (!entityList.TryGetValue(creatorId, out list))
             {
                 list = new Dictionary<int, NetworkEntity>();
+                entityList.Add(creatorId, list);
             }
             list.Add(entity.entityId, entity);
         }
@@ -1744,7 +1649,7 @@ namespace Gj.Galaxy.Logic
         //    }
         //}
 
-        public static int ObjectsInOneUpdate = 10;
+        public static int ObjectsInOneUpdate = 20;
 
         #region sync entity
         internal static void Update()
@@ -1786,14 +1691,15 @@ namespace Gj.Galaxy.Logic
         options.Receivers = ReceiverGroup.All;
 #endif
 
-            List<int> toRemove = null;
-
             var enumerator = entityList.GetEnumerator();   // replacing foreach (PhotonView view in this.photonViewList.Values) for memory allocation improvement
             while (enumerator.MoveNext())
             {
-                var list = enumerator.Current.Value.GetEnumerator();
-                while (list.MoveNext()){
-                    NetworkEntity entity = list.Current.Value;
+                var list = enumerator.Current.Value;
+                var listEnumerator = list.GetEnumerator();
+                List<int> toRemove = null;
+                while (listEnumerator.MoveNext())
+                {
+                    NetworkEntity entity = listEnumerator.Current.Value;
 
                     if (entity == null)
                     {
@@ -1819,7 +1725,7 @@ namespace Gj.Galaxy.Logic
                         continue; // Block sending on this group
                     }
 
-                    object[] evData = this.OnSerializeWrite(entity);
+                    object[] evData = entity.OnSerializeWrite(pStream, Room.localPlayer);
                     if (evData == null)
                     {
                         continue;
@@ -1885,16 +1791,15 @@ namespace Gj.Galaxy.Logic
                         }
                     }
                 }
-
+                if (toRemove != null)
+                {
+                    for (int idx = 0, count = toRemove.Count; idx < count; ++idx)
+                    {
+                        list.Remove(toRemove[idx]);
+                    }
+                }
             }   // all views serialized
 
-            if (toRemove != null)
-            {
-                for (int idx = 0, count = toRemove.Count; idx < count; ++idx)
-                {
-                    entityList.Remove(toRemove[idx]);
-                }
-            }
 
             // if we didn't produce anything to send, don't do it
             if (countOfUpdatesToSend == 0)
@@ -1941,90 +1846,13 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-
-        public const int SyncViewId = 0;
-        public const int SyncCreatorId = 1;
-        public const int SyncCompressed = 2;
-        public const int SyncNullValues = 3;
-        public const int SyncFirstValue = 4;
-
-        private object[] OnSerializeWrite(NetworkEntity entity)
-        {
-            if (entity.synchronization == EntitySynchronization.Off)
-            {
-                return null;
-            }
-
-
-            // each view creates a list of values that should be sent
-            MessageInfo info = new MessageInfo(Room.localPlayer, entity);
-            this.pStream.ResetWriteStream();
-            this.pStream.SendNext(null);
-            this.pStream.SendNext(null);
-            this.pStream.SendNext(null);
-            this.pStream.SendNext(null);
-            entity.Serialize(this.pStream, info);
-
-            // check if there are actual values to be sent (after the "header" of viewId, (bool)compressed and (int[])nullValues)
-            if (this.pStream.Count <= SyncFirstValue)
-            {
-                return null;
-            }
-
-
-            object[] currentValues = this.pStream.ToArray();
-            currentValues[0] = entity.entityId;
-            currentValues[1] = entity.creatorId;
-            currentValues[2] = false;
-            currentValues[3] = null;
-
-            if (entity.synchronization == EntitySynchronization.Unreliable)
-            {
-                return currentValues;
-            }
-
-            // ViewSynchronization: Off, Unreliable, UnreliableOnChange, ReliableDeltaCompressed
-            if (entity.synchronization == EntitySynchronization.UnreliableOnChange)
-            {
-                if (AlmostEquals(currentValues, entity.lastOnSerializeDataSent))
-                {
-                    if (entity.mixedModeIsReliable)
-                    {
-                        return null;
-                    }
-
-                    entity.mixedModeIsReliable = true;
-                    entity.lastOnSerializeDataSent = currentValues;
-                }
-                else
-                {
-                    entity.mixedModeIsReliable = false;
-                    entity.lastOnSerializeDataSent = currentValues;
-                }
-
-                return currentValues;
-            }
-
-            if (entity.synchronization == EntitySynchronization.Reliable)
-            {
-                object[] dataToSend = DeltaCompressionWrite(entity.lastOnSerializeDataSent, currentValues);
-
-                entity.lastOnSerializeDataSent = currentValues;
-
-                return dataToSend;
-            }
-
-            return null;
-        }
         private void OnSerialize(int sendId, Dictionary<byte, object> serializeData)
         {
             short remoteLevelPrefix = -1;
             byte initialDataIndex = 10;
-            int headerLength = 1;
             if (serializeData.ContainsKey((byte)0))
             {
                 remoteLevelPrefix = (short)serializeData[(byte)0];
-                headerLength = 2;
             }
             var s = initialDataIndex;
 
@@ -2033,156 +1861,28 @@ namespace Gj.Galaxy.Logic
             {
                 var result = serializeData.TryGetValue(s, out data);
                 if (!result) break;
-                OnSerializeRead(data as object[], sendId, remoteLevelPrefix);
+                var d = data as object[];
+
+                int entityId = (int)d[NetworkEntity.SyncViewId];
+                int creatorId = (int)d[NetworkEntity.SyncCreatorId];
+                Debug.Log("serialize:" + creatorId + ',' + entityId);
+                NetworkEntity entity = GetEntity(creatorId, entityId);
+                if (entity == null)
+                {
+                    Debug.LogWarning("Received OnSerialization for view ID " + entity + ". We have no such NetworkEntity! Ignored this if you're leaving a room. State: " + PeerClient.connected);
+                    return;
+                }
+
+                // SetReceiving filtering
+                if (entity.group != 0 && !allowedReceivingGroups.Contains(entity.group))
+                {
+                    return; // Ignore group
+                }
+                entity.OnSerializeRead(readStream, Room.GetPlayerWithId(sendId), d, remoteLevelPrefix);
                 s++;
             } while (true);
         }
 
-        private void OnSerializeRead(object[] data, int sendId, short correctPrefix)
-        {
-            // read view ID from key (byte)0: a int-array (PUN 1.17++)
-            int entityId = (int)data[SyncViewId];
-            int creatorId = (int)data[SyncCreatorId];
-            NetworkEntity entity = GetEntity(creatorId, entityId);
-            if (entity == null)
-            {
-                Debug.LogWarning("Received OnSerialization for view ID " + entity + ". We have no such NetworkEntity! Ignored this if you're leaving a room. State: " + PeerClient.connected);
-                return;
-            }
-
-            if (entity.prefix > 0 && correctPrefix != entity.prefix)
-            {
-                Debug.LogError("Received OnSerialization for view ID " + entity + " with prefix " + correctPrefix + ". Our prefix is " + entity.prefix);
-                return;
-            }
-
-            // SetReceiving filtering
-            if (entity.group != 0 && !allowedReceivingGroups.Contains(entity.group))
-            {
-                return; // Ignore group
-            }
-
-            if (entity.synchronization == EntitySynchronization.Reliable)
-            {
-                object[] uncompressed = this.DeltaCompressionRead(entity.lastOnSerializeDataReceived, data);
-                //LogObjectArray(uncompressed,"uncompressed ");
-                if (uncompressed == null)
-                {
-                    // Skip this packet as we haven't got received complete-copy of this view yet.
-                    if (PeerClient.logLevel >= LogLevel.Info)
-                    {
-                        Debug.Log("Skipping packet for " + entity.name + " [" + entity.entityId + "] as we haven't received a full packet for delta compression yet. This is OK if it happens for the first few frames after joining a game.");
-                    }
-                    return;
-                }
-
-                // store last received values (uncompressed) for delta-compression usage
-                entity.lastOnSerializeDataReceived = uncompressed;
-                data = uncompressed;
-            }
-
-            this.readStream.SetReadStream(data, 3);
-            MessageInfo info = new MessageInfo(Room.GetPlayerWithId(creatorId), entity);
-
-            entity.Deserialize(this.readStream, info);
-        }
-
-        private object[] DeltaCompressionWrite(object[] previousContent, object[] currentContent)
-        {
-            if (currentContent == null || previousContent == null || previousContent.Length != currentContent.Length)
-            {
-                return currentContent;  // the current data needs to be sent (which might be null)
-            }
-
-            if (currentContent.Length <= SyncFirstValue)
-            {
-                return null;  // this send doesn't contain values (except the "headers"), so it's not being sent
-            }
-
-            object[] compressedContent = previousContent;   // the previous content is no longer needed, once we compared the values!
-            compressedContent[SyncCompressed] = false;
-            int compressedValues = 0;
-
-            Queue<int> valuesThatAreChangedToNull = null;
-            for (int index = SyncFirstValue; index < currentContent.Length; index++)
-            {
-                object newObj = currentContent[index];
-                object oldObj = previousContent[index];
-                if (AlmostEquals(newObj, oldObj))
-                {
-                    // compress (by using null, instead of value, which is same as before)
-                    compressedValues++;
-                    compressedContent[index] = null;
-                }
-                else
-                {
-                    compressedContent[index] = newObj;
-
-                    // value changed, we don't replace it with null
-                    // new value is null (like a compressed value): we have to mark it so it STAYS null instead of being replaced with previous value
-                    if (newObj == null)
-                    {
-                        if (valuesThatAreChangedToNull == null)
-                        {
-                            valuesThatAreChangedToNull = new Queue<int>(currentContent.Length);
-                        }
-                        valuesThatAreChangedToNull.Enqueue(index);
-                    }
-                }
-            }
-
-            // Only send the list of compressed fields if we actually compressed 1 or more fields.
-            if (compressedValues > 0)
-            {
-                if (compressedValues == currentContent.Length - SyncFirstValue)
-                {
-                    // all values are compressed to null, we have nothing to send
-                    return null;
-                }
-
-                compressedContent[SyncCompressed] = true;
-                if (valuesThatAreChangedToNull != null)
-                {
-                    compressedContent[SyncNullValues] = valuesThatAreChangedToNull.ToArray(); // data that is actually null (not just cause we didn't want to send it)
-                }
-            }
-
-            compressedContent[SyncViewId] = currentContent[SyncViewId];
-            return compressedContent;    // some data was compressed but we need to send something
-        }
-
-        private object[] DeltaCompressionRead(object[] lastOnSerializeDataReceived, object[] incomingData)
-        {
-            if ((bool)incomingData[SyncCompressed] == false)
-            {
-                // index 1 marks "compressed" as being true.
-                return incomingData;
-            }
-
-            // Compression was applied (as data[1] == true)
-            // we need a previous "full" list of values to restore values that are null in this msg. else, ignore this
-            if (lastOnSerializeDataReceived == null)
-            {
-                return null;
-            }
-
-            int[] indexesThatAreChangedToNull = incomingData[(byte)2] as int[];
-            for (int index = SyncFirstValue; index < incomingData.Length; index++)
-            {
-                if (indexesThatAreChangedToNull != null && indexesThatAreChangedToNull.Contains(index))
-                {
-                    continue;   // if a value was set to null in this update, we don't need to fetch it from an earlier update
-                }
-                if (incomingData[index] == null)
-                {
-                    // we replace null values in this received msg unless a index is in the "changed to null" list
-                    object lastValue = lastOnSerializeDataReceived[index];
-                    incomingData[index] = lastValue;
-                }
-            }
-
-            return incomingData;
-        }
         #endregion
 
         #region scene
@@ -2333,87 +2033,5 @@ namespace Gj.Galaxy.Logic
             return result;
         }
 
-        private static bool AlmostEquals(object[] lastData, object[] currentContent)
-        {
-            if (lastData == null && currentContent == null)
-            {
-                return true;
-            }
-
-            if (lastData == null || currentContent == null || (lastData.Length != currentContent.Length))
-            {
-                return false;
-            }
-
-            for (int index = 0; index < currentContent.Length; index++)
-            {
-                object newObj = currentContent[index];
-                object oldObj = lastData[index];
-                if (!AlmostEquals(newObj, oldObj))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Returns true if both objects are almost identical.
-        /// Used to check whether two objects are similar enough to skip an update.
-        /// </summary>
-        private static bool AlmostEquals(object one, object two)
-        {
-            if (one == null || two == null)
-            {
-                return one == null && two == null;
-            }
-
-            if (!one.Equals(two))
-            {
-                // if A is not B, lets check if A is almost B
-                if (one is Vector3)
-                {
-                    Vector3 a = (Vector3)one;
-                    Vector3 b = (Vector3)two;
-                    if (a.AlmostEquals(b, PeerClient.precisionForVectorSynchronization))
-                    {
-                        return true;
-                    }
-                }
-                else if (one is Vector2)
-                {
-                    Vector2 a = (Vector2)one;
-                    Vector2 b = (Vector2)two;
-                    if (a.AlmostEquals(b, PeerClient.precisionForVectorSynchronization))
-                    {
-                        return true;
-                    }
-                }
-                else if (one is Quaternion)
-                {
-                    Quaternion a = (Quaternion)one;
-                    Quaternion b = (Quaternion)two;
-                    if (a.AlmostEquals(b, PeerClient.precisionForQuaternionSynchronization))
-                    {
-                        return true;
-                    }
-                }
-                else if (one is float)
-                {
-                    float a = (float)one;
-                    float b = (float)two;
-                    if (a.AlmostEquals(b, PeerClient.precisionForFloatSynchronization))
-                    {
-                        return true;
-                    }
-                }
-
-                // one does not equal two
-                return false;
-            }
-
-            return true;
-        }
     }
 }
