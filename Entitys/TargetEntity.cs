@@ -28,9 +28,15 @@ namespace Gj
 
         public TargetEntity Init()
         {
+            return Init(true);
+        }
+
+        public TargetEntity Init(bool sync)
+        {
             BefortInit();
             Appear();
             AfterInit();
+            if (sync) SyncInit();
             return this;
         }
 
@@ -112,9 +118,37 @@ namespace Gj
             }
         }
 
-        protected virtual void Die()
+        public void Die()
         {
-            Disappear();
+            Die(true);
+        }
+
+        public void Die(bool sync)
+        {
+            float time = BeforeDie();
+            if (sync) SyncDestroy();
+            Invoke("Disappear", time);
+        }
+
+        protected virtual float BeforeDie()
+        {
+            return 0;
+        }
+
+        public void Command(string type, string category, float value)
+        {
+            Command(type, category, value, true);
+        }
+
+        public void Command(string type, string category, float value, bool sync)
+        {
+            if (sync) SyncDestroy();
+            ExecCommand(type, category, value);
+        }
+
+        protected virtual void ExecCommand(string type, string category, float value)
+        {
+            
         }
 
         protected virtual void SkillEffect(SkillInfo skillInfo) { }

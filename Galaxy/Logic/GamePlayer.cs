@@ -9,10 +9,10 @@ namespace Gj.Galaxy.Logic{
     {
         public int Id
         {
-            get { return this.actorId; }
+            get { return this.id; }
         }
 
-        internal int actorId = -1;
+        internal int id = -1;
 
         public string UserId { get; internal set; }
 
@@ -46,11 +46,11 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public GamePlayer(bool isLocal, int actorId, string userId)
+        public GamePlayer(bool isLocal, int id, string userId)
         {
             this.CustomProperties = new Dictionary<string, object>();
             this.IsLocal = isLocal;
-            this.actorId = actorId;
+            this.id = id;
             this.UserId = userId;
         }
 
@@ -70,16 +70,16 @@ namespace Gj.Galaxy.Logic{
             return this.Id;
         }
 
-        internal void InternalChangeLocalId(int newId)
-        {
-            if (!this.IsLocal)
-            {
-                Debug.LogError("ERROR You should never change PhotonPlayer IDs!");
-                return;
-            }
+        //internal void InternalChangeLocalId(int newId)
+        //{
+        //    if (!this.IsLocal)
+        //    {
+        //        Debug.LogError("ERROR You should never change PhotonPlayer IDs!");
+        //        return;
+        //    }
 
-            this.actorId = newId;
-        }
+        //    this.id = newId;
+        //}
 
         internal void InternalProperties(Dictionary<string, object> properties)
         {
@@ -145,11 +145,11 @@ namespace Gj.Galaxy.Logic{
         /// </summary>
         public override string ToString()
         {
-            return string.Format("'{0}'{1}{2}", this.actorId, this.IsInactive ? " (inactive)" : " ", GameConnect.isMasterClient ? "(master)" : "");
+            return string.Format("'{0}'{1}{2}", this.id, this.IsInactive ? " (inactive)" : " ", GameConnect.isMasterClient ? "(master)" : "");
         }
 
         /// <summary>
-        /// String summary of the PhotonPlayer: player.ID, name and all custom properties of this user.
+        /// String summary of the NetworkPlayer: player.ID, name and all custom properties of this user.
         /// </summary>
         /// <remarks>
         /// Use with care and not every frame!
@@ -157,7 +157,7 @@ namespace Gj.Galaxy.Logic{
         /// </remarks>
         public string ToStringFull()
         {
-            return string.Format("#{0:00} '{1}'{2} {3}", this.Id, this.actorId, this.IsInactive ? " (inactive)" : "", this.CustomProperties.ToStringFull());
+            return string.Format("#{0:00} '{1}'{2} {3}", this.Id, this.id, this.IsInactive ? " (inactive)" : "", this.CustomProperties.ToStringFull());
         }
 
     }

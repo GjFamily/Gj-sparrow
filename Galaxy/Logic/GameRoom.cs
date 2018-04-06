@@ -12,23 +12,23 @@ namespace Gj.Galaxy.Logic{
         private GameRoomListener Delegate;
         public int MasterClientId = 0;
         public int LocalClientId = 0;
-        public Dictionary<int, GamePlayer> mActors = new Dictionary<int, GamePlayer>();
+        public Dictionary<int, GamePlayer> mPlayers = new Dictionary<int, GamePlayer>();
 
         public GamePlayer[] mOtherPlayerListCopy = new GamePlayer[0];
         public GamePlayer[] mPlayerListCopy = new GamePlayer[0];
 
         public Dictionary<string, object> CustomProperties { get; internal set; }
-        public int number;
-        public int initNumber;
+        //public int number;
+        //public int initNumber;
 
-        public int InitProcess
-        {
-            get{
-                if (initNumber == 0) return 0;
-                if (number >= initNumber) return 100;
-                return (initNumber - number) * 100 / initNumber;
-            }
-        }
+        //public int InitProcess
+        //{
+        //    get{
+        //        if (initNumber == 0) return 0;
+        //        if (number >= initNumber) return 100;
+        //        return (initNumber - number) * 100 / initNumber;
+        //    }
+        //}
 
         public GamePlayer localPlayer
         {
@@ -42,7 +42,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return mActors[MasterClientId];
+                return mPlayers[MasterClientId];
             }
         }
 
@@ -58,8 +58,8 @@ namespace Gj.Galaxy.Logic{
         {
             this.Delegate = Delegate;
             var player = new GamePlayer(true, -1, SceneConnect.player.UserId);
-            LocalClientId = -1;
             AddNewPlayer(player);
+            LocalClientId = player.Id;
             this.CustomProperties = new Dictionary<string, object>();
         }
 
@@ -101,66 +101,65 @@ namespace Gj.Galaxy.Logic{
         {
             if (SceneConnect.player == null)
             {
-                Debug.LogWarning(string.Format("LocalPlayer is null or not in mActors! LocalPlayer: {0} mActors==null: {1} newID: {2}", this.localPlayer, this.mActors == null, newID));
+                Debug.LogWarning(string.Format("LocalPlayer is null or not in mPlayers! LocalPlayer: {0} mPlayers==null: {1} newID: {2}", this.localPlayer, this.mPlayers == null, newID));
             }
             GamePlayer player;
-            var result = this.mActors.TryGetValue(LocalClientId, out player);
+            var result = this.mPlayers.TryGetValue(LocalClientId, out player);
             if(result)
             {
-                this.mActors.Remove(LocalClientId);
+                this.mPlayers.Remove(LocalClientId);
             }
-            player.actorId = newID;
+            player.id = newID;
 
             LocalClientId = newID;
-            this.mActors[LocalClientId] = player;
+            this.mPlayers[LocalClientId] = player;
             this.RebuildPlayerListCopies();
         }
 
-        internal void CheckMasterClient(int leavingPlayerId)
-        {
-            bool currentMasterIsLeaving = this.MasterClientId == leavingPlayerId;
-            bool someoneIsLeaving = leavingPlayerId > 0;
+        //internal void CheckMasterClient(int leavingPlayerId)
+        //{
+        //    bool currentMasterIsLeaving = this.MasterClientId == leavingPlayerId;
+        //    bool someoneIsLeaving = leavingPlayerId > 0;
 
-            // return early if SOME player (leavingId > 0) is leaving AND it's NOT the current master
-            if (someoneIsLeaving && !currentMasterIsLeaving)
-            {
-                return;
-            }
+        //    // return early if SOME player (leavingId > 0) is leaving AND it's NOT the current master
+        //    if (someoneIsLeaving && !currentMasterIsLeaving)
+        //    {
+        //        return;
+        //    }
 
-            this.MasterClientId = ReturnLowestPlayerId(this.mActors.Values.GetEnumerator(), leavingPlayerId);
-        }
+        //    this.MasterClientId = ReturnLowestPlayerId(this.mActors.Values.GetEnumerator(), leavingPlayerId);
+        //}
 
-        private static int ReturnLowestPlayerId(IEnumerator<GamePlayer> players, int playerIdToIgnore)
-        {
-            if (players == null || !players.MoveNext())
-            {
-                return -1;
-            }
+        //private static int ReturnLowestPlayerId(IEnumerator<GamePlayer> players, int playerIdToIgnore)
+        //{
+        //    if (players == null || !players.MoveNext())
+        //    {
+        //        return -1;
+        //    }
 
-            int lowestActorNumber = Int32.MaxValue;
-            do
-            {
-                GamePlayer player = players.Current;
-                if (player.Id == playerIdToIgnore)
-                {
-                    continue;
-                }
+        //    int lowestActorNumber = Int32.MaxValue;
+        //    do
+        //    {
+        //        GamePlayer player = players.Current;
+        //        if (player.Id == playerIdToIgnore)
+        //        {
+        //            continue;
+        //        }
 
-                if (player.Id < lowestActorNumber)
-                {
-                    lowestActorNumber = player.Id;
-                }
-            } while (players.MoveNext());
+        //        if (player.Id < lowestActorNumber)
+        //        {
+        //            lowestActorNumber = player.Id;
+        //        }
+        //    } while (players.MoveNext());
 
-            return lowestActorNumber;
-        }
+        //    return lowestActorNumber;
+        //}
 
         protected internal GamePlayer GetPlayerWithId(int number)
         {
-            if (this.mActors == null) return null;
-
+            if (this.mPlayers == null) return null;
             GamePlayer player = null;
-            this.mActors.TryGetValue(number, out player);
+            this.mPlayers.TryGetValue(number, out player);
             return player;
         }
 
@@ -174,25 +173,25 @@ namespace Gj.Galaxy.Logic{
             return null;
         }
 
-        internal void SwitchMaster(int actor){
-            GamePlayer player = GetPlayerWithId(actor);
+        internal void SwitchMaster(int playerId){
+            GamePlayer player = GetPlayerWithId(playerId);
             if(player != null)
-                this.MasterClientId = actor;
+                this.MasterClientId = playerId;
         }
 
-        internal void OnEnter(int localActor)
+        internal void OnEnter(int localId)
         {
-            ChangeLocalId(localActor);
+            ChangeLocalId(localId);
             Delegate.OnEnter();
         }
 
-        internal void OnLeave(int actorId)
+        internal void OnLeave(int playerId)
         {
             // actorNr is fetched out of event
-            GamePlayer player = GetPlayerWithId(actorId);
+            GamePlayer player = GetPlayerWithId(playerId);
             if (player == null)
             {
-                Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", actorId));
+                Debug.LogError(String.Format("Received event Leave for unknown player ID: {0}", playerId));
                 return;
             }
 
@@ -251,12 +250,12 @@ namespace Gj.Galaxy.Logic{
             player.InternalProperties(playerProperties);
         }
 
-        internal void OnReady(int actorId)
+        internal void OnReady(int playerId)
         {
-            GamePlayer player = GetPlayerWithId(actorId);
+            GamePlayer player = GetPlayerWithId(playerId);
             if (player == null)
             {
-                Debug.LogError(String.Format("Received event Ready for unknown player ID: {0}", actorId));
+                Debug.LogError(String.Format("Received event Ready for unknown player ID: {0}", playerId));
                 return;
             }
             player.IsReady = true;
@@ -265,7 +264,7 @@ namespace Gj.Galaxy.Logic{
 
         internal void OnReadyAll()
         {
-            var enumerator = this.mActors.Values.GetEnumerator();
+            var enumerator = this.mPlayers.Values.GetEnumerator();
             while(enumerator.MoveNext()){
                 GamePlayer player = enumerator.Current;
                 player.IsReady = true;
@@ -275,32 +274,32 @@ namespace Gj.Galaxy.Logic{
             Delegate.OnReadyAll();
         }
 
-        internal void OnInit(int actorId, int number)
+        internal void OnInit(int sendId, int number)
         {
-            if(actorId == 0){
-                this.initNumber = number;
-                return;
-            }
-            GamePlayer player = GetPlayerWithId(actorId);
+            //if(actorId == 0){
+            //    this.initNumber = number;
+            //    return;
+            //}
+            GamePlayer player = GetPlayerWithId(sendId);
             if (player == null)
             {
-                Debug.LogError(String.Format("Received event Init for unknown player ID: {0}", actorId));
+                Debug.LogError(String.Format("Received event Init for unknown player ID: {0}", sendId));
                 return;
             }
             player.initNumber = number;
 
         }
 
-        internal void OnInstance(int actorId)
+        internal void OnInstance(int sendId)
         {
-            if(actorId == 0){
-                this.number++;
-                return;
-            }
-            GamePlayer player = GetPlayerWithId(actorId);
+            //if(actorId == 0){
+            //    this.number++;
+            //    return;
+            //}
+            GamePlayer player = GetPlayerWithId(sendId);
             if (player == null)
             {
-                Debug.LogError(String.Format("Received event Instance for unknown player ID: {0}", actorId));
+                Debug.LogError(String.Format("Received event Instance for unknown player ID: {0}", sendId));
                 return;
             }
             player.number++;
@@ -308,9 +307,9 @@ namespace Gj.Galaxy.Logic{
 
         internal void AddNewPlayer(GamePlayer player)
         {
-            if (!this.mActors.ContainsKey(player.Id))
+            if (!this.mPlayers.ContainsKey(player.Id))
             {
-                this.mActors[player.Id] = player;
+                this.mPlayers[player.Id] = player;
                 RebuildPlayerListCopies();
             }
             else
@@ -321,7 +320,7 @@ namespace Gj.Galaxy.Logic{
 
         internal void RemovePlayer(int Id, GamePlayer player)
         {
-            this.mActors.Remove(Id);
+            this.mPlayers.Remove(Id);
             if (!player.IsLocal)
             {
                 RebuildPlayerListCopies();
@@ -330,8 +329,8 @@ namespace Gj.Galaxy.Logic{
 
         private void RebuildPlayerListCopies()
         {
-            this.mPlayerListCopy = new GamePlayer[this.mActors.Count];
-            this.mActors.Values.CopyTo(this.mPlayerListCopy, 0);
+            this.mPlayerListCopy = new GamePlayer[this.mPlayers.Count];
+            this.mPlayers.Values.CopyTo(this.mPlayerListCopy, 0);
 
             List<GamePlayer> otherP = new List<GamePlayer>();
             for (int i = 0; i < this.mPlayerListCopy.Length; i++)
@@ -346,14 +345,14 @@ namespace Gj.Galaxy.Logic{
             this.mOtherPlayerListCopy = otherP.ToArray();
         }
 
-        public GamePlayer Find(int ID)
+        public GamePlayer Find(int Id)
         {
-            return GetPlayerWithId(ID);
+            return GetPlayerWithId(Id);
         }
 
-        public GamePlayer Get(int id)
+        public GamePlayer Get(int Id)
         {
-            return Find(id);
+            return Find(Id);
         }
 
         public GamePlayer GetNext()
@@ -372,12 +371,12 @@ namespace Gj.Galaxy.Logic{
 
         public GamePlayer GetNextFor(int currentPlayerId)
         {
-            if (mActors.Count < 2)
+            if (mPlayers.Count < 2)
             {
                 return null;
             }
 
-            Dictionary<int, GamePlayer> players = mActors;
+            Dictionary<int, GamePlayer> players = mPlayers;
             int nextHigherId = int.MaxValue;    // we look for the next higher ID
             int lowestId = currentPlayerId;     // if we are the player with the highest ID, there is no higher and we return to the lowest player's id
 
@@ -396,21 +395,21 @@ namespace Gj.Galaxy.Logic{
             return (nextHigherId != int.MaxValue) ? players[nextHigherId] : players[lowestId];
         }
 
-        internal void UpdatedActorList(int[] actorsInRoom)
-        {
-            for (int i = 0; i < actorsInRoom.Length; i++)
-            {
-                int actorNrToCheck = actorsInRoom[i];
-                if (SceneConnect.player.Id != actorNrToCheck && !this.mActors.ContainsKey(actorNrToCheck))
-                {
-                    this.AddNewPlayer(new GamePlayer(false, actorNrToCheck, string.Empty));
-                }
-            }
-        }
+        //internal void UpdatedActorList(int[] actorsInRoom)
+        //{
+        //    for (int i = 0; i < actorsInRoom.Length; i++)
+        //    {
+        //        int actorNrToCheck = actorsInRoom[i];
+        //        if (SceneConnect.player.Id != actorNrToCheck && !this.mPlayers.ContainsKey(actorNrToCheck))
+        //        {
+        //            this.AddNewPlayer(new GamePlayer(false, actorNrToCheck, string.Empty));
+        //        }
+        //    }
+        //}
 
         internal void Clear()
         {
-            mActors.Clear();
+            mPlayers.Clear();
             localPlayer.initNumber = 0;
             localPlayer.number = 0;
         }
