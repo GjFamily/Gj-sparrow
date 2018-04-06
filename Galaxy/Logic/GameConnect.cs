@@ -63,7 +63,7 @@ namespace Gj.Galaxy.Logic
         void OnStart();
         void OnLeaveGame();
         void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer);
-        GameObject OnInstance(string prefabName, GamePlayer player);
+        GameObject OnInstance(string prefabName, GamePlayer player, object data);
         void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value);
         void OnDestroyInstance(GameObject gameObject, GamePlayer player);
     }
@@ -88,7 +88,7 @@ namespace Gj.Galaxy.Logic
         public delegate void OnLeaveGameDelegate();
         public delegate void OnOwnershipDelegate(NetworkEntity entity, GamePlayer oldPlayer);
         public delegate void OnCommandDelegate(NetworkEntity entity, GamePlayer player, string type, string category, float value);
-        public delegate GameObject OnInstanceDelegate(string prefabName, GamePlayer player);
+        public delegate GameObject OnInstanceDelegate(string prefabName, GamePlayer player, object data);
         public delegate void OnDestroyInstanceDelegate(GameObject gameObject, GamePlayer player);
 
         public OnFinishDelegate OnFinish;
@@ -124,9 +124,9 @@ namespace Gj.Galaxy.Logic
             if (OnCommand != null) OnCommand(entity, player, type, category, value);
         }
 
-        GameObject GameListener.OnInstance(string prefabName, GamePlayer player)
+        GameObject GameListener.OnInstance(string prefabName, GamePlayer player, object data)
         {
-            if (OnInstance != null) return OnInstance(prefabName, player);
+            if (OnInstance != null) return OnInstance(prefabName, player, data);
             return null;
         }
 
@@ -543,7 +543,7 @@ namespace Gj.Galaxy.Logic
             n.Emit(GameEvent.Members, null);
         }
 
-        public static void RelationInstance(string prefabName, InstanceRelation relation, GameObject prefabGo, byte group, object[] data)
+        public static void RelationInstance(string prefabName, InstanceRelation relation, GameObject prefabGo, byte group, object data)
         {
             if (!inRoom)
             {
@@ -770,6 +770,8 @@ namespace Gj.Galaxy.Logic
 
         static internal GameStage stage = GameStage.None;
 
+        private readonly Dictionary<int, Dictionary<int, List<object[]>>> waitInstanceData = new Dictionary<int, Dictionary<int, List<object[]>>>();
+
         //public static bool UsePrefabCache = true;
 
         //internal IPunPrefabPool ObjectPool;
@@ -790,7 +792,7 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        internal Dictionary<byte, object> EmitInstantiate(int creatorId, string prefabName, Vector3 position, Quaternion rotation, byte group, int[] viewIDs, object[] data, bool isGlobalObject)
+        internal Dictionary<byte, object> EmitInstantiate(int creatorId, string prefabName, Vector3 position, Quaternion rotation, byte group, int[] viewIDs, object data, bool isGlobalObject)
         {
             // first viewID is now also the gameobject's instantiateId
             int instantiateId = viewIDs[0];
@@ -830,10 +832,10 @@ namespace Gj.Galaxy.Logic
                 instantiateEvent[(byte)7] = viewIDs;
             }
 
-            //if (data != null)
-            //{
-            //    instantiateEvent[(byte)8] = data;
-            //}
+            if (data != null)
+            {
+                instantiateEvent[(byte)8] = data;
+            }
 
             EmitSync(SyncEvent.Instance, Room.LocalClientId, instantiateEvent);
             return instantiateEvent;
@@ -860,8 +862,7 @@ namespace Gj.Galaxy.Logic
                     Debug.LogWarning("Ownership mode == fixed. Ignoring request.");
                     break;
                 case OwnershipOption.Request:
-                    entity.OwnerShipWasTransfered = true;
-                    entity.ownerId = newPlayer.Id;
+                    entity.OnTransferOwnership(newOwnerId);
                     Delegate.OnOwnership(entity, oldPlayer);
                     break;
                 default:
@@ -1120,9 +1121,9 @@ namespace Gj.Galaxy.Logic
             //int serverTime = (int)evData[(byte)6];
             int instantiationId = (int)evData[(byte)1];
             int creatorId = (int)evData[(byte)2];
-            Debug.Log("instance:" + creatorId + "," + instantiationId);
+            //Debug.Log("instance:" + creatorId + "," + instantiationId);
             // 负数是该用户创建的场景物体
-            var player = Room.GetPlayerWithId(creatorId);
+            var player = Room.GetPlayerWithId(sendId);
 
             Vector3 position;
             if (evData.ContainsKey((byte)3))
@@ -1169,15 +1170,15 @@ namespace Gj.Galaxy.Logic
                 viewsIDs = new int[1] { instantiationId };
             }
 
-            //object[] incomingInstantiationData;
-            //if (evData.ContainsKey((byte)8))
-            //{
-            //    incomingInstantiationData = (object[])evData[(byte)8];
-            //}
-            //else
-            //{
-            //    incomingInstantiationData = null;
-            //}
+            object incomingInstantiationData;
+            if (evData.ContainsKey((byte)8))
+            {
+                incomingInstantiationData = (object)evData[(byte)8];
+            }
+            else
+            {
+                incomingInstantiationData = null;
+            }
 
             // SetReceiving filtering
             if (group != 0 && !allowedReceivingGroups.Contains(group))
@@ -1198,7 +1199,8 @@ namespace Gj.Galaxy.Logic
                 //        PrefabCache.Add(prefabName, resourceGameObject);
                 //    }
                 //}
-                go = Delegate.OnInstance(prefabName, player);
+                // 如果是负号玩家，则代表是场景物体，玩家为空
+                go = Delegate.OnInstance(prefabName, Room.GetPlayerWithId(creatorId), incomingInstantiationData);
                 if (go == null)
                 {
                     Debug.LogError("error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
@@ -1218,6 +1220,9 @@ namespace Gj.Galaxy.Logic
             {
                 throw new Exception("Error in Instantiation! The resource's Entity count is not the same as in incoming data.");
             }
+            Dictionary<int, List<object[]>> waitList;
+            List<object[]> waitData;
+            waitInstanceData.TryGetValue(creatorId, out waitList);
             //Debug.Log("OnInstance:" + creatorId+","+instantiationId);
             for (int i = 0; i < viewsIDs.Length; i++)
             {
@@ -1229,6 +1234,13 @@ namespace Gj.Galaxy.Logic
                 resourcePVs[i].creatorId = creatorId;
                 // 注册entity
                 resourcePVs[i].entityId = viewsIDs[i];
+
+                // 延后执行
+                if(waitList != null && waitList.TryGetValue(viewsIDs[i], out waitData))
+                {
+                    waitData.ForEach((object[] obj) => resourcePVs[i].OnSerializeRead(readStream, player, obj, objLevelPrefix));
+                    waitList.Remove(viewsIDs[i]);
+                }
             }
 
             //this.StoreInstantiationData(instantiationId, incomingInstantiationData);
@@ -1865,11 +1877,31 @@ namespace Gj.Galaxy.Logic
 
                 int entityId = (int)d[NetworkEntity.SyncViewId];
                 int creatorId = (int)d[NetworkEntity.SyncCreatorId];
-                Debug.Log("serialize:" + creatorId + ',' + entityId);
+                //Debug.Log("serialize:" + creatorId + ',' + entityId);
                 NetworkEntity entity = GetEntity(creatorId, entityId);
                 if (entity == null)
                 {
-                    Debug.LogWarning("Received OnSerialization for view ID " + entity + ". We have no such NetworkEntity! Ignored this if you're leaving a room. State: " + PeerClient.connected);
+                    if(Room.GetPlayerWithId(Math.Abs(creatorId)) == null)
+                    {
+                        Debug.LogWarning("Received OnSerialization for view ID " + entityId + ". We have no such NetworkEntity! Ignored this if you're leaving a room. State: " + PeerClient.connected);
+                    }
+                    else
+                    {
+                        Dictionary<int, List<object[]>> map;
+                        List<object[]> list;
+                        if(!waitInstanceData.TryGetValue(creatorId, out map))
+                        {
+                            map = new Dictionary<int, List<object[]>>();
+                            waitInstanceData.Add(creatorId, map);
+                        }
+                        if (!map.TryGetValue(entityId, out list))
+                        {
+                            list = new List<object[]>();
+                            map.Add(entityId, list);
+                        }
+                        list.Add(d);
+                        Debug.Log("Wait Received Instance" + entityId);
+                    }
                     return;
                 }
 

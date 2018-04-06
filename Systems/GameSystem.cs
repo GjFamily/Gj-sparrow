@@ -67,7 +67,7 @@ namespace Gj
             Debug.Log("[ SOCKET ] Finish Game");
         }
 
-        public GameObject OnInstance(string prefabName, GamePlayer player)
+        public GameObject OnInstance(string prefabName, GamePlayer player, object data)
         {
             TargetEntity targetEntity = MakeTarget(prefabName);
             targetEntity.Init(false);

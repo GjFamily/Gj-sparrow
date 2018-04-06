@@ -49,6 +49,11 @@ namespace Gj
 
         }
 
+        public object GetAll()
+        {
+            return "";
+        }
+
         public float GetAttribute(string key)
         {
             return attributeMap.ContainsKey(key) ? attributeMap[key] : 0;

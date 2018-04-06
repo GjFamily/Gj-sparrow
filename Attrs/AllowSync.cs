@@ -103,7 +103,8 @@ namespace Gj
                     Debug.Log("other player");
                 }
             }
-            GameConnect.RelationInstance(o.name, relation, o, 0, null);
+
+            GameConnect.RelationInstance(o.name, relation, o, 0, info.GetAll());
         }
 
         public void Destroy()
