@@ -84,9 +84,9 @@ namespace Gj
             GetComponent<AttackPart>().CancelCast();
         }
 
-        public void Cast()
+        public void OkCast()
         {
-            GetComponent<AttackPart>().Cast();
+            GetComponent<AttackPart>().OkCast();
         }
 
         public void Cast(string skillName)

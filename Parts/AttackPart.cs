@@ -81,7 +81,7 @@ namespace Gj
             readyCast = ready;
         }
 
-        public void Cast()
+        public void OkCast()
         {
             if (waitCast)
             {
