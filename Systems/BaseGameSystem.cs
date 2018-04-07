@@ -5,7 +5,7 @@ using Gj.Galaxy.Logic;
 
 namespace Gj
 {
-    public class GameSystem : BaseSystem, GameListener, GameRoomListener
+    public class BaseGameSystem : BaseSystem, GameListener, GameRoomListener
     {
         [SerializeField]
         private GameObject container;
