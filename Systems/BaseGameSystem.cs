@@ -5,7 +5,7 @@ using Gj.Galaxy.Logic;
 
 namespace Gj
 {
-    public class BaseGameSystem : BaseSystem, GameListener, GameRoomListener
+    public class BaseGameSystem : BaseSystem, GameListener, GameReadyListener
     {
         [SerializeField]
         private GameObject container;
@@ -96,25 +96,9 @@ namespace Gj
             Debug.Log("[ SOCKET ] Game start");
         }
 
-        public void OnEnter()
-        {
-            Debug.Log("[ SOCKET ] Room Enter");
-            GameConnect.ReadyGame();
-        }
-
         public virtual void OnFail(string reason)
         {
             Debug.Log("[ SOCKET ] Game fail");
-        }
-
-        public virtual void OnRoomChange(Dictionary<string, object> props)
-        {
-            Debug.Log("[ SOCKET ] Room Change");
-        }
-
-        public virtual void OnPlayerJoin(GamePlayer player)
-        {
-            Debug.Log("[ SOCKET ] Player join");
         }
 
         public virtual void OnPlayerLeave(GamePlayer player)

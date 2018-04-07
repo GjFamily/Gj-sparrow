@@ -43,9 +43,9 @@ namespace Gj.Galaxy.Logic
     {
         None,
         Connect,
+        Wait,
         Join,
         Ready,
-        ReadyAll,
         Init,
         Start,
         Finish
@@ -57,23 +57,19 @@ namespace Gj.Galaxy.Logic
         Scene,
         OtherPlayer
     }
-    public interface GameListener
-    {
-        void OnFinish(bool exit, Dictionary<string, object> result);
-        void OnStart();
-        void OnLeaveGame();
-        void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer);
-        GameObject OnInstance(string prefabName, GamePlayer player, object data);
-        void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value);
-        void OnDestroyInstance(GameObject gameObject, GamePlayer player);
-    }
-
-    public interface GameRoomListener
+    public interface GameBeforeListener
     {
         void OnEnter();
-        void OnFail(string reason);
-        void OnRoomChange(Dictionary<string, object> props);
         void OnPlayerJoin(GamePlayer player);
+        void OnPlayerLeave(GamePlayer player);
+        void OnRoomChange(Dictionary<string, object> props);
+        void OnLeaveGame();
+    }
+
+    public interface GameReadyListener
+    {
+        void OnStart();
+        void OnLeaveGame();
         void OnPlayerLeave(GamePlayer player);
         void OnPlayerRejoin(GamePlayer player);
         void OnPlayerChange(GamePlayer player, Dictionary<string, object> props);
@@ -81,7 +77,22 @@ namespace Gj.Galaxy.Logic
         void OnReadyAll();
     }
 
-    public class GameDelegate : GameListener
+    public interface GameListener
+    {
+        void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer);
+        GameObject OnInstance(string prefabName, GamePlayer player, object data);
+        void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value);
+        void OnDestroyInstance(GameObject gameObject, GamePlayer player);
+
+        void OnFinish(bool exit, Dictionary<string, object> result);
+        void OnLeaveGame();
+        void OnFail(string reason);
+        void OnPlayerLeave(GamePlayer player);
+        void OnPlayerRejoin(GamePlayer player);
+        void OnPlayerChange(GamePlayer player, Dictionary<string, object> props);
+    }
+
+    public class GameDelegate : GameBeforeListener, GameReadyListener, GameListener
     {
         public delegate void OnFinishDelegate(bool exit, Dictionary<string, object> result);
         public delegate void OnStartDelegate();
@@ -91,52 +102,6 @@ namespace Gj.Galaxy.Logic
         public delegate GameObject OnInstanceDelegate(string prefabName, GamePlayer player, object data);
         public delegate void OnDestroyInstanceDelegate(GameObject gameObject, GamePlayer player);
 
-        public OnFinishDelegate OnFinish;
-        public OnStartDelegate OnStart;
-        public OnLeaveGameDelegate OnLeaveGame;
-        public OnOwnershipDelegate OnOwnership;
-        public OnCommandDelegate OnCommand;
-        public OnInstanceDelegate OnInstance;
-        public OnDestroyInstanceDelegate OnDestroyInstance;
-
-        void GameListener.OnFinish(bool exit, Dictionary<string, object> result)
-        {
-            if (OnFinish != null) OnFinish(exit, result);
-        }
-
-        void GameListener.OnStart()
-        {
-            if (OnStart != null) OnStart();
-        }
-
-        void GameListener.OnLeaveGame()
-        {
-            if (OnLeaveGame != null) OnLeaveGame();
-        }
-
-        void GameListener.OnOwnership(NetworkEntity entity, GamePlayer oldPlayer)
-        {
-            if (OnOwnership != null) OnOwnership(entity, oldPlayer);
-        }
-
-        void GameListener.OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value)
-        {
-            if (OnCommand != null) OnCommand(entity, player, type, category, value);
-        }
-
-        GameObject GameListener.OnInstance(string prefabName, GamePlayer player, object data)
-        {
-            if (OnInstance != null) return OnInstance(prefabName, player, data);
-            return null;
-        }
-
-        void GameListener.OnDestroyInstance(GameObject gameObject, GamePlayer player)
-        {
-            if (OnDestroyInstance != null) OnDestroyInstance(gameObject, player);
-        }
-    }
-    public class GameRoomDelegate : GameRoomListener
-    {
         public delegate void OnEnterDelegate();
         public delegate void OnFailDelegate(string reason);
         public delegate void OnRoomChangeDelegate(Dictionary<string, object> props);
@@ -147,65 +112,144 @@ namespace Gj.Galaxy.Logic
         public delegate void OnReadyPlayerDelegate(GamePlayer player);
         public delegate void OnReadyAllDelegate();
 
-        public OnEnterDelegate OnEnter;
-        public OnFailDelegate OnFail;
-        public OnRoomChangeDelegate OnRoomChange;
-        public OnPlayerJoinDelegate OnPlayerJoin;
-        public OnPlayerLeaveDelegate OnPlayerLeave;
-        public OnPlayerRejoinDelegate OnPlayerRejoin;
-        public OnPlayerChangeDelegate OnPlayerChange;
-        public OnReadyPlayerDelegate OnReadyPlayer;
-        public OnReadyAllDelegate OnReadyAll;
+        public OnEnterDelegate OnEnterEvent;
+        public OnFailDelegate OnFailEvent;
+        public OnRoomChangeDelegate OnRoomChangeEvent;
+        public OnPlayerChangeDelegate OnPlayerChangeEvent;
+        public OnPlayerJoinDelegate OnPlayerJoinEvent;
+        public OnPlayerLeaveDelegate OnPlayerLeaveEvent;
+        public OnPlayerRejoinDelegate OnPlayerRejoinEvent;
+        public OnReadyPlayerDelegate OnReadyPlayerEvent;
+        public OnReadyAllDelegate OnReadyAllEvent;
 
-        void GameRoomListener.OnEnter()
+        public OnFinishDelegate OnFinishEvent;
+        public OnStartDelegate OnStartEvent;
+        public OnLeaveGameDelegate OnLeaveGameEvent;
+        public OnOwnershipDelegate OnOwnershipEvent;
+        public OnCommandDelegate OnCommandEvent;
+        public OnInstanceDelegate OnInstanceEvent;
+        public OnDestroyInstanceDelegate OnDestroyInstanceEvent;
+
+        internal void BindBefore(GameBeforeListener listener)
         {
-            if (OnEnter != null) OnEnter();
+            OnEnterEvent = listener.OnEnter;
+            OnPlayerJoinEvent = listener.OnPlayerJoin;
+            OnPlayerLeaveEvent = OnPlayerLeave;
+            OnRoomChangeEvent = OnRoomChange;
+            OnLeaveGameEvent = OnLeaveGame;
         }
 
-        void GameRoomListener.OnFail(string reason)
+        internal void BindReady(GameReadyListener listener)
         {
-            if (OnFail != null) OnFail(reason);
+            OnStartEvent = listener.OnStart;
+            OnLeaveGameEvent = listener.OnLeaveGame;
+            OnPlayerLeaveEvent = listener.OnPlayerLeave;
+            OnPlayerRejoinEvent = listener.OnPlayerRejoin;
+            OnPlayerChangeEvent = listener.OnPlayerChange;
+            OnReadyPlayerEvent = listener.OnReadyPlayer;
+            OnReadyAllEvent = listener.OnReadyAll;
         }
 
-        void GameRoomListener.OnRoomChange(Dictionary<string, object> props)
+        internal void BindGame(GameListener listener)
         {
-            if (OnRoomChange != null) OnRoomChange(props);
+            OnOwnershipEvent = listener.OnOwnership;
+            OnInstanceEvent = listener.OnInstance;
+            OnCommandEvent = listener.OnCommand;
+            OnDestroyInstanceEvent = listener.OnDestroyInstance;
+
+            OnFinishEvent = listener.OnFinish;
+            OnLeaveGameEvent = listener.OnLeaveGame;
+            OnFailEvent = listener.OnFail;
+            OnPlayerLeaveEvent = listener.OnPlayerLeave;
+            OnPlayerRejoinEvent = listener.OnPlayerRejoin;
+            OnPlayerChangeEvent = listener.OnPlayerChange;
         }
 
-        void GameRoomListener.OnPlayerJoin(GamePlayer player)
+        public void OnFinish(bool exit, Dictionary<string, object> result)
         {
-            if (OnPlayerJoin != null) OnPlayerJoin(player);
+            if (OnFinishEvent != null) OnFinishEvent(exit, result);
         }
 
-        void GameRoomListener.OnPlayerLeave(GamePlayer player)
+        public void OnStart()
         {
-            if (OnPlayerLeave != null) OnPlayerLeave(player);
+            if (OnStartEvent != null) OnStartEvent();
         }
 
-        void GameRoomListener.OnPlayerRejoin(GamePlayer player)
+        public void OnLeaveGame()
         {
-            if (OnPlayerRejoin != null) OnPlayerRejoin(player);
+            if (OnLeaveGameEvent != null) OnLeaveGameEvent();
         }
 
-        void GameRoomListener.OnPlayerChange(GamePlayer player, Dictionary<string, object> props)
+        public void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer)
         {
-            if (OnPlayerChange != null) OnPlayerChange(player, props);
+            if (OnOwnershipEvent != null) OnOwnershipEvent(entity, oldPlayer);
         }
 
-        void GameRoomListener.OnReadyPlayer(GamePlayer player)
+        public void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value)
         {
-            if (OnReadyPlayer != null) OnReadyPlayer(player);
+            if (OnCommandEvent != null) OnCommandEvent(entity, player, type, category, value);
         }
 
-        void GameRoomListener.OnReadyAll()
+        public GameObject OnInstance(string prefabName, GamePlayer player, object data)
         {
-            if (OnReadyAll != null) OnReadyAll();
+            if (OnInstanceEvent != null) return OnInstanceEvent(prefabName, player, data);
+            return null;
+        }
+
+        public void OnDestroyInstance(GameObject gameObject, GamePlayer player)
+        {
+            if (OnDestroyInstanceEvent != null) OnDestroyInstanceEvent(gameObject, player);
+        }
+
+        public void OnEnter()
+        {
+            if (OnEnterEvent != null) OnEnterEvent();
+        }
+
+        public void OnFail(string reason)
+        {
+            if (OnFailEvent != null) OnFailEvent(reason);
+        }
+
+        public void OnRoomChange(Dictionary<string, object> props)
+        {
+            if (OnRoomChangeEvent != null) OnRoomChangeEvent(props);
+        }
+
+        public void OnPlayerJoin(GamePlayer player)
+        {
+            if (OnPlayerJoinEvent != null) OnPlayerJoinEvent(player);
+        }
+
+        public void OnPlayerLeave(GamePlayer player)
+        {
+            if (OnPlayerLeaveEvent != null) OnPlayerLeaveEvent(player);
+        }
+
+        public void OnPlayerRejoin(GamePlayer player)
+        {
+            if (OnPlayerRejoinEvent != null) OnPlayerRejoinEvent(player);
+        }
+
+        public void OnPlayerChange(GamePlayer player, Dictionary<string, object> props)
+        {
+            if (OnPlayerChangeEvent != null) OnPlayerChangeEvent(player, props);
+        }
+
+        public void OnReadyPlayer(GamePlayer player)
+        {
+            if (OnReadyPlayerEvent != null) OnReadyPlayerEvent(player);
+        }
+
+        public void OnReadyAll()
+        {
+            if (OnReadyAllEvent != null) OnReadyAllEvent();
         }
     }
 
     public class GameConnect : NamespaceListener
     {
-        internal static GameListener Delegate;
+        internal static GameDelegate Delegate;
         private static Namespace n;
         public static GameRoom Room;
         private static GameConnect listener;
@@ -268,20 +312,35 @@ namespace Gj.Galaxy.Logic
             n.listener = listener;
         }
         #region flow
-        // SceneConnect收到游戏房间后，执行进入游戏
-        public static void JoinGame(string gameName, GameRoomListener listener)
+        // SceneConnect收到游戏房间后，执行链接游戏
+        public static void ConnectGame(string gameName, GameBeforeListener listener)
         {
             if (stage != GameStage.None)
                 throw new Exception("Game is going");
             if (listener == null)
-                throw new Exception("Game Room Delegate empty");
+                throw new Exception("Game Before Delegate empty");
             // 需要设定玩家委托
             // 会触发游戏进入成功，开始接受相关房间事件
             // 玩家加入，玩家修改信息
             PeerClient.isMessageQueueRunning = true;
-            Room = new GameRoom(listener);
+            Delegate = new GameDelegate();
+            Delegate.BindBefore(listener);
+            Room = new GameRoom(Delegate);
             n.Connect("game=" + gameName);
             stage = GameStage.Connect;
+        }
+
+        // GameConnect所有玩家Connect后操作，执行进入游戏
+        public static void JoinGame(GameReadyListener listener)
+        {
+            if (stage != GameStage.None)
+                throw new Exception("Game is going");
+            if (listener == null)
+                throw new Exception("Game Ready Delegate empty");
+            if (stage != GameStage.Wait)
+                throw new Exception("game stage need wait");
+            Delegate.BindReady(listener);
+            stage = GameStage.Join;
         }
 
         // 通知服务器已经能开始游戏
@@ -289,9 +348,9 @@ namespace Gj.Galaxy.Logic
         {
             if (stage != GameStage.Join)
                 throw new Exception("game stage need join");
-            n.Emit(GameEvent.Ready, null);
             Room.localPlayer.IsReady = true;
             stage = GameStage.Ready;
+            n.Emit(GameEvent.Ready, null);
             // 会发送给其他玩家准备完毕事件
             // 会触发所有玩家准备完毕事件
         }
@@ -303,9 +362,9 @@ namespace Gj.Galaxy.Logic
                 throw new Exception("Game Delegate empty");
             if (!Room.localPlayer.IsReady)
                 throw new Exception("local player need ready");
-            if (stage != GameStage.ReadyAll)
+            if (stage != GameStage.Ready)
                 throw new Exception("game stage need join");
-            Delegate = gameListener;
+            Delegate.BindGame(gameListener);
             listener.ResetEntityOnSerialize();
             listener.LoadScene();
             //可以开始进行游戏初始化
@@ -340,18 +399,19 @@ namespace Gj.Galaxy.Logic
             if (stage == GameStage.Finish)
             {
                 n.Disconnect();
-                listener.OnDisconnect();
+                listener.ClearGame();
             }
             // 如果游戏还未开始，执行退出后直接退出
-            else if (stage == GameStage.Join
-                    || stage == GameStage.Ready
-                    || stage == GameStage.Connect)
+            else if (stage == GameStage.Wait
+                     || stage == GameStage.Join
+                     || stage == GameStage.Ready
+                     || stage == GameStage.Connect)
             {
                 // 游戏还没开始
                 n.Emit(GameEvent.Exit, null, (obj) =>
                 {
                     n.Disconnect();
-                    listener.OnDisconnect();
+                    listener.ClearGame();
                 });
             }
             // 执行退出，并执行游戏完成
@@ -360,7 +420,7 @@ namespace Gj.Galaxy.Logic
                 n.Emit(GameEvent.Exit, null, (obj) =>
                 {
                     n.Disconnect();
-                    listener.OnDisconnect();
+                    listener.ClearGame();
                 });
             }
 
@@ -381,15 +441,14 @@ namespace Gj.Galaxy.Logic
             }
             else
             {
-                stage = GameStage.Join;
+                stage = GameStage.Wait;
             }
         }
 
         public void OnDisconnect()
         {
-            ClearRoom();
-            stage = GameStage.None;
-            PeerClient.isMessageQueueRunning = false;
+            Delegate.OnLeaveGame();
+            ClearGame();
         }
 
         public void OnReconnect(bool success)
@@ -416,14 +475,14 @@ namespace Gj.Galaxy.Logic
             switch (code)
             {
                 case GameEvent.AssignPlayer:
-                    stage = GameStage.Join;
+                    stage = GameStage.Wait;
                     Room.OnEnter(param[0].ConverInt());
                     break;
                 case GameEvent.Ready:
                     Room.OnReady(param[0].ConverInt());
                     break;
                 case GameEvent.ReadyAll:
-                    stage = GameStage.ReadyAll;
+                    stage = GameStage.Init;
                     Room.OnReadyAll();
                     break;
                 case GameEvent.SwitchMaster:
@@ -1928,14 +1987,15 @@ namespace Gj.Galaxy.Logic
         }
         #endregion
 
-        private void ClearRoom()
+        private void ClearGame()
         {
+            stage = GameStage.None;
+            PeerClient.isMessageQueueRunning = false;
             Room.Clear();
             Room = null;
             allowedReceivingGroups = new HashSet<byte>();
             blockSendingGroups = new HashSet<byte>();
             DestroyAll();
-            Delegate.OnLeaveGame();
         }
 
         #region Allocate

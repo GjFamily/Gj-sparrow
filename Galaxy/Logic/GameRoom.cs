@@ -9,7 +9,7 @@ namespace Gj.Galaxy.Logic{
 
     public class GameRoom
     {
-        private GameRoomListener Delegate;
+        private GameDelegate Delegate;
         public int MasterClientId = 0;
         public int LocalClientId = 0;
         public Dictionary<int, GamePlayer> mPlayers = new Dictionary<int, GamePlayer>();
@@ -54,9 +54,9 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public GameRoom(GameRoomListener Delegate)
+        public GameRoom(GameDelegate gameDelegate)
         {
-            this.Delegate = Delegate;
+            Delegate = gameDelegate;
             var player = new GamePlayer(true, -1, SceneConnect.player.UserId);
             AddNewPlayer(player);
             LocalClientId = player.Id;
@@ -64,7 +64,7 @@ namespace Gj.Galaxy.Logic{
         }
 
         internal void OnFail(string reason){
-            this.Delegate.OnFail(reason);
+            Delegate.OnFail(reason);
         }
 
         public void SetCustomProperties(Dictionary<string, object> propertiesToSet)
