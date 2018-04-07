@@ -27,7 +27,7 @@ namespace Gj
 			single.audioSoundSource = game.AddComponent<AudioSource> ();
 			single.audioSoundSource.volume = Cache.soundVolume;
 
-            ServerSettings settings = new ServerSettings();
+            ServerSettings settings = PeerClient.Generate();
             settings.SetAppInfo("first", "1.0.1", "xasfd");
             settings.HostType = ServerSettings.HostingOption.OnlineMode;
             settings.ServerAddress = "192.168.31.225:8080";

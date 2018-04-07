@@ -116,45 +116,6 @@ namespace Gj.Galaxy.Logic{
             this.RebuildPlayerListCopies();
         }
 
-        //internal void CheckMasterClient(int leavingPlayerId)
-        //{
-        //    bool currentMasterIsLeaving = this.MasterClientId == leavingPlayerId;
-        //    bool someoneIsLeaving = leavingPlayerId > 0;
-
-        //    // return early if SOME player (leavingId > 0) is leaving AND it's NOT the current master
-        //    if (someoneIsLeaving && !currentMasterIsLeaving)
-        //    {
-        //        return;
-        //    }
-
-        //    this.MasterClientId = ReturnLowestPlayerId(this.mActors.Values.GetEnumerator(), leavingPlayerId);
-        //}
-
-        //private static int ReturnLowestPlayerId(IEnumerator<GamePlayer> players, int playerIdToIgnore)
-        //{
-        //    if (players == null || !players.MoveNext())
-        //    {
-        //        return -1;
-        //    }
-
-        //    int lowestActorNumber = Int32.MaxValue;
-        //    do
-        //    {
-        //        GamePlayer player = players.Current;
-        //        if (player.Id == playerIdToIgnore)
-        //        {
-        //            continue;
-        //        }
-
-        //        if (player.Id < lowestActorNumber)
-        //        {
-        //            lowestActorNumber = player.Id;
-        //        }
-        //    } while (players.MoveNext());
-
-        //    return lowestActorNumber;
-        //}
-
         protected internal GamePlayer GetPlayerWithId(int number)
         {
             if (this.mPlayers == null) return null;
@@ -173,7 +134,8 @@ namespace Gj.Galaxy.Logic{
             return null;
         }
 
-        internal void SwitchMaster(int playerId){
+        internal void SwitchMaster(int playerId)
+        {
             GamePlayer player = GetPlayerWithId(playerId);
             if(player != null)
                 this.MasterClientId = playerId;
@@ -198,8 +160,6 @@ namespace Gj.Galaxy.Logic{
             player.IsInactive = false;
             // Delegate
             Delegate.OnPlayerLeave(player);
-
-            //this.CheckMasterClient(actorId);
         }
 
         internal void OnJoin(int actorId, string userId)
@@ -207,11 +167,6 @@ namespace Gj.Galaxy.Logic{
             GamePlayer target;
             bool exist = false;
 
-            //var newName = (string)props[PlayerProperties.Name];
-            //var userId = (string)props[PlayerProperties.UserId];
-            //if(userId == localPlayer.UserId){
-                
-            //}
             target = GetPlayerWithId(actorId);
             if (target == null)
             {
@@ -222,8 +177,6 @@ namespace Gj.Galaxy.Logic{
             {
                 exist = true;
             }
-
-            //target.InternalProperties(props);
 
             target.IsInactive = true;// Delegate
             if (exist)

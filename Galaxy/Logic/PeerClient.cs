@@ -313,6 +313,13 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
+        public static ServerSettings Generate()
+        {
+            var settings = ScriptableObject.CreateInstance<ServerSettings>();
+            PeerClient.ServerSettings = settings;
+            return settings;
+        }
+
         public static Namespace Of(byte ns){
             return PeerClient.client.Of(ns);
         }
