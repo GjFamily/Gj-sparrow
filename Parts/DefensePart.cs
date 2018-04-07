@@ -8,6 +8,7 @@ namespace Gj
     {
         private Action<SkillInfo> skillNotic;
         private Action<ExtraInfo> extraNotic;
+
         // Use this for initialization
         void Start()
         {

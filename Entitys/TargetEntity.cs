@@ -10,6 +10,7 @@ namespace Gj
     public class TargetEntity : BaseEntity
     {
         public string showName = "";
+        public bool live = false;
         protected Role role = Role.Empty;
         public enum Role
         {
@@ -47,6 +48,7 @@ namespace Gj
 
         protected virtual void AfterInit()
         {
+            live = true;
         }
 
         protected SkillInfo GetSkillInfo(string skillName)
@@ -127,6 +129,7 @@ namespace Gj
         public void Die(bool sync)
         {
             float time = BeforeDie();
+            live = false;
             if (sync) SyncDestroy();
             Invoke("Disappear", time);
         }

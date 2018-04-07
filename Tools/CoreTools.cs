@@ -10,6 +10,11 @@ namespace Gj
 {
     public static class CoreTools
     {
+        public static bool IsTarget (GameObject obj) {
+            Info info = GetInfo(obj);
+            return info.IsTarget();
+        }
+
         public static Info GetInfo(GameObject obj)
         {
             return obj.GetComponent<Info>();

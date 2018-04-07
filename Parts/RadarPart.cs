@@ -9,35 +9,36 @@ namespace Gj
         private Action<GameObject> FindTarget;
         private Action<GameObject> LoseTarget;
 
-        public void SetFindTargetNotic (Action<GameObject> action){
+        public void SetFindTargetNotic(Action<GameObject> action)
+        {
             FindTarget = action;
         }
 
-        public void SetLoseTargetNotic (Action<GameObject> action) {
+        public void SetLoseTargetNotic(Action<GameObject> action)
+        {
             LoseTarget = action;
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            Info info = CoreTools.GetInfo(other.gameObject);
-            if (info != null && info.IsTarget() && FindTarget != null) {
+            if (FindTarget != null && CoreTools.IsTarget(other.gameObject))
+            {
                 FindTarget(other.gameObject);
             }
         }
 
         private void OnTriggerStay(Collider other)
         {
-            
+
         }
 
         private void OnTriggerExit(Collider other)
         {
-            Info info = CoreTools.GetInfo(other.gameObject);
-            if (info != null && info.IsTarget() && FindTarget != null)
+            if (LoseTarget != null && CoreTools.IsTarget(other.gameObject))
             {
                 LoseTarget(other.gameObject);
             }
-            
+
         }
     }
 }
