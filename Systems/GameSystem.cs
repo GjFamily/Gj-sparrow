@@ -71,7 +71,14 @@ namespace Gj
         {
             TargetEntity targetEntity = MakeTarget(prefabName);
             targetEntity.Init(false);
+            if (player != null) {
+                OnPlayerCreate(player, targetEntity);
+            }
             return targetEntity.gameObject;
+        }
+
+        public virtual void OnPlayerCreate (GamePlayer player, TargetEntity targetEntity) {
+            Debug.Log("[ SOCKET ] Player Create");
         }
 
         public void OnLeaveGame()

@@ -9,6 +9,7 @@ namespace Gj
     [RequirePart(typeof(RelationPart))]
     public class TargetEntity : BaseEntity
     {
+        public string showName = "";
         protected Role role = Role.Empty;
         public enum Role
         {
