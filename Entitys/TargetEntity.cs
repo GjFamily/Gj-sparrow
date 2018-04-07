@@ -155,7 +155,7 @@ namespace Gj
 
         protected virtual void ExtraEffect(ExtraInfo extraInfo) { }
 
-        protected virtual void Effect(float value) { }
+        protected virtual void Effect(float value, GameObject obj) { }
 
         protected virtual bool IsEnoughConsume(SkillInfo skillInfo) { return true; }
 

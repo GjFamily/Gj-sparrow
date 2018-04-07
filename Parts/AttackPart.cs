@@ -63,7 +63,7 @@ namespace Gj
         public void SetAttackTarget(GameObject obj, Action enterAction, Action exitAction)
         {
             target = obj;
-            attackDistance = GetAttribute("radio") + GetAttribute(obj, "radio");
+            attackDistance = GetAttribute("radio") + CoreTools.GetAttribute(obj, "radio");
             enterAttackNotic = enterAction;
             exitAttackNotic = exitAction;
         }

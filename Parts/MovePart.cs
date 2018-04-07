@@ -91,7 +91,7 @@ namespace Gj
 
             if (Physics.Raycast(transform.position, transform.forward, out hit, GetAttribute("radio")))
             {
-                Info info = GetInfo(hit.transform.gameObject);
+                Info info = CoreTools.GetInfo(hit.transform.gameObject);
                 if (info != null)
                 {
                     if (info.IsBuild())

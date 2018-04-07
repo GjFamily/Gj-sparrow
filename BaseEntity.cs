@@ -62,27 +62,6 @@ namespace Gj
             if (sync != null) sync.Giveout();
         }
 
-        public static Info GetInfo (GameObject obj) {
-            return obj.GetComponent<Info>();
-        }
-
-        public static float GetAttribute (GameObject obj, string key) {
-            Info info = GetInfo(obj);
-            if (info != null) {
-                return info.GetAttribute(key);
-            }
-            return 0;
-        }
-
-        public static void SetAttribute(GameObject obj, string key, float value)
-        {
-            Info info = GetInfo(obj);
-            if (info != null)
-            {
-                info.SetAttribute(key, value);
-            }
-        }
-
         public float GetAttribute (string key) {
             return Info.GetAttribute(key);
         }

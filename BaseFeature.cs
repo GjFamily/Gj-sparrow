@@ -61,30 +61,6 @@ namespace Gj
             return Feature.AddComponent<T>();
         }
 
-        protected Info GetInfo(GameObject obj)
-        {
-            return obj.GetComponent<Info>();
-        }
-
-        protected float GetAttribute(GameObject obj, string key)
-        {
-            Info info = GetInfo(obj);
-            if (info != null)
-            {
-                return info.GetAttribute(key);
-            }
-            return 0;
-        }
-
-        protected void SetAttribute(GameObject obj, string key, float value)
-        {
-            Info info = GetInfo(obj);
-            if (info != null)
-            {
-                Info.SetAttribute(key, value);
-            }
-        }
-
         protected float GetFeatureAttribute(string key)
         {
             return FeatureInfo.GetAttribute(key);

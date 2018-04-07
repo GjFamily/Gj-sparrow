@@ -5,6 +5,19 @@ namespace Gj
 {
     public class BasePlayer : MonoBehaviour
     {
+        private Info _info;
+        public Info Info
+        {
+            get
+            {
+                if (_info == null)
+                {
+                    _info = GetComponent<Info>();
+                }
+                return _info;
+            }
+        }
+        public string showName;
         protected virtual void Awake()
         {
             CoreTools.BindPart(this, gameObject);
@@ -25,6 +38,16 @@ namespace Gj
         public virtual void RightRocker(float angle, float h, float v) { }
 
         public virtual void RightRockerExit(string key) { }
+
+        public float GetAttribute(string key)
+        {
+            return Info.GetAttribute(key);
+        }
+
+        public void SetAttribute(string key, float value)
+        {
+            Info.SetAttribute(key, value);
+        }
 
         public void Message(string type) {
             Message(type, "", 0);
