@@ -4,6 +4,7 @@ using System.IO;
 using System.Collections;
 using System.Collections.Generic;
 using SimpleJSON;
+using Gj.Galaxy.Logic;
 
 namespace Gj
 {
@@ -25,6 +26,26 @@ namespace Gj
 			single.audioMusicSource.volume = Cache.musicVolume;
 			single.audioSoundSource = game.AddComponent<AudioSource> ();
 			single.audioSoundSource.volume = Cache.soundVolume;
+
+            ServerSettings settings = new ServerSettings();
+            settings.SetAppInfo("first", "1.0.1", "xasfd");
+            settings.HostType = ServerSettings.HostingOption.OnlineMode;
+            settings.ServerAddress = "192.168.31.225:8080";
+            PeerClient.ServerSettings = settings;
+
+            PeerClient.Listener.OnReconnectEvent += (bool success) =>
+            {
+                if (success)
+                {
+                }
+                else
+                {
+                    Debug.LogError("Server reconnect fail");
+                }
+
+            };
+
+            PeerClient.Connect();
 		}
 
 		public static string GetVersion ()
@@ -43,6 +64,7 @@ namespace Gj
 				sceneList = new List<string> ();
 			}
 			sceneList.Add (sceneName);
+            Application.LoadLevel(sceneName);
 		}
 
 		public string GetLastScene ()

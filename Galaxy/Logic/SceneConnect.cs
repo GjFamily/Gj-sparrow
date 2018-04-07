@@ -73,6 +73,11 @@ namespace Gj.Galaxy.Logic
             n.Connect("abc=123");
         }
 
+        public static void Disconnect()
+        {
+            n.Disconnect();
+        }
+
         public static void JoinLobby(string lobby, Dictionary<string, object> options)
         {
             switch (lobby)
@@ -149,6 +154,7 @@ namespace Gj.Galaxy.Logic
                         OnInvitedTeam((string)param[0], (string)param[1]);
                     break;
                 case SceneEvent.GameConnect:
+                    Debug.Log(1);
                     if (OnJoinedGame != null)
                         OnJoinedGame((string)param[0]);
                     break;
