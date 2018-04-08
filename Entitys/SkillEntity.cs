@@ -166,7 +166,7 @@ namespace Gj
             if (IsEnv(obj)) {
                 return true;
             } else {
-                Info _info = obj.GetComponent<Info>();
+                Info _info = CoreTools.GetInfo(obj);
                 if (_info != null && _info.HaveBody()) {
                     return true;
                 } else {
