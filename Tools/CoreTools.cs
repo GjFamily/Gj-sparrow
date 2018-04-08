@@ -12,6 +12,7 @@ namespace Gj
     {
         public static bool IsTarget (GameObject obj) {
             Info info = GetInfo(obj);
+            if (info == null) return false;
             return info.IsTarget();
         }
 

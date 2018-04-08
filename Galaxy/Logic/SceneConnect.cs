@@ -147,6 +147,7 @@ namespace Gj.Galaxy.Logic
 
         public object[] OnEvent(byte eb, object[] param)
         {
+            //Debug.Log(eb);
             switch (eb)
             {
                 case SceneEvent.TeamInvite:
@@ -154,7 +155,6 @@ namespace Gj.Galaxy.Logic
                         OnInvitedTeam((string)param[0], (string)param[1]);
                     break;
                 case SceneEvent.GameConnect:
-                    Debug.Log(1);
                     if (OnJoinedGame != null)
                         OnJoinedGame((string)param[0]);
                     break;

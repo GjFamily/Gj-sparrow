@@ -333,8 +333,6 @@ namespace Gj.Galaxy.Logic
         // GameConnect所有玩家Connect后操作，执行进入游戏
         public static void JoinGame(GameReadyListener listener)
         {
-            if (stage != GameStage.None)
-                throw new Exception("Game is going");
             if (listener == null)
                 throw new Exception("Game Ready Delegate empty");
             if (stage != GameStage.Wait)
@@ -362,7 +360,7 @@ namespace Gj.Galaxy.Logic
                 throw new Exception("Game Delegate empty");
             if (!Room.localPlayer.IsReady)
                 throw new Exception("local player need ready");
-            if (stage != GameStage.Ready)
+            if (stage != GameStage.Ready && stage != GameStage.Init)
                 throw new Exception("game stage need join");
             Delegate.BindGame(gameListener);
             listener.ResetEntityOnSerialize();

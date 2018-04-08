@@ -366,9 +366,9 @@ namespace Gj.Galaxy.Network
 
         protected bool udp(IPEndPoint point)
         {
-            //var conn = new UdpSocket(point);
-            //return Accept(ProtocolType.Speed, conn);
-            return true;
+            var conn = new UdpSocket(point);
+            return Accept(ProtocolType.Speed, conn);
+            //return true;
         }
 
         protected bool Accept(ProtocolType protocolType, ProtocolConn conn)
@@ -401,6 +401,7 @@ namespace Gj.Galaxy.Network
                             break;
                         }
                     }
+                    //Debug.Log(length);
                     var b = new byte[length];
                     conn.Read(ref b, () => {
                         var buffer = new MemoryStream(b, false);
@@ -580,6 +581,7 @@ namespace Gj.Galaxy.Network
             buffer.Position = 0;
             var length = buffer.Length;
 
+            //Debug.Log(length);
             for (var i = headLength - 4; length > 0; i++)
             {
                 var b = length % 128;
