@@ -349,9 +349,9 @@ namespace Gj.Galaxy.Network
 
         protected bool tcp(IPEndPoint point)
         {
-            var conn = new TcpSocket(point);
-            return Accept(ProtocolType.Default, conn);
-            //return true;
+            //var conn = new TcpSocket(point);
+            //return Accept(ProtocolType.Default, conn);
+            return true;
         }
 
         protected bool Udp(string host, int port)
