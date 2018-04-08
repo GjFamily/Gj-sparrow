@@ -10,7 +10,12 @@ namespace Gj
         private Vector3 end = Vector3.zero;
         private Vector3 direction = Vector3.zero;
         private bool moving = false;
+        private bool targeting = false;
+        private bool ending = false;
+        private bool directing = false;
         private bool needHit = false;
+        private bool auto = false;
+        private UnityEngine.AI.NavMeshAgent agent = null;
         // Use this for initialization
         void Start()
         {
@@ -27,11 +32,24 @@ namespace Gj
             needHit = false;
         }
 
+        private void OpenAuto () {
+            auto = true;
+            if (agent == null) {
+                agent = gameObject.AddComponent<UnityEngine.AI.NavMeshAgent>();
+            } else {
+                agent.isStopped = false;
+            }
+        }
+
         public void SetTarget(GameObject obj)
         {
             Cancel();
             moving = true;
             target = obj;
+            targeting = true;
+            if (GetAttribute("auto") > 0) {
+                OpenAuto();
+            }
         }
 
         public void SetEnd(Vector3 position)
@@ -39,34 +57,56 @@ namespace Gj
             Cancel();
             moving = true;
             end = position;
+            ending = true;
+            if (GetAttribute("auto") > 0)
+            {
+                OpenAuto();
+            }
         }
 
-        public void SetDirection(Vector3 direction)
+        public void SetDirection(Vector3 d)
         {
             Cancel();
             moving = true;
-            this.direction = direction;
+            direction = d;
+            directing = true;
         }
 
         public void Cancel()
         {
-            this.target = null;
-            this.direction = Vector3.zero;
-            this.end = Vector3.zero;
-            this.moving = false;
+            target = null;
+            direction = Vector3.zero;
+            end = Vector3.zero;
+            moving = false;
+            directing = false;
+            targeting = false;
+            ending = false;
+            if (agent != null) {
+                agent.isStopped = true;
+            }
+            auto = false;
+        }
+
+        private void Move (Vector3 position, float speed) {
+            if (auto) {
+                agent.speed = speed;
+                agent.SetDestination(position);
+            } else {
+                transform.position = Vector3.MoveTowards(transform.position, position, Time.deltaTime * speed);
+            }
         }
 
         // Update is called once per frame
         void Update()
         {
-            if (moving && !IsHit())
+            if (moving)
             {
                 float speed = GetAttribute("moveSpeed");
-                if (target != null)
+                if (targeting)
                 {
-                    transform.position = Vector3.MoveTowards(transform.position, target.transform.position, Time.deltaTime * speed);
+                    Move(target.transform.position, speed);
                 }
-                else if (!Vector3.zero.Equals(end))
+                else if (ending)
                 {
                     if (transform.position.Equals(end))
                     {
@@ -74,10 +114,10 @@ namespace Gj
                     }
                     else
                     {
-                        transform.position = Vector3.MoveTowards(transform.position, end, Time.deltaTime * speed);
+                        Move(end, speed);
                     }
                 }
-                else if (!Vector3.zero.Equals(direction))
+                else if (directing)
                 {
                     transform.Translate(direction * Time.deltaTime * speed, Space.World);
                 }
