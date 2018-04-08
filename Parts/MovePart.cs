@@ -104,7 +104,11 @@ namespace Gj
                 float speed = GetAttribute("moveSpeed");
                 if (targeting)
                 {
-                    Move(target.transform.position, speed);
+                    if (target != null) {
+                        Move(target.transform.position, speed);
+                    } else {
+                        Cancel();
+                    }
                 }
                 else if (ending)
                 {
