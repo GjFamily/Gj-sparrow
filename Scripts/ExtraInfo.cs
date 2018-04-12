@@ -7,13 +7,8 @@ namespace Gj
     {
         public float time;
         public float intervalTime;
-        public RargetRelation targetRelation;
-        public enum RargetRelation
-        {
-            Self,
-            Partner,
-            Enemy
-        }
+        public TargetRelation targetRelation;
+
         public ExtraType extraType;
         public enum ExtraType
         {
@@ -43,6 +38,36 @@ namespace Gj
 
         [HideInInspector]
         public GameObject master;
+
+        public bool AllowTarget(GameObject target)
+        {
+            return AllowTarget(master, target);
+        }
+
+        public bool AllowTarget(GameObject master, GameObject target)
+        {
+            if (targetRelation == TargetRelation.Self)
+            {
+                return master == target;
+            }
+            else
+            {
+                RelationPart relation = master.GetComponent<RelationPart>();
+                if (relation == null) return false;
+                if (targetRelation == TargetRelation.Partner)
+                {
+                    return relation.IsPartner(target);
+                }
+                else if (targetRelation == TargetRelation.Enemy)
+                {
+                    return relation.IsEnemy(target);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
 
         public void Ready()
         {

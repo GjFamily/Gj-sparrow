@@ -5,7 +5,7 @@ using Gj.Galaxy.Logic;
 
 namespace Gj
 {
-    public class BaseGameSystem : BaseSystem, GameListener, GameReadyListener
+    public class BaseGameSystem : MonoBehaviour, GameListener, GameReadyListener
     {
         [SerializeField]
         private GameObject container;
@@ -14,20 +14,19 @@ namespace Gj
         private GameObject[] objs;
 
 
-        protected override void Awake()
+        protected virtual void Awake()
         {
-            base.Awake();
-            ObjectManage.single.SetObjs(objs);
-            ObjectManage.single.SetContainer(container);
-            StatisticsManage.single.Start();
+            ObjectService.single.SetObjs(objs);
+            StatisticsService.single.Start();
         }
 
-        protected TargetEntity MakeTarget(string targetName)
+        protected GameObject MakeTarget(string targetName)
         {
-            GameObject obj = ObjectManage.single.MakeObj(targetName);
+            GameObject obj = ObjectService.single.MakeObj(targetName);
             if (obj != null)
             {
-                return obj.GetComponent<TargetEntity>();
+                obj.transform.parent = container.transform;
+                return obj;
             }
             else
             {
@@ -35,13 +34,13 @@ namespace Gj
             }
         }
 
-        protected TargetEntity MakeTarget(string targetName, Vector3 position)
+        protected GameObject MakeTarget(string targetName, Vector3 position)
         {
-            TargetEntity target = MakeTarget(targetName);
-            if (target != null)
+            GameObject obj = MakeTarget(targetName);
+            if (obj != null)
             {
-                target.transform.position = position;
-                return target;
+                obj.transform.position = position;
+                return obj;
             }
             else
             {
@@ -52,14 +51,12 @@ namespace Gj
         public void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value)
         {
             TargetEntity targetEntity = entity.GetComponent<TargetEntity>();
-            if (targetEntity != null) targetEntity.Command(type, category, value, false);
         }
 
         public void OnDestroyInstance(GameObject gameObject, GamePlayer player)
         {
             Debug.Log("destroy");
             TargetEntity targetEntity = gameObject.GetComponent<TargetEntity>();
-            if (targetEntity != null) targetEntity.Die(false);
         }
 
         public void OnFinish(bool exit, Dictionary<string, object> result)
@@ -69,16 +66,8 @@ namespace Gj
 
         public GameObject OnInstance(string prefabName, GamePlayer player, object data)
         {
-            TargetEntity targetEntity = MakeTarget(prefabName);
-            targetEntity.Init(false);
-            if (player != null) {
-                OnPlayerCreate(player, targetEntity);
-            }
-            return targetEntity.gameObject;
-        }
-
-        public virtual void OnPlayerCreate (GamePlayer player, TargetEntity targetEntity) {
-            Debug.Log("[ SOCKET ] Player Create");
+            GameObject target = MakeTarget(prefabName);
+            return target;
         }
 
         public void OnLeaveGame()

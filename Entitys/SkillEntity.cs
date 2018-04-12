@@ -4,7 +4,6 @@ using System;
 
 namespace Gj
 {
-    [RequirePart(typeof(BeLongPart))]
     public class SkillEntity : BaseEntity
     {
         public SkillInfo SkillInfo
@@ -32,16 +31,15 @@ namespace Gj
         private bool waiting = false;
         private bool sustaining = false;
         private bool auto = false;
+
         protected float power = 0;
         private float startTime = 0;
 
         protected Transform targetTransform;
-        protected GameObject targetObj;
+        protected GameObject target;
 
         public void SetMaster(GameObject obj)
         {
-            Appear();
-            GetComponent<BeLongPart>().SetMaster(obj);
             if (SkillInfo != null)
             {
                 SkillInfo.master = obj;
@@ -50,11 +48,7 @@ namespace Gj
             {
                 ExtraInfo.master = obj;
             }
-        }
-
-        public GameObject GetMaster()
-        {
-            return GetComponent<BeLongPart>().GetMaster();
+            Appear();
         }
 
         public void Init(Action before, Action after, Action start, Action end, Action ready, bool auto)
@@ -81,7 +75,6 @@ namespace Gj
             power = 0;
             startTime = Time.time;
             readyCast();
-            ReadyCast();
             waiting = true;
             if (auto) Invoke("ReadyEnd", SkillInfo.readyTime);
         }
@@ -106,17 +99,12 @@ namespace Gj
             endCast();
         }
 
-        protected virtual void ReadyCast()
-        {
-
-        }
-
         protected virtual void Cast()
         {
 
         }
 
-        public void CancelCast()
+        public void Cancel()
         {
             if (waiting)
             {
@@ -147,42 +135,22 @@ namespace Gj
             }
         }
 
-        public void Set(GameObject target)
+        public void Set(GameObject obj)
         {
-            targetObj = target;
+            target = obj;
         }
 
         public void Set(Transform transform)
         {
-            Debug.Log(transform);
             targetTransform = transform;
-        }
-
-        protected bool IsEnv (GameObject obj) {
-            return obj.tag == "Env";
-        }
-
-        protected bool AllowCollision (GameObject obj) {
-            if (IsEnv(obj)) {
-                return true;
-            } else {
-                Info _info = CoreTools.GetInfo(obj);
-                if (_info != null && _info.HaveBody()) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }
-
-        protected bool AllowTarget (GameObject target) {
-            return SkillInfo.AllowTarget(target);
         }
 
         protected void CastTarget(GameObject target)
         {
-            if (AllowTarget(target)) {
+            if (SkillInfo && SkillInfo.AllowTarget(target)) {
                 BeCastTarget(target);
+            }
+            if (ExtraInfo && ExtraInfo.AllowTarget(target)) {
                 AddExtraTarget(target);
             }
         }
@@ -202,15 +170,6 @@ namespace Gj
             if (statusPart != null && ExtraInfo != null)
             {
                 statusPart.AddExtra(ExtraInfo);
-            }
-        }
-
-        protected void CancelExtraTarget(GameObject target)
-        {
-            StatusPart statusPart = target.GetComponent<StatusPart>();
-            if (statusPart != null && ExtraInfo != null)
-            {
-                statusPart.CancelExtra(ExtraInfo);
             }
         }
     }

@@ -9,11 +9,13 @@ namespace Gj
     public class Info : MonoBehaviour
     {
         [HideInInspector]
-        public bool ai = false;
+        public bool live;
         [HideInInspector]
-        public bool player = false;
+        public bool ai;
         [HideInInspector]
-        public bool currentPlayer = false;
+        public bool player;
+        [HideInInspector]
+        public bool otherPlayer;
         [Serializable]
         public struct Attribute
         {

@@ -9,13 +9,8 @@ namespace Gj
         public float need;
         public float range;
         public float intervalTime;
-        public RargetRelation targetRelation;
-        public enum RargetRelation
-        {
-            Self,
-            Partner,
-            Enemy
-        }
+        public TargetRelation targetRelation;
+
         public TargetNum targetNum;
         public enum TargetNum
         {
@@ -52,7 +47,6 @@ namespace Gj
         [HideInInspector]
         public GameObject master;
 
-
         public bool AllowTarget(GameObject target)
         {
             return AllowTarget(master, target);
@@ -60,7 +54,7 @@ namespace Gj
 
         public bool AllowTarget(GameObject master, GameObject target)
         {
-            if (targetRelation == RargetRelation.Self)
+            if (targetRelation == TargetRelation.Self)
             {
                 return master == target;
             }
@@ -68,11 +62,11 @@ namespace Gj
             {
                 RelationPart relation = master.GetComponent<RelationPart>();
                 if (relation == null) return false;
-                if (targetRelation == RargetRelation.Partner)
+                if (targetRelation == TargetRelation.Partner)
                 {
                     return relation.IsPartner(target);
                 }
-                else if (targetRelation == RargetRelation.Enemy)
+                else if (targetRelation == TargetRelation.Enemy)
                 {
                     return relation.IsEnemy(target);
                 }

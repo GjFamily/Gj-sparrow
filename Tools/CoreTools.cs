@@ -52,75 +52,6 @@ namespace Gj
             }
         }
 
-        public static void BindPart(Component c, GameObject t)
-        {
-            foreach (object attributes in c.GetType().GetCustomAttributes(typeof(RequirePart), true))
-            {
-                RequirePart requirePart = attributes as RequirePart;
-                if (null != requirePart)
-                {
-                    if (t.GetComponent(requirePart.part) == null)
-                    {
-                        t.AddComponent(requirePart.part);
-                    }
-                }
-            }
-        }
-
-        public static void AddFeature(Component c, GameObject t)
-        {
-            foreach (FieldInfo fieldInfo in c.GetType().GetFields())
-            {
-                if (fieldInfo.FieldType == typeof(GameObject))
-                {
-                    GameObject obj = fieldInfo.GetValue(c) as GameObject;
-                    foreach (object attributes in fieldInfo.GetCustomAttributes(typeof(AddFeature), false))
-                    {
-                        AddFeature addFeature = attributes as AddFeature;
-                        if (null != addFeature)
-                        {
-                            if (t.GetComponent(addFeature.feature) == null)
-                            {
-                                if (addFeature.prefab)
-                                {
-                                    obj = ModelTools.Create(obj, t);
-                                }
-                                BaseFeature baseFeature = t.AddComponent(addFeature.feature) as BaseFeature;
-
-                                if (obj != null)
-                                {
-                                    baseFeature.Feature = obj;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public static void BindFeature(Component c, GameObject t)
-        {
-            foreach (object attributes in c.GetType().GetCustomAttributes(typeof(RequireFeature), true))
-            {
-                RequireFeature requireFeature = attributes as RequireFeature;
-                if (null != requireFeature)
-                {
-                    if (t.GetComponent(requireFeature.feature) == null)
-                    {
-                        GameObject obj = ModelTools.Create(null, t);
-
-                        BaseFeature baseFeature = t.AddComponent(requireFeature.feature) as BaseFeature;
-
-                        if (obj != null)
-                        {
-                            obj.name = requireFeature.feature.Name;
-                            baseFeature.Feature = obj;
-                        }
-                    }
-                }
-            }
-        }
-
         public static AllowSync AllowSync(Component c, GameObject t)
         {
             foreach (object attributes in c.GetType().GetCustomAttributes(typeof(AllowSync), true))
@@ -150,6 +81,31 @@ namespace Gj
                             infoSync.Register(c, t, obj);
                         }
                     }
+                }
+            }
+        }
+
+        public static bool IsEnv(GameObject obj)
+        {
+            return obj.tag == "Env";
+        }
+
+        public static bool AllowCollision(GameObject obj)
+        {
+            if (IsEnv(obj))
+            {
+                return true;
+            }
+            else
+            {
+                Info info = GetInfo(obj);
+                if (info != null && info.HaveBody())
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
                 }
             }
         }

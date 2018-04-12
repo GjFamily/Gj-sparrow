@@ -7,7 +7,7 @@ namespace Gj
 {
     public class MonitorPart : BasePart
     {
-        private TargetEntity target;
+        private GameObject target;
         private bool targeting = false;
         private List<GameObject> targetList = new List<GameObject>();
         private Action<GameObject> changeNotic;
@@ -31,7 +31,7 @@ namespace Gj
 
         public void ChangeTarget(GameObject obj)
         {
-            target = obj.GetComponent<TargetEntity>();
+            target = obj.GetComponent<GameObject>();
             targeting = true;
             if (changeNotic != null)
             {
@@ -65,7 +65,7 @@ namespace Gj
         {
             if (targeting)
             {
-                if (target.live == false)
+                if (CoreTools.GetInfo(target).live == false)
                 {
                     NextTarget();
                 }

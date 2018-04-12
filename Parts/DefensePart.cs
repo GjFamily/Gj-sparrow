@@ -20,6 +20,15 @@ namespace Gj
         {
 
         }
+        public void Effect(float value, GameObject obj)
+        {
+            float health = GetAttribute("health");
+            health -= value;
+            if (health <= 0)
+            {
+            }
+            SetAttribute("health", health);
+        }
 
         public void SetNotic(Action<SkillInfo> notic)
         {
@@ -37,6 +46,7 @@ namespace Gj
             {
                 skillNotic(skillInfo);
             }
+            Effect(skillInfo.value, skillInfo.master);
         }
 
         public void BeCast(ExtraInfo extraInfo)
@@ -45,6 +55,7 @@ namespace Gj
             {
                 extraNotic(extraInfo);
             }
+            Effect(extraInfo.value, extraInfo.master);
         }
     }
 }

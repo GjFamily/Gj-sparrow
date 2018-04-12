@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Gj
 {
-    public class MobileUISystem : BaseSystem
+    public class MobileUISystem : MonoBehaviour
     {
         [SerializeField]
         private bool leftRocker = false;
@@ -17,16 +17,11 @@ namespace Gj
         private string leftRockerKey = "";
         private string rightRockerKey = "";
 
-        // Use this for initialization
-        protected override void Start()
-        {
-            base.Start();
-        }
+        protected PlayerControl player;
 
         // Update is called once per frame
-        protected override void Update()
+        protected virtual void Update()
         {
-            base.Update();
             if (leftRocker && (System.Math.Abs(SystemInput.lh) > 0 || System.Math.Abs(SystemInput.lv) > 0))
             {
                 HandleRocker(SystemInput.lh, SystemInput.lv, true);

@@ -57,7 +57,15 @@ namespace Gj
 			return Application.platform.ToString ();
 		}
 
-		public void AddScene (string sceneName)
+        public void InitScene (string sceneName) {
+            if (sceneList == null)
+            {
+                sceneList = new List<string>();
+            }
+            sceneList.Add(sceneName);
+        }
+
+		public void JumpScene (string sceneName)
 		{
 			if (sceneList == null) {
 				sceneList = new List<string> ();
@@ -66,7 +74,7 @@ namespace Gj
             Application.LoadLevel(sceneName);
 		}
 
-		public string GetLastScene ()
+		public void BackScene ()
 		{
 			string sceneName = "main";
 			if (sceneList != null && sceneList.Count > 0) {
@@ -74,8 +82,8 @@ namespace Gj
 			}
 			if (sceneList != null && sceneList.Count > 0) {
 				sceneName = sceneList [sceneList.Count - 1];
-			}
-			return sceneName;
+            }
+            Application.LoadLevel(sceneName);
 		}
 
 		public void ChangeSpeed (float value)

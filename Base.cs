@@ -7,4 +7,11 @@ namespace Gj
     {
         void UIClick(string key);
     }
+
+    public enum TargetRelation
+    {
+        Self,
+        Partner,
+        Enemy
+    }
 }

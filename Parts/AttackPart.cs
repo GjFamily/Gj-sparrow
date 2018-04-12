@@ -96,7 +96,7 @@ namespace Gj
             {
                 waitCast = false;
                 casting = false;
-                cSkillEntity.CancelCast();
+                cSkillEntity.Cancel();
             }
         }
 

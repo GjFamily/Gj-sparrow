@@ -87,14 +87,14 @@ namespace Gj
         {
             InstanceRelation relation;
             Info info = c.GetComponent<Info>();
-            if (info == null || !info.player)
+            if (info == null || !info.ai)
             {
                 relation = InstanceRelation.Scene;
                 Debug.Log("scene");
             }
             else
             {
-                if (info.currentPlayer)
+                if (info.player)
                 {
                     relation = InstanceRelation.Player;
                     Debug.Log("player");

@@ -17,10 +17,6 @@ namespace Gj
                 return _info;
             }
         }
-        protected virtual void Awake()
-        {
-            CoreTools.BindPart(this, gameObject);
-        }
 
         protected float GetAttribute(string key)
         {

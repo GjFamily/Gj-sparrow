@@ -3,166 +3,52 @@ using System.Collections;
 
 namespace Gj
 {
-    [RequirePart(typeof(AttackPart))]
-    [RequirePart(typeof(DefensePart))]
-    [RequirePart(typeof(StatusPart))]
-    [RequirePart(typeof(RelationPart))]
     public class TargetEntity : BaseEntity
     {
-        public string showName = "";
-        public bool live = false;
-        protected Role role = Role.Empty;
-        public enum Role
-        {
-            Empty,
-            Self,
-            Partner,
-            Enemy
-        }
-        // Use this for initialization
-        protected virtual void Start()
-        {
-            GetComponent<DefensePart>().SetNotic(SkillEffect);
-            GetComponent<DefensePart>().SetNotic(ExtraEffect);
-            GetComponent<AttackPart>().SetNotic(Consume);
-            GetComponent<AttackPart>().SetSkillNotic(BeforeCast, AfterCast, StartCast, EndCast, ReadyCast);
-        }
 
-        public TargetEntity Init()
-        {
-            return Init(true);
-        }
-
-        public TargetEntity Init(bool sync)
-        {
-            BefortInit();
-            Appear();
-            AfterInit();
-            if (sync) SyncInit();
-            return this;
-        }
-
-        protected virtual void BefortInit()
-        {
-        }
-
-        protected virtual void AfterInit()
-        {
-            live = true;
-        }
-
-        protected SkillInfo GetSkillInfo(string skillName)
-        {
-            return SkillManage.single.GetSkillInfo(skillName);
-        }
-
-        protected SkillEntity GetSkillEntity(string skillName)
-        {
-            return SkillManage.single.InitSkill(skillName, gameObject);
-        }
-
-        protected virtual void BeforeCast(SkillInfo skillInfo)
-        {
-        }
-
-        protected virtual void AfterCast(SkillInfo skillInfo)
-        {
-        }
-
-        protected virtual void StartCast(SkillInfo skillInfo)
-        {
-        }
-
-        protected virtual void EndCast(SkillInfo skillInfo)
-        {
-        }
-
-        protected virtual void ReadyCast(SkillInfo skillInfo)
-        {
-        }
-
-        public void CancelCast()
-        {
-            GetComponent<AttackPart>().CancelCast();
-        }
-
-        public void OkCast()
-        {
-            GetComponent<AttackPart>().OkCast();
-        }
-
-        public void Cast(string skillName)
-        {
-            SkillInfo skillInfo = GetSkillInfo(skillName);
-            if (IsEnoughConsume(skillInfo))
-            {
-                SkillEntity skillEntity = GetSkillEntity(skillName);
-                GetComponent<AttackPart>().Cast(skillInfo, skillEntity);
-            }
-        }
-
-        public void Cast(string skillName, GameObject target)
-        {
-            SkillInfo skillInfo = GetSkillInfo(skillName);
-            if (IsEnoughConsume(skillInfo) && skillInfo.AllowTarget(gameObject, target) && skillInfo.IsAllowRange(gameObject, target))
-            {
-                SkillEntity skillEntity = GetSkillEntity(skillName);
-                GetComponent<AttackPart>().Cast(skillInfo, skillEntity, target);
-            }
-        }
-
-        public void Cast(string skillName, Transform transform)
-        {
-            SkillInfo skillInfo = GetSkillInfo(skillName);
-            if (IsEnoughConsume(skillInfo) && skillInfo.IsAllowRange(gameObject, transform))
-            {
-                SkillEntity skillEntity = GetSkillEntity(skillName);
-                GetComponent<AttackPart>().Cast(skillInfo, skillEntity, transform);
-            }
-        }
-
-        public void Die()
-        {
-            Die(true);
-        }
-
-        public void Die(bool sync)
-        {
-            float time = BeforeDie();
-            live = false;
-            if (sync) SyncDestroy();
-            Invoke("Disappear", time);
-        }
-
-        protected virtual float BeforeDie()
+        public virtual float Birth()
         {
             return 0;
         }
 
-        public void Command(string type, string category, float value)
+        public virtual float Attack()
         {
-            Command(type, category, value, true);
+            return 0;
         }
 
-        public void Command(string type, string category, float value, bool sync)
+        public virtual float Cast()
         {
-            if (sync) this.SyncCommand(type, category, value);
-            ExecCommand(type, category, value);
+            return 0;
         }
 
-        protected virtual void ExecCommand(string type, string category, float value)
+        public virtual float Charge()
         {
-            
+            return 0;
         }
 
-        protected virtual void SkillEffect(SkillInfo skillInfo) { }
+        public virtual float Defense()
+        {
+            return 0;
+        }
 
-        protected virtual void ExtraEffect(ExtraInfo extraInfo) { }
+        public virtual float Injured()
+        {
+            return 0;
+        }
 
-        protected virtual void Effect(float value, GameObject obj) { }
+        public virtual float Run()
+        {
+            return 0;
+        }
 
-        protected virtual bool IsEnoughConsume(SkillInfo skillInfo) { return true; }
+        public virtual float Walk()
+        {
+            return 0;
+        }
 
-        protected virtual void Consume(SkillInfo skillInfo) { }
+        public virtual float Die()
+        {
+            return 0;
+        }
     }
 }
