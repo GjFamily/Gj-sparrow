@@ -17,7 +17,8 @@ namespace Gj
             single = new ObjectService();
         }
 
-        public void SetObjs(GameObject[] objs) {
+        public void SetObjs(GameObject[] objs)
+        {
             foreach (GameObject obj in objs)
             {
                 objMap.Add(obj.name, obj);
@@ -51,12 +52,27 @@ namespace Gj
 
         public GameObject MakeObj(string objName)
         {
+            return MakeObj(objName, null);
+        }
+
+        public GameObject MakeObj(string objName, GameObject parent)
+        {
             GameObject obj = CacheService.single.GetCache(objName);
             if (obj == null)
             {
                 obj = CreateObj(objName);
             }
+            if (obj != null && parent != null)
+            {
+                obj.transform.parent = parent.transform;
+            }
             return obj;
+        }
+
+        public void DestroyObj(GameObject obj)
+        {
+            obj.transform.parent = null;
+            CacheService.single.SetCache(obj.name, obj);
         }
     }
 }

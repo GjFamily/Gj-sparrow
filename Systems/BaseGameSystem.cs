@@ -20,27 +20,13 @@ namespace Gj
             StatisticsService.single.Start();
         }
 
-        protected GameObject MakeTarget(string targetName)
+        protected T Make<T>(string targetName, Vector3 position) where T : Component
         {
-            GameObject obj = ObjectService.single.MakeObj(targetName);
-            if (obj != null)
-            {
-                obj.transform.parent = container.transform;
-                return obj;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        protected GameObject MakeTarget(string targetName, Vector3 position)
-        {
-            GameObject obj = MakeTarget(targetName);
+            GameObject obj = ObjectService.single.MakeObj(targetName, container);
             if (obj != null)
             {
                 obj.transform.position = position;
-                return obj;
+                return obj.AddComponent<T>();
             }
             else
             {
@@ -66,8 +52,7 @@ namespace Gj
 
         public GameObject OnInstance(string prefabName, GamePlayer player, object data)
         {
-            GameObject target = MakeTarget(prefabName);
-            return target;
+            return null;
         }
 
         public void OnLeaveGame()

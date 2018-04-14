@@ -10,7 +10,7 @@ namespace Gj
         private Action enterAttackNotic;
         private Action exitAttackNotic;
         private Action attackNotic;
-        private Action<SkillInfo> notic;
+        private Action<SkillInfo> consumeNotic;
         private float attackDistance;
         private bool attacking = false;
 
@@ -68,9 +68,9 @@ namespace Gj
             exitAttackNotic = exitAction;
         }
 
-        public void SetNotic(Action<SkillInfo> notic)
+        public void SetConsumeNoticNotic(Action<SkillInfo> notic)
         {
-            this.notic = notic;
+            consumeNotic = notic;
         }
 
         public void SetSkillNotic(Action<SkillInfo> before, Action<SkillInfo> after, Action<SkillInfo> start, Action<SkillInfo> end, Action<SkillInfo> ready) {
@@ -102,13 +102,13 @@ namespace Gj
 
         private void BeforeCast()
         {
-            beforeCast(cSkillInfo);
-            notic(cSkillInfo);
+            if (beforeCast != null) beforeCast(cSkillInfo);
+            if (consumeNotic != null) consumeNotic(cSkillInfo);
         }
 
         private void AfterCast()
         {
-            afterCast(cSkillInfo);
+            if (afterCast != null) afterCast(cSkillInfo);
             cSkillInfo = null;
             cSkillEntity = null;
         }
@@ -116,21 +116,21 @@ namespace Gj
         private void StartCast()
         {
             casting = true;
-            startCast(cSkillInfo);
-            notic(cSkillInfo);
+            if (startCast != null) startCast(cSkillInfo);
+            if (consumeNotic != null) consumeNotic(cSkillInfo);
         }
 
         private void EndCast()
         {
             casting = false;
-            endCast(cSkillInfo);
+            if (endCast != null) endCast(cSkillInfo);
             cSkillInfo = null;
             cSkillEntity = null;
         }
 
         private void ReadyCast()
         {
-            readyCast(cSkillInfo);
+            if (readyCast != null) readyCast(cSkillInfo);
             waitCast = true;
         }
 

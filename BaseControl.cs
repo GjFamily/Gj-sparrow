@@ -3,6 +3,7 @@ using System.Collections;
 
 namespace Gj
 {
+    [RequireComponent(typeof(Info))]
     public class BaseControl : MonoBehaviour
     {
         private Info _info;
@@ -19,6 +20,8 @@ namespace Gj
         }
         public string showName;
 
+        public virtual void Init() { }
+
         public float GetAttribute(string key)
         {
             return Info.GetAttribute(key);
@@ -29,8 +32,6 @@ namespace Gj
             Info.SetAttribute(key, value);
         }
 
-        protected void Command (string type, string category, float value) {
-            
-        }
+        protected virtual void Command(string type, string category, float value) { }
     }
 }
