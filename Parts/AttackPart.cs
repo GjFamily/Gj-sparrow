@@ -10,7 +10,8 @@ namespace Gj
         private Action enterAttackNotic;
         private Action exitAttackNotic;
         private Action attackNotic;
-        private Action<SkillInfo> consumeNotic;
+        private Action<SkillInfo> consume;
+        private Func<SkillInfo, bool> inspect;
         private float attackDistance;
         private bool attacking = false;
 
@@ -68,9 +69,10 @@ namespace Gj
             exitAttackNotic = exitAction;
         }
 
-        public void SetConsumeNoticNotic(Action<SkillInfo> notic)
+        public void SetPower(Func<SkillInfo, bool> func, Action<SkillInfo> action)
         {
-            consumeNotic = notic;
+            inspect = func;
+            consume = action;
         }
 
         public void SetSkillNotic(Action<SkillInfo> before, Action<SkillInfo> after, Action<SkillInfo> start, Action<SkillInfo> end, Action<SkillInfo> ready) {
@@ -103,7 +105,7 @@ namespace Gj
         private void BeforeCast()
         {
             if (beforeCast != null) beforeCast(cSkillInfo);
-            if (consumeNotic != null) consumeNotic(cSkillInfo);
+            if (consume != null) consume(cSkillInfo);
         }
 
         private void AfterCast()
@@ -117,7 +119,7 @@ namespace Gj
         {
             casting = true;
             if (startCast != null) startCast(cSkillInfo);
-            if (consumeNotic != null) consumeNotic(cSkillInfo);
+            if (consume != null) consume(cSkillInfo);
         }
 
         private void EndCast()
@@ -134,16 +136,32 @@ namespace Gj
             waitCast = true;
         }
 
-        public void Cast(SkillInfo skillInfo, SkillEntity skillEntity, GameObject target)
-        {
-            skillEntity.Set(target);
-            Cast(skillInfo, skillEntity);
+        public void Cast(string skillName) {
+            SkillInfo skillInfo = SkillService.single.GetSkillInfo(skillName);
+            if (skillInfo != null && inspect != null && inspect(skillInfo)) {
+                SkillEntity skillEntity = SkillService.single.InitSkill(skillName, gameObject);
+                Cast(skillInfo, skillEntity);
+            }
         }
 
-        public void Cast(SkillInfo skillInfo, SkillEntity skillEntity, Transform transform)
+        public void Cast(string skillName, GameObject target)
         {
-            skillEntity.Set(transform);
-            Cast(skillInfo, skillEntity);
+            SkillInfo skillInfo = SkillService.single.GetSkillInfo(skillName);
+            if (skillInfo != null && skillInfo.AllowTarget(target) && skillInfo.AllowRange(gameObject, target) && inspect != null && inspect(skillInfo)) {
+                SkillEntity skillEntity = SkillService.single.InitSkill(skillName, gameObject);
+                skillEntity.Set(target);
+                Cast(skillInfo, skillEntity);
+            }
+        }
+
+        public void Cast(string skillName, Transform transform)
+        {
+            SkillInfo skillInfo = SkillService.single.GetSkillInfo(skillName);
+            if (skillInfo != null && skillInfo.AllowRange(gameObject, transform) && inspect != null && inspect(skillInfo)) {
+                SkillEntity skillEntity = SkillService.single.InitSkill(skillName, gameObject);
+                skillEntity.Set(transform);
+                Cast(skillInfo, skillEntity);
+            }
         }
 
         public void Cast(SkillInfo skillInfo, SkillEntity skillEntity)

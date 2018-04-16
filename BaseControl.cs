@@ -19,6 +19,11 @@ namespace Gj
             }
         }
         public string showName;
+        protected GameObject entity;
+
+        protected void SetEntity (string entityName) {
+            entity = ObjectService.single.MakeObj(entityName, gameObject);
+        }
 
         public virtual void Init() { }
 

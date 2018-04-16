@@ -22,16 +22,7 @@ namespace Gj
 
         protected T Make<T>(string targetName, Vector3 position) where T : Component
         {
-            GameObject obj = ObjectService.single.MakeObj(targetName, container);
-            if (obj != null)
-            {
-                obj.transform.position = position;
-                return obj.AddComponent<T>();
-            }
-            else
-            {
-                return null;
-            }
+            return ObjectService.single.MakeObj<T>(targetName, container, position);
         }
 
         public void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value)

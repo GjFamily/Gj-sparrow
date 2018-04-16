@@ -77,12 +77,22 @@ namespace Gj
             }
         }
 
-        public bool IsAllowRange(GameObject master, GameObject target)
+        public bool AllowRange(Transform transform)
         {
-            return IsAllowRange(master, target.transform);
+            return AllowRange(master, transform);
         }
 
-        public bool IsAllowRange(GameObject master, Transform transform)
+        public bool AllowRange(GameObject target)
+        {
+            return AllowRange(master, target);
+        }
+
+        public bool AllowRange(GameObject master, GameObject target)
+        {
+            return AllowRange(master, target.transform);
+        }
+
+        public bool AllowRange(GameObject master, Transform transform)
         {
             return Vector3.Distance(master.transform.position, transform.position) <= range;
         }

@@ -69,6 +69,21 @@ namespace Gj
             return obj;
         }
 
+        public T MakeObj<T>(string objName, GameObject parent, Vector3 position) where T : Component
+        {
+            GameObject obj = CacheService.single.GetCache(objName);
+            if (obj == null)
+            {
+                obj = ModelTools.Create(null);
+            }
+            if (obj != null && parent != null)
+            {
+                obj.transform.parent = parent.transform;
+                obj.transform.position = position;
+            }
+            return obj.AddComponent<T>();
+        }
+
         public void DestroyObj(GameObject obj)
         {
             obj.transform.parent = null;
