@@ -36,6 +36,7 @@ namespace Gj
         {
             if (target != null)
             {
+                Debug.LogFormat("{0},{1}", Vector3.Distance(target.transform.position, gameObject.transform.position), attackDistance);
                 if (Vector3.Distance(target.transform.position, gameObject.transform.position) < attackDistance)
                 {
                     if (!attacking)
@@ -65,6 +66,7 @@ namespace Gj
         {
             target = obj;
             attackDistance = GetAttribute("radio") + CoreTools.GetAttribute(obj, "radio");
+            attackDistance += attackDistance * 0.3f;
             enterAttackNotic = enterAction;
             exitAttackNotic = exitAction;
         }
@@ -147,7 +149,7 @@ namespace Gj
         public void Cast(string skillName, GameObject target)
         {
             SkillInfo skillInfo = SkillService.single.GetSkillInfo(skillName);
-            if (skillInfo != null && skillInfo.AllowTarget(target) && skillInfo.AllowRange(gameObject, target) && inspect != null && inspect(skillInfo)) {
+            if (skillInfo != null && skillInfo.AllowTarget(gameObject, target) && skillInfo.AllowRange(gameObject, target) && inspect != null && inspect(skillInfo)) {
                 SkillEntity skillEntity = SkillService.single.InitSkill(skillName, gameObject);
                 skillEntity.Set(target);
                 Cast(skillInfo, skillEntity);

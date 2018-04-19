@@ -21,6 +21,24 @@ namespace Gj
             return obj.GetComponent<Info>();
         }
 
+        public static GameObject GetMaster(GameObject obj)
+        {
+            Info info = GetInfo(obj);
+            if (info != null && info.master != null)
+            {
+                return info.master;
+            }
+            else
+            {
+                return obj;
+            }
+        }
+
+        public static Info GetMasterInfo(GameObject obj)
+        {
+            return GetInfo(GetMaster(obj));
+        }
+
         public static float GetAttribute(GameObject obj, string key)
         {
             Info info = GetInfo(obj);
@@ -37,18 +55,6 @@ namespace Gj
             if (info != null)
             {
                 info.SetAttribute(key, value);
-            }
-        }
-
-        public static GameObject GetMaster(GameObject obj)
-        {
-            if (obj.GetComponent<BeLongPart>() != null)
-            {
-                return obj.GetComponent<BeLongPart>().GetMaster();
-            }
-            else
-            {
-                return obj;
             }
         }
 

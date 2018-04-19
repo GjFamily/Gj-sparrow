@@ -13,26 +13,22 @@ namespace Gj
             GameObject enemy = null;
             float distance = 0;
             float _distance = 0;
-            RelationPart relation = GetComponent<RelationPart>();
-            if (relation != null)
+            foreach (GameObject t in targetEntities)
             {
-                foreach (GameObject t in targetEntities)
+                if (Info.IsEnemy(t.gameObject))
                 {
-                    if (relation.IsEnemy(t.gameObject))
+                    if (enemy == null)
                     {
-                        if (enemy == null)
+                        enemy = t;
+                        distance = Vector3.Distance(transform.position, enemy.transform.position);
+                    }
+                    else
+                    {
+                        _distance = Vector3.Distance(transform.position, enemy.transform.position);
+                        if (_distance < distance)
                         {
                             enemy = t;
-                            distance = Vector3.Distance(transform.position, enemy.transform.position);
-                        }
-                        else
-                        {
-                            _distance = Vector3.Distance(transform.position, enemy.transform.position);
-                            if (_distance < distance)
-                            {
-                                enemy = t;
-                                distance = _distance;
-                            }
+                            distance = _distance;
                         }
                     }
                 }
@@ -45,15 +41,11 @@ namespace Gj
             List<GameObject> targetEntities = FindTarget();
             List<GameObject> enemys = new List<GameObject>();
 
-            RelationPart relation = GetComponent<RelationPart>();
-            if (relation != null)
+            foreach (GameObject t in targetEntities)
             {
-                foreach (GameObject t in targetEntities)
+                if (Info.IsEnemy(t.gameObject))
                 {
-                    if (relation.IsEnemy(t.gameObject))
-                    {
-                        enemys.Add(t);
-                    }
+                    enemys.Add(t);
                 }
             }
             return enemys;
@@ -65,26 +57,22 @@ namespace Gj
             GameObject enemy = null;
             float distance = 0;
             float _distance = 0;
-            RelationPart relation = GetComponent<RelationPart>();
-            if (relation != null)
+            foreach (GameObject t in targetEntities)
             {
-                foreach (GameObject t in targetEntities)
+                if (Info.IsPartner(t.gameObject))
                 {
-                    if (relation.IsPartner(t.gameObject))
+                    if (enemy == null)
                     {
-                        if (enemy == null)
+                        enemy = t;
+                        distance = Vector3.Distance(transform.position, enemy.transform.position);
+                    }
+                    else
+                    {
+                        _distance = Vector3.Distance(transform.position, enemy.transform.position);
+                        if (_distance < distance)
                         {
                             enemy = t;
-                            distance = Vector3.Distance(transform.position, enemy.transform.position);
-                        }
-                        else
-                        {
-                            _distance = Vector3.Distance(transform.position, enemy.transform.position);
-                            if (_distance < distance)
-                            {
-                                enemy = t;
-                                distance = _distance;
-                            }
+                            distance = _distance;
                         }
                     }
                 }
@@ -97,15 +85,11 @@ namespace Gj
             List<GameObject> targetEntities = FindTarget();
             List<GameObject> partners = new List<GameObject>();
 
-            RelationPart relation = GetComponent<RelationPart>();
-            if (relation != null)
+            foreach (GameObject t in targetEntities)
             {
-                foreach (GameObject t in targetEntities)
+                if (Info.IsPartner(t.gameObject))
                 {
-                    if (relation.IsPartner(t.gameObject))
-                    {
-                        partners.Add(t);
-                    }
+                    partners.Add(t);
                 }
             }
             return partners;

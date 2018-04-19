@@ -60,15 +60,15 @@ namespace Gj
             }
             else
             {
-                RelationPart relation = master.GetComponent<RelationPart>();
-                if (relation == null) return false;
+                Info info = CoreTools.GetInfo(master);
+                if (info == null) return false;
                 if (targetRelation == TargetRelation.Partner)
                 {
-                    return relation.IsPartner(target);
+                    return info.IsPartner(target);
                 }
                 else if (targetRelation == TargetRelation.Enemy)
                 {
-                    return relation.IsEnemy(target);
+                    return info.IsEnemy(target);
                 }
                 else
                 {

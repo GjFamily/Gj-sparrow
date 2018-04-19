@@ -16,13 +16,10 @@ namespace Gj
         public bool player;
         [HideInInspector]
         public bool otherPlayer;
-        [Serializable]
-        public struct Attribute
-        {
-            public string key;
-            public float value;
-        }
-        public Attribute[] attrubutes;
+
+        [HideInInspector]
+        public GameObject master;
+
         private Dictionary<string, float> attributeMap = new Dictionary<string, float>();
         private Category category = Category.Empty;
         public enum Category
@@ -35,15 +32,12 @@ namespace Gj
             SkillTarget
         }
 
-        void Awake()
+        private Identity identity = Identity.Empty;
+        public enum Identity
         {
-            if (attrubutes != null && attrubutes.Length > 0)
-            {
-                for (int i = 0; i < attrubutes.Length; i++)
-                {
-                    attributeMap.Add(attrubutes[i].key, attrubutes[i].value);
-                }
-            }
+            Partner,
+            Enemy,
+            Empty
         }
 
         public void Init(JSONObject json)
@@ -100,6 +94,79 @@ namespace Gj
         public bool IsBuild()
         {
             return category == Category.Build || category == Category.BuildTarget;
+        }
+
+        public void SetIdentity(Identity i)
+        {
+            identity = i;
+        }
+
+        public bool IsPartner()
+        {
+            return identity == Identity.Partner;
+        }
+
+        public bool IsEnemy()
+        {
+            return identity == Identity.Enemy;
+        }
+
+        public bool IsPartner(GameObject obj)
+        {
+            Info info = CoreTools.GetMasterInfo(obj);
+            if (info != null)
+            {
+                return IsPartner(info);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsPartner(Info info)
+        {
+            if (identity == Identity.Enemy)
+            {
+                return info.identity == Identity.Enemy;
+            }
+            else if (identity == Identity.Partner)
+            {
+                return info.identity == Identity.Partner;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsEnemy(GameObject obj)
+        {
+            Info info = CoreTools.GetMasterInfo(obj);
+            if (info != null)
+            {
+                return IsEnemy(info);
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public bool IsEnemy(Info info)
+        {
+            if (identity == Identity.Enemy)
+            {
+                return info.identity == Identity.Partner;
+            }
+            else if (identity == Identity.Partner)
+            {
+                return info.identity == Identity.Enemy;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

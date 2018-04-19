@@ -5,9 +5,10 @@ namespace Gj
 {
     public class AIControl : BaseControl
     {
-        public virtual void Init()
+        public override void Init()
         {
             Auto();
+            base.Init();
         }
 
         protected virtual void Auto()

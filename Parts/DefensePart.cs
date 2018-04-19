@@ -8,6 +8,7 @@ namespace Gj
     {
         private Action<SkillInfo> skillNotic;
         private Action<ExtraInfo> extraNotic;
+        private Action<GameObject> dieNotic;
 
         // Use this for initialization
         void Start()
@@ -26,18 +27,18 @@ namespace Gj
             health -= value;
             if (health <= 0)
             {
+                if (dieNotic != null) {
+                    dieNotic(obj);
+                }
             }
             SetAttribute("health", health);
         }
 
-        public void SetNotic(Action<SkillInfo> notic)
+        public void SetNotic(Action<GameObject> die, Action<SkillInfo> skill, Action<ExtraInfo> extra)
         {
-            this.skillNotic = notic;
-        }
-
-        public void SetNotic(Action<ExtraInfo> notic)
-        {
-            this.extraNotic = notic;
+            dieNotic = die;
+            skillNotic = skill;
+            extraNotic = extra;
         }
 
         public void BeCast(SkillInfo skillInfo)

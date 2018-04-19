@@ -64,7 +64,7 @@ namespace Gj
             }
             if (obj != null && parent != null)
             {
-                obj.transform.parent = parent.transform;
+                obj.transform.SetParent(parent.transform, false);
             }
             return obj;
         }
@@ -78,9 +78,10 @@ namespace Gj
             }
             if (obj != null && parent != null)
             {
-                obj.transform.parent = parent.transform;
+                obj.transform.SetParent(parent.transform, false);
                 obj.transform.position = position;
             }
+            obj.name = objName;
             return obj.AddComponent<T>();
         }
 

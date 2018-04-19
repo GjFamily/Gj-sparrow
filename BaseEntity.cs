@@ -18,7 +18,7 @@ namespace Gj
         protected virtual void Disappear () {
             show = false;
             gameObject.SetActive(false);
-            CacheService.single.SetCache(name, gameObject);
+            ObjectService.single.DestroyObj(gameObject);
         }
     }
 }

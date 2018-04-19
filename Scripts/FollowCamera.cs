@@ -14,6 +14,7 @@ namespace Gj
         void Start()
         {
             r = transform.position.y / transform.position.z;
+            offsetPosition = transform.position;
         }
 
         // Update is called once per frame

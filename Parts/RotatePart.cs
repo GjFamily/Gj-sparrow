@@ -64,7 +64,7 @@ namespace Gj
             {
                 transform.LookAt(target.transform.position);
             }
-            else if (!targetPosition.Equals(Vector3.zero))
+            else if (targetPosition != null)
             {
                 transform.LookAt(targetPosition);
             }

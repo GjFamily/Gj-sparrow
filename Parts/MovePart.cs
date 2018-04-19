@@ -33,12 +33,12 @@ namespace Gj
         }
 
         private void OpenAuto () {
-            auto = true;
             if (agent == null) {
                 agent = gameObject.AddComponent<UnityEngine.AI.NavMeshAgent>();
             } else {
                 agent.isStopped = false;
             }
+            auto = true;
         }
 
         public void SetTarget(GameObject obj)
@@ -72,6 +72,21 @@ namespace Gj
             directing = true;
         }
 
+        public void Stop () {
+            moving = false;
+            if (auto) {
+                agent.isStopped = true;
+            }
+        }
+
+        public void Resume () {
+            moving = true;
+            if (auto)
+            {
+                agent.isStopped = false;
+            }
+        }
+
         public void Cancel()
         {
             target = null;
@@ -81,7 +96,7 @@ namespace Gj
             directing = false;
             targeting = false;
             ending = false;
-            if (agent != null) {
+            if (auto) {
                 agent.isStopped = true;
             }
             auto = false;
