@@ -36,7 +36,6 @@ namespace Gj
         {
             if (target != null)
             {
-                Debug.LogFormat("{0},{1}", Vector3.Distance(target.transform.position, gameObject.transform.position), attackDistance);
                 if (Vector3.Distance(target.transform.position, gameObject.transform.position) < attackDistance)
                 {
                     if (!attacking)

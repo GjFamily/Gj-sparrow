@@ -5,13 +5,67 @@ namespace Gj
 {
     public class TargetEntity : BaseEntity
     {
+        public virtual void Init()
+        {
+            Idle();
+        }
 
-        public virtual float Birth()
+        public virtual float Idle()
+        {
+            return 0;
+        }
+
+        public virtual float Run()
+        {
+            return 0;
+        }
+
+        public virtual float Walk()
+        {
+            return 0;
+        }
+
+        public virtual float Talk()
+        {
+            return 0;
+        }
+
+        public virtual float Laugh()
+        {
+            return 0;
+        }
+
+        public virtual float Dizzy()
+        {
+            return 0;
+        }
+
+        public virtual float Escape()
+        {
+            return 0;
+        }
+
+        public virtual float Sleep()
+        {
+            return 0;
+        }
+
+        public virtual float GetUp()
+        {
+            return 0;
+        }
+
+        public virtual float Jump()
         {
             return 0;
         }
 
         public virtual float Attack()
+        {
+            return 0;
+        }
+
+        public virtual float AttackRepeat()
         {
             return 0;
         }
@@ -31,17 +85,7 @@ namespace Gj
             return 0;
         }
 
-        public virtual float Injured()
-        {
-            return 0;
-        }
-
-        public virtual float Run()
-        {
-            return 0;
-        }
-
-        public virtual float Walk()
+        public virtual float Hit()
         {
             return 0;
         }

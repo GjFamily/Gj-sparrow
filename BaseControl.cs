@@ -39,6 +39,7 @@ namespace Gj
             else
             {
                 entity = ObjectService.single.MakeObj(entityName, gameObject);
+                entity.GetComponent<TargetEntity>().Init();
             }
         }
 
