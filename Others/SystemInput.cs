@@ -8,5 +8,7 @@
         public static float rv;
         public static string lk;
         public static string rk;
+        public static float sh;
+        public static float sv;
     }
 }

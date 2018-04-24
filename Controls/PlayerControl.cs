@@ -17,6 +17,12 @@ namespace Gj
 
         public virtual void RightRockerExit(string key) { }
 
+        public virtual void ScreenRockerEnter() { }
+
+        public virtual void ScreenRocker(float angle, float h, float v) { }
+
+        public virtual void ScreenRockerExit() { }
+
         public void Message(string type) {
             Message(type, "", 0);
         }

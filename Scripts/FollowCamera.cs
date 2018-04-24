@@ -6,8 +6,10 @@ namespace Gj
     public class FollowCamera : MonoBehaviour
     {
         public float speed = 5;
+        public float touchSpeed = 30;
         GameObject target;
         Vector3 offsetPosition;
+        Quaternion offsetRotation;
         float r;
 
         // Use this for initialization
@@ -15,6 +17,7 @@ namespace Gj
         {
             r = transform.position.y / transform.position.z;
             offsetPosition = transform.position;
+            offsetRotation = transform.rotation;
         }
 
         // Update is called once per frame
@@ -22,6 +25,7 @@ namespace Gj
         {
             if (target != null) {
                 transform.position = Vector3.Lerp(transform.position, target.transform.position + offsetPosition, Time.deltaTime * speed);
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, offsetRotation * Quaternion.Euler(SystemInput.sv * 10 * -1, SystemInput.sh * 10, 0), Time.deltaTime * touchSpeed);
             }
         }
 

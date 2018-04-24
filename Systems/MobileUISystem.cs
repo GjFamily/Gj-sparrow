@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -10,9 +11,12 @@ namespace Gj
         private bool leftRocker = false;
         [SerializeField]
         private bool rightRocker = false;
+        [SerializeField]
+        private bool screenRocker = false;
 
         private bool leftRockerTouch = false;
         private bool rightRochkerTouch = false;
+        private bool screenRockerTouch = false;
 
         private string leftRockerKey = "";
         private string rightRockerKey = "";
@@ -24,7 +28,7 @@ namespace Gj
         {
             if (leftRocker && (System.Math.Abs(SystemInput.lh) > 0 || System.Math.Abs(SystemInput.lv) > 0))
             {
-                HandleRocker(SystemInput.lh, SystemInput.lv, true);
+                HandleRocker(SystemInput.lh, SystemInput.lv, LeftRocker);
                 if (!leftRockerTouch)
                 {
                     leftRockerKey = SystemInput.lk;
@@ -44,7 +48,7 @@ namespace Gj
 
             if (rightRocker && (System.Math.Abs(SystemInput.rh) > 0 || System.Math.Abs(SystemInput.rv) > 0))
             {
-                HandleRocker(SystemInput.rh, SystemInput.rv, false);
+                HandleRocker(SystemInput.rh, SystemInput.rv, RightRocker);
                 if (!rightRochkerTouch)
                 {
                     rightRockerKey = SystemInput.rk;
@@ -61,19 +65,30 @@ namespace Gj
                     rightRochkerTouch = false;
                 }
             }
-        }
 
-        private void HandleRocker(float h, float v, bool left)
-        {
-            float angle = GetAngle(h, v);
-            if (left)
+            if (screenRocker && (System.Math.Abs(SystemInput.sh) > 0 || System.Math.Abs(SystemInput.sv) > 0))
             {
-                LeftRocker(angle, h, v);
+                HandleRocker(SystemInput.sh, SystemInput.sv, ScreenRocker);
+                if (!screenRockerTouch)
+                {
+                    ScreenRockerEnter();
+                    screenRockerTouch = true;
+                }
             }
             else
             {
-                RightRocker(angle, h, v);
+                if (screenRockerTouch)
+                {
+                    ScreenRockerExit();
+                    screenRockerTouch = false;
+                }
             }
+        }
+
+        private void HandleRocker(float h, float v, Action<float, float, float> action)
+        {
+            float angle = GetAngle(h, v);
+            action(angle, h, v);
         }
 
         private float GetAngle(float h, float v)
@@ -130,6 +145,32 @@ namespace Gj
             if (player != null)
             {
                 player.RightRockerExit(key);
+            }
+        }
+
+        protected virtual void ScreenRockerEnter()
+        {
+            if (player != null)
+            {
+                player.ScreenRockerEnter();
+            }
+        }
+
+        protected virtual void ScreenRocker(float angle, float h, float v)
+        {
+
+            if (player != null)
+            {
+                player.ScreenRocker(angle, h, v);
+            }
+        }
+
+        protected virtual void ScreenRockerExit()
+        {
+
+            if (player != null)
+            {
+                player.ScreenRockerExit();
             }
         }
     }
