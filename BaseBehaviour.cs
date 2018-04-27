@@ -1,9 +1,9 @@
 using UnityEngine;
-using System;
+using System.Collections;
 
 namespace Gj
 {
-    public class BasePart : MonoBehaviour
+    public class BaseBehaviour : MonoBehaviour
     {
         private Info _info;
         protected Info Info

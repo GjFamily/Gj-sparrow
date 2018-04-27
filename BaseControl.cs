@@ -7,7 +7,7 @@ namespace Gj
     public class BaseControl : MonoBehaviour
     {
         private Info _info;
-        public Info Info
+        protected Info Info
         {
             get
             {
@@ -18,8 +18,6 @@ namespace Gj
                 return _info;
             }
         }
-        [HideInInspector]
-        public string showName;
 
         protected GameObject entity;
 
@@ -39,7 +37,6 @@ namespace Gj
             else
             {
                 entity = ObjectService.single.MakeObj(entityName, gameObject);
-                entity.GetComponent<TargetEntity>().Init();
             }
         }
 
@@ -57,27 +54,22 @@ namespace Gj
             Open();
         }
 
+        public void Init(Attr attr, GameObject obj)
+        {
+            Info.attr = attr;
+            Info.master = obj;
+            Init();
+        }
+
         protected void Open()
         {
-            gameObject.SetActive(true);
             Info.live = true;
         }
 
         protected void Close()
         {
-            gameObject.SetActive(false);
             Info.live = false;
-            ObjectService.single.DestroyObj(gameObject);
-        }
-
-        public float GetAttribute(string key)
-        {
-            return Info.GetAttribute(key);
-        }
-
-        public void SetAttribute(string key, float value)
-        {
-            Info.SetAttribute(key, value);
+            ControlService.single.DestroyControl(gameObject);
         }
 
         protected virtual void Command(string type, string category, float value) { }

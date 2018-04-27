@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 namespace Gj
 {
+    // TODO
     public class StatusPart : BasePart
     {
         private Dictionary<string, List<ExtraInfo>> extraInfoMap = new Dictionary<string, List<ExtraInfo>>();
@@ -135,7 +136,7 @@ namespace Gj
             DefensePart defensePart = gameObject.GetComponent<DefensePart>();
             if (defensePart != null)
             {
-                defensePart.BeCast(extraInfo);
+                //defensePart.BeCast(extraInfo);
             }
         }
     }

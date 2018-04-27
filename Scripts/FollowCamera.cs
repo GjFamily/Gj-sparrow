@@ -25,8 +25,6 @@ namespace Gj
         {
             if (target != null) {
                 Vector3 tmp = new Vector3(SystemInput.sh * distance, 0, SystemInput.sv * distance);
-                Debug.Log(distance);
-                Debug.Log(tmp);
                 transform.position = Vector3.Lerp(transform.position, target.transform.position + offsetPosition + tmp, Time.deltaTime * speed);
 
             }

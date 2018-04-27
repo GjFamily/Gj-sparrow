@@ -17,12 +17,8 @@ namespace Gj
         protected virtual void Awake()
         {
             ObjectService.single.SetObjs(objs);
+            ObjectService.single.SetContainer(container);
             StatisticsService.single.Start();
-        }
-
-        protected T Make<T>(string targetName, Vector3 position) where T : Component
-        {
-            return ObjectService.single.MakeObj<T>(targetName, container, position);
         }
 
         public void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value)

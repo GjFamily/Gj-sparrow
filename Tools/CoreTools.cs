@@ -58,6 +58,42 @@ namespace Gj
             }
         }
 
+        public static bool AllowTarget(Skill skill, GameObject master, GameObject target)
+        {
+            if (skill.targetRelation == TargetRelation.Self)
+            {
+                return master == target;
+            }
+            else
+            {
+                Info info = GetInfo(master);
+                if (info == null) return false;
+                if (skill.targetRelation == TargetRelation.Partner)
+                {
+                    return info.IsPartner(target);
+                }
+                else if (skill.targetRelation == TargetRelation.Enemy)
+                {
+                    return info.IsEnemy(target);
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        public static bool AllowRange(Skill skill, GameObject master, GameObject target)
+        {
+            return AllowRange(skill, master, target.transform);
+        }
+
+        public static bool AllowRange(Skill skill, GameObject master, Transform transform)
+        {
+            if (skill.range <= 0) return true;
+            return Vector3.Distance(master.transform.position, transform.position) <= skill.range;
+        }
+
         public static AllowSync AllowSync(Component c, GameObject t)
         {
             foreach (object attributes in c.GetType().GetCustomAttributes(typeof(AllowSync), true))

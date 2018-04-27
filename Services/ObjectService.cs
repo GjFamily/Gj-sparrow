@@ -9,12 +9,18 @@ namespace Gj
     {
         public static ObjectService single;
 
+        private GameObject container;
+
         private Dictionary<string, GameObject> objMap = new Dictionary<string, GameObject>();
-        private Dictionary<string, SkillInfo> skillInfoMap = new Dictionary<string, SkillInfo>();
 
         static ObjectService()
         {
             single = new ObjectService();
+        }
+
+        public void SetContainer(GameObject obj)
+        {
+            container = obj;
         }
 
         public void SetObjs(GameObject[] objs)
@@ -62,23 +68,50 @@ namespace Gj
             {
                 obj = CreateObj(objName);
             }
-            if (obj != null && parent != null)
+            if (parent != null)
             {
                 obj.transform.SetParent(parent.transform, false);
             }
             return obj;
         }
 
-        public T MakeObj<T>(string objName, GameObject parent, Vector3 position) where T : Component
+        public Component MakeObj(Type type, string objName, Vector3 position)
+        {
+            GameObject obj = MakeObj(objName);
+            if (obj != null)
+            {
+                obj.transform.SetParent(container.transform, false);
+                obj.transform.position = position;
+            }
+            return obj.AddComponent(type);
+        }
+
+        public Component MakeEmpty(Type type, string objName, Vector3 position)
         {
             GameObject obj = CacheService.single.GetCache(objName);
             if (obj == null)
             {
                 obj = ModelTools.Create(null);
             }
-            if (obj != null && parent != null)
+            if (obj != null)
             {
-                obj.transform.SetParent(parent.transform, false);
+                obj.transform.SetParent(container.transform, false);
+                obj.transform.position = position;
+            }
+            obj.name = objName;
+            return obj.AddComponent(type);
+        }
+
+        public T MakeTarget<T>(string objName, Vector3 position) where T : Component
+        {
+            GameObject obj = CacheService.single.GetCache(objName);
+            if (obj == null)
+            {
+                obj = ModelTools.Create(null);
+            }
+            if (obj != null)
+            {
+                obj.transform.SetParent(container.transform, false);
                 obj.transform.position = position;
             }
             obj.name = objName;

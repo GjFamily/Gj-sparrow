@@ -19,6 +19,8 @@ namespace Gj
 
         [HideInInspector]
         public GameObject master;
+        [HideInInspector]
+        public Attr attr;
 
         private Dictionary<string, float> attributeMap = new Dictionary<string, float>();
         private Category category = Category.Empty;

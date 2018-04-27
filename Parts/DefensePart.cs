@@ -6,57 +6,34 @@ namespace Gj
 {
     public class DefensePart : BasePart
     {
-        private Action<SkillInfo> skillNotic;
-        private Action<ExtraInfo> extraNotic;
-        private Action<GameObject> dieNotic;
+        private Action<GameObject, Skill> hitNotic;
+        private Action<GameObject, Skill> dieNotic;
 
-        // Use this for initialization
-        void Start()
+        public void SetNotic(Action<GameObject, Skill> die, Action<GameObject, Skill> hit)
         {
-
+            dieNotic = die;
+            hitNotic = hit;
         }
 
-        // Update is called once per frame
-        void Update()
-        {
-
-        }
-        public void Effect(float value, GameObject obj)
+        public void BeCast(GameObject target, Skill skill)
         {
             float health = GetAttribute("health");
-            health -= value;
+            if (skill.value < 0)
+            {
+                if (hitNotic != null)
+                {
+                    hitNotic(target, skill);
+                }
+            }
+            health += skill.value;
             if (health <= 0)
             {
-                if (dieNotic != null) {
-                    dieNotic(obj);
+                if (dieNotic != null)
+                {
+                    dieNotic(target, skill);
                 }
             }
             SetAttribute("health", health);
-        }
-
-        public void SetNotic(Action<GameObject> die, Action<SkillInfo> skill, Action<ExtraInfo> extra)
-        {
-            dieNotic = die;
-            skillNotic = skill;
-            extraNotic = extra;
-        }
-
-        public void BeCast(SkillInfo skillInfo)
-        {
-            if (skillNotic != null)
-            {
-                skillNotic(skillInfo);
-            }
-            Effect(skillInfo.value, skillInfo.master);
-        }
-
-        public void BeCast(ExtraInfo extraInfo)
-        {
-            if (extraNotic != null)
-            {
-                extraNotic(extraInfo);
-            }
-            Effect(extraInfo.value, extraInfo.master);
         }
     }
 }
