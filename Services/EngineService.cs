@@ -6,7 +6,6 @@ using SimpleJSON;
 
 namespace Gj
 {
-    // TODO 
     public class EngineService
     {
         public static EngineService single;
@@ -21,7 +20,7 @@ namespace Gj
 
         public void Init(Dictionary<string, Type> dict, JSONArray jSONArray)
         {
-            SetEngine(dict);
+            engineMap = dict;
             SetSkill(jSONArray);
         }
 
@@ -29,35 +28,8 @@ namespace Gj
         {
             foreach (JSONObject json in jSONArray)
             {
-                skillMap.Add(json["name"], FormatSkill(json));
+                skillMap.Add(json["name"], new Skill(json));
             }
-        }
-
-        private void SetEngine(Dictionary<string, Type> dict)
-        {
-            engineMap = dict;
-        }
-
-        private Skill FormatSkill(JSONObject json)
-        {
-            return new Skill
-            {
-                name = json["name"],
-                value = json["vaule"].AsFloat,
-                need = json["need"].AsFloat,
-                range = json["rang"].AsFloat,
-                type = engineMap[json["name"]],
-                readyTime = json["readyTime"].AsFloat,
-                castTime = json["castTime"].AsFloat,
-                intervalTime = json["intervalTime"].AsFloat,
-                sustainedTime = json["sustainedTime"].AsFloat,
-                targetRelation = (TargetRelation)json["targetRelation"].AsInt,
-                targetNum = (TargetNum)json["targetNum"].AsInt,
-                targetNeed = (TargetNeed)json["targetNeed"].AsInt,
-                skillType = (SkillType)json["skillType"].AsInt,
-                castType = (CastType)json["castType"].AsInt,
-                needType = (NeedType)json["needType"].AsInt
-            };
         }
 
         public Skill GetSkill(string skillName)
@@ -67,7 +39,7 @@ namespace Gj
 
         public BaseEngine MakeEngine(GameObject obj, Skill skill)
         {
-            BaseEngine baseEngine = ObjectService.single.MakeObj(skill.type, skill.name, obj.transform.position) as BaseEngine;
+            BaseEngine baseEngine = ObjectService.single.MakeObj(engineMap[skill.name], skill.name, obj.transform.position) as BaseEngine;
             baseEngine.Init(obj, skill);
             baseEngine.gameObject.SetActive(true);
             return baseEngine;

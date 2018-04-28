@@ -39,25 +39,6 @@ namespace Gj
             return GetInfo(GetMaster(obj));
         }
 
-        public static float GetAttribute(GameObject obj, string key)
-        {
-            Info info = GetInfo(obj);
-            if (info != null)
-            {
-                return info.GetAttribute(key);
-            }
-            return 0;
-        }
-
-        public static void SetAttribute(GameObject obj, string key, float value)
-        {
-            Info info = GetInfo(obj);
-            if (info != null)
-            {
-                info.SetAttribute(key, value);
-            }
-        }
-
         public static bool AllowTarget(Skill skill, GameObject master, GameObject target)
         {
             if (skill.targetRelation == TargetRelation.Self)

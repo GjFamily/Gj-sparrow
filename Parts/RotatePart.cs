@@ -59,7 +59,7 @@ namespace Gj
         // Update is called once per frame
         void Update()
         {
-            float speed = GetAttribute("rotateSpeed");
+            float speed = Info.attr.rotate;
             if (target != null)
             {
                 transform.LookAt(target.transform.position);

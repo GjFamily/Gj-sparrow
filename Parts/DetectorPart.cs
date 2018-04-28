@@ -97,7 +97,7 @@ namespace Gj
 
         public List<GameObject> FindTarget()
         {
-            Collider[] colliders = Physics.OverlapSphere(transform.position, GetAttribute("detectorRadius"));
+            Collider[] colliders = Physics.OverlapSphere(transform.position, Info.attr.scanRadius);
             List<GameObject> targetEntities = new List<GameObject>();
             foreach (Collider c in colliders)
             {

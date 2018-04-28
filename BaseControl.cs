@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using SimpleJSON;
 
 namespace Gj
 {
@@ -7,7 +8,7 @@ namespace Gj
     public class BaseControl : MonoBehaviour
     {
         private Info _info;
-        protected Info Info
+        public Info Info
         {
             get
             {
@@ -49,15 +50,20 @@ namespace Gj
             return t;
         }
 
+        public virtual void FormatExtend (JSONObject json) {
+            
+        }
+
         public virtual void Init()
         {
             Open();
         }
 
-        public void Init(Attr attr, GameObject obj)
+        public void Init(TargetAttr attr, GameObject obj)
         {
             Info.attr = attr;
             Info.master = obj;
+            FormatExtend(attr.extend);
             Init();
         }
 

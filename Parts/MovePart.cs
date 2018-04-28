@@ -14,7 +14,6 @@ namespace Gj
         private bool ending = false;
         private bool directing = false;
         private bool needHit = false;
-        private bool auto = false;
         private UnityEngine.AI.NavMeshAgent agent = null;
         // Use this for initialization
         void Start()
@@ -32,13 +31,16 @@ namespace Gj
             needHit = false;
         }
 
-        private void OpenAuto () {
-            if (agent == null) {
+        private void OpenAuto()
+        {
+            if (agent == null)
+            {
                 agent = gameObject.AddComponent<UnityEngine.AI.NavMeshAgent>();
-            } else {
+            }
+            else
+            {
                 agent.isStopped = false;
             }
-            auto = true;
         }
 
         public void SetTarget(GameObject obj)
@@ -47,7 +49,8 @@ namespace Gj
             moving = true;
             target = obj;
             targeting = true;
-            if (GetAttribute("auto") > 0) {
+            if (Info.attr.auto)
+            {
                 OpenAuto();
             }
         }
@@ -58,7 +61,7 @@ namespace Gj
             moving = true;
             end = position;
             ending = true;
-            if (GetAttribute("auto") > 0)
+            if (Info.attr.auto)
             {
                 OpenAuto();
             }
@@ -72,16 +75,19 @@ namespace Gj
             directing = true;
         }
 
-        public void Stop () {
+        public void Stop()
+        {
             moving = false;
-            if (auto) {
+            if (Info.attr.auto)
+            {
                 agent.isStopped = true;
             }
         }
 
-        public void Resume () {
+        public void Resume()
+        {
             moving = true;
-            if (auto)
+            if (Info.attr.auto)
             {
                 agent.isStopped = false;
             }
@@ -96,17 +102,21 @@ namespace Gj
             directing = false;
             targeting = false;
             ending = false;
-            if (auto) {
+            if (Info.attr.auto && agent != null)
+            {
                 agent.isStopped = true;
             }
-            auto = false;
         }
 
-        private void Move (Vector3 position, float speed) {
-            if (auto) {
+        private void Move(Vector3 position, float speed)
+        {
+            if (Info.attr.auto)
+            {
                 agent.speed = speed;
                 agent.SetDestination(position);
-            } else {
+            }
+            else
+            {
                 transform.position = Vector3.MoveTowards(transform.position, position, Time.deltaTime * speed);
             }
         }
@@ -116,12 +126,15 @@ namespace Gj
         {
             if (moving)
             {
-                float speed = GetAttribute("moveSpeed");
+                float speed = Info.attr.speed;
                 if (targeting)
                 {
-                    if (target != null) {
+                    if (target != null)
+                    {
                         Move(target.transform.position, speed);
-                    } else {
+                    }
+                    else
+                    {
                         Cancel();
                     }
                 }
@@ -148,7 +161,7 @@ namespace Gj
             if (!needHit) return false;
             RaycastHit hit;
 
-            if (Physics.Raycast(transform.position, transform.forward, out hit, GetAttribute("radio")))
+            if (Physics.Raycast(transform.position, transform.forward, out hit, Info.attr.radio))
             {
                 Info info = CoreTools.GetInfo(hit.transform.gameObject);
                 if (info != null)

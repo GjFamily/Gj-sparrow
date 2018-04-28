@@ -57,12 +57,12 @@ namespace Gj
 
         private void AddAttribute(ExtraInfo extraInfo)
         {
-            SetAttribute(extraInfo.attrubute, extraInfo.HandleAttribute(GetAttribute(extraInfo.attrubute)));
+            //SetAttribute(extraInfo.attrubute, extraInfo.HandleAttribute(GetAttribute(extraInfo.attrubute)));
         }
 
         private void CancelAttribute(ExtraInfo extraInfo)
         {
-            SetAttribute(extraInfo.attrubute, extraInfo.RecoveryAttribute(GetAttribute(extraInfo.attrubute)));
+            //SetAttribute(extraInfo.attrubute, extraInfo.RecoveryAttribute(GetAttribute(extraInfo.attrubute)));
         }
 
         public void Merge(ExtraInfo extraInfo)

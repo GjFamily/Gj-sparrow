@@ -52,7 +52,7 @@ namespace Gj
             if (inspect != null && inspect(skill))
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
-                Cast(engine);
+                Cast(baseEngine);
             }
         }
 
@@ -62,8 +62,8 @@ namespace Gj
             if (CoreTools.AllowTarget(skill, gameObject, target) && CoreTools.AllowRange(skill, gameObject, target) && inspect != null && inspect(skill))
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
-                engine.Set(target);
-                Cast(engine);
+                baseEngine.Set(target);
+                Cast(baseEngine);
             }
         }
 
@@ -73,15 +73,15 @@ namespace Gj
             if (CoreTools.AllowRange(skill, gameObject, transform) && inspect != null && inspect(skill))
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
-                engine.Set(transform);
-                Cast(engine);
+                baseEngine.Set(transform);
+                Cast(baseEngine);
             }
         }
 
         public void Cast(BaseEngine baseEngine)
         {
             engine = baseEngine;
-            engine.Ignition(startCast, endCast, readyCast, cancelCast, GetAttribute("auto") > 0);
+            engine.Ignition(startCast, endCast, readyCast, cancelCast, Info.attr.auto);
         }
     }
 }

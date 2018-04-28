@@ -1,18 +1,13 @@
 using UnityEngine;
 using System.Collections;
 using System;
+using SimpleJSON;
 
 namespace Gj
 {
     public interface UISystem
     {
         void UIClick(string key);
-    }
-
-    public struct Attr {
-        public string name;
-        public float speed;
-        public Type type;
     }
 
     public interface TargetEntity
@@ -36,19 +31,91 @@ namespace Gj
         void Die();
     }
 
-    public struct SkillExtra
+    public class TargetAttr
     {
+        public TargetAttr(JSONObject json) {
+            name = json["name"];
+            showName = json["showName"];
+            speed = json["speed"].AsFloat;
+            rotate = json["rotate"].AsFloat;
+            auto = false;
+            kill = 0;
+            star = 0;
+            radio = json["radio"].AsFloat;
+            health = json["health"].AsFloat;
+            healthTotal = json["health"].AsFloat;
+            number = json["number"].AsFloat;
+            isHot = false;
+            hot = 0;
+            wait = 0;
+            block = json["block"].AsFloat;
+            magic = json["magic"].AsFloat;
+            magicTotal = json["magic"].AsFloat;
+            energy = json["energy"].AsFloat;
+            energyTotal = json["energy"].AsFloat;
+            scanRadius = json["scanRadius"].AsFloat;
+            extend = json["extend"].AsObject;
+        }
+        public string name;
+        public string showName;
+        public float speed;
+        public float rotate;
+        public float kill;
+        public float star;
+        public bool auto;
+        public float radio;
+        public float health;
+        public float healthTotal;
+        public float wait;
+        public float number;
+        public bool isHot;
+        public float hot;
+        public float block;
+        public float magic;
+        public float magicTotal;
+        public float energy;
+        public float energyTotal;
+        public float scanRadius;
+        public JSONObject extend;
+    }
+
+    public class SkillExtra
+    {
+        public SkillExtra (JSONObject json) {
+            value = json["value"].AsFloat;
+            intervalTime = json["intervalTime"].AsFloat;
+            targetRelation = (TargetRelation) json["targetRelation"].AsInt;
+            extraType = (ExtraType) json["extraType"].AsInt;
+            handleType = (HandleType) json["handleType"].AsInt;
+            numType = (NumType) json["numType"].AsInt;
+        }
+        public float value;
         public float intervalTime;
         public TargetRelation targetRelation;
         public ExtraType extraType;
-        public float value;
-        public string attrubute;
         public HandleType handleType;
         public NumType numType;
     }
 
-    public struct Skill
+    public class Skill
     {
+        public Skill(JSONObject json)
+        {
+            name = json["name"];
+            value = json["value"].AsFloat;
+            need = json["need"].AsFloat;
+            range = json["rang"].AsFloat;
+            readyTime = json["readyTime"].AsFloat;
+            castTime = json["castTime"].AsFloat;
+            intervalTime = json["intervalTime"].AsFloat;
+            sustainedTime = json["sustainedTime"].AsFloat;
+            targetRelation = (TargetRelation)json["targetRelation"].AsInt;
+            targetNum = (TargetNum)json["targetNum"].AsInt;
+            targetNeed = (TargetNeed)json["targetNeed"].AsInt;
+            skillType = (SkillType)json["skillType"].AsInt;
+            castType = (CastType)json["castType"].AsInt;
+            needType = (NeedType)json["needType"].AsInt;
+        }
         public string name;
         public float value;
         public float need;
@@ -57,7 +124,6 @@ namespace Gj
         public float readyTime;
         public float castTime;
         public float sustainedTime;
-        public Type type;
         public TargetRelation targetRelation;
         public TargetNum targetNum;
         public TargetNeed targetNeed;

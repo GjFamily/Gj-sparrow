@@ -57,7 +57,7 @@ namespace Gj
         public void SetAttackTarget(GameObject obj)
         {
             target = obj;
-            attackDistance = GetAttribute("radio") + CoreTools.GetAttribute(obj, "radio");
+            attackDistance = Info.attr.radio + CoreTools.GetInfo(obj).attr.radio;
             attackDistance += attackDistance * 0.3f;
         }
     }

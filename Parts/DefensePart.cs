@@ -17,7 +17,7 @@ namespace Gj
 
         public void BeCast(GameObject target, Skill skill)
         {
-            float health = GetAttribute("health");
+            float health = Info.attr.health;
             if (skill.value < 0)
             {
                 if (hitNotic != null)
@@ -32,8 +32,9 @@ namespace Gj
                 {
                     dieNotic(target, skill);
                 }
+                health = 0;
             }
-            SetAttribute("health", health);
+            Info.attr.health = health;
         }
     }
 }

@@ -6,12 +6,11 @@ using SimpleJSON;
 
 namespace Gj
 {
-    // TODO 
     public class ControlService
     {
         public static ControlService single;
 
-        private Dictionary<string, Target> targetMap = new Dictionary<string, Target>();
+        private Dictionary<string, JSONObject> targetMap = new Dictionary<string, JSONObject>();
         private Dictionary<string, Type> controlMap = new Dictionary<string, Type>();
 
         static ControlService()
@@ -19,8 +18,9 @@ namespace Gj
             single = new ControlService();
         }
 
-        public void Init(Dictionary<string, Type> dict, JSONArray jSONArray) {
-            SetControl(dict);
+        public void Init(Dictionary<string, Type> dict, JSONArray jSONArray)
+        {
+            controlMap = dict;
             SetTarget(jSONArray);
         }
 
@@ -28,50 +28,25 @@ namespace Gj
         {
             foreach (JSONObject json in jSONArray)
             {
-                targetMap.Add(json["name"], FormatTarget(json));
+                targetMap.Add(json["name"], json);
             }
         }
 
-        private void SetControl(Dictionary<string, Type> dict)
+        public TargetAttr GetTarget(string targetName)
         {
-            controlMap = dict;
+            return new TargetAttr(targetMap[targetName]);
         }
 
-        private Target FormatTarget(JSONObject json)
+        public BaseControl MakeControl(string targetName, Vector3 position)
         {
-            //return new Skill
-            //{
-            //    name = json["name"],
-            //    value = json["vaule"].AsFloat,
-            //    need = json["need"].AsFloat,
-            //    range = json["rang"].AsFloat,
-            //    type = controlMap[json["name"]],
-            //    readyTime = json["readyTime"].AsFloat,
-            //    castTime = json["castTime"].AsFloat,
-            //    intervalTime = json["intervalTime"].AsFloat,
-            //    sustainedTime = json["sustainedTime"].AsFloat,
-            //    targetRelation = (TargetRelation)json["targetRelation"].AsInt,
-            //    targetNum = (TargetNum)json["targetNum"].AsInt,
-            //    targetNeed = (TargetNeed)json["targetNeed"].AsInt,
-            //    skillType = (SkillType)json["skillType"].AsInt,
-            //    castType = (CastType)json["castType"].AsInt,
-            //    needType = (NeedType)json["needType"].AsInt
-            //};
-            return new Target
-            {
-
-            };
+            return MakeControl(targetName, position, null);
         }
 
-        public BaseControl MakeControl(Target target, Vector3 position)
+        public BaseControl MakeControl(string targetName, Vector3 position, GameObject master)
         {
-            return MakeControl(target, position, null);
-        }
-
-        public BaseControl MakeControl(Target target, Vector3 position, GameObject master)
-        {
-            BaseControl baseControl = ObjectService.single.MakeEmpty(target.type, target.name, position) as BaseControl;
-            baseControl.Init(target, master);
+            TargetAttr attr = GetTarget(targetName);
+            BaseControl baseControl = ObjectService.single.MakeEmpty(controlMap[attr.name], attr.name, position) as BaseControl;
+            baseControl.Init(attr, master);
             baseControl.gameObject.SetActive(true);
             return baseControl;
         }
