@@ -12,7 +12,7 @@ namespace Gj
         private struct Event
         {
             public Action<float> action;
-            public Action<string, float> cateAction;
+            public Action<byte, float> cateAction;
             public string key;
             public bool once;
         }
@@ -34,7 +34,7 @@ namespace Gj
             return e.key;
         }
 
-        public string On(string type, string category, Action<float> eventAction, bool once = false)
+        public string On(byte type, byte category, Action<float> eventAction, bool once = false)
         {
             Event e = new Event
             {
@@ -45,7 +45,7 @@ namespace Gj
             return On(GetKey(type, category), e);
         }
 
-        public string On(string type, Action<string, float> eventAction, bool once = false)
+        public string On(byte type, Action<byte, float> eventAction, bool once = false)
         {
             Event e = new Event
             {
@@ -53,22 +53,22 @@ namespace Gj
                 cateAction = eventAction,
                 once = once
             };
-            return On(type, e);
+            return On(GetKey(type), e);
         }
 
-        public string Once(string type, Action<string, float> eventAction)
+        public string Once(byte type, Action<byte, float> eventAction)
         {
             return On(type, eventAction, true);
         }
 
-        public string Once(string type, string category, Action<float> eventAction)
+        public string Once(byte type, byte category, Action<float> eventAction)
         {
             return On(type, category, eventAction, true);
         }
 
-        public void Off(string type, string key)
+        public void Off(byte type, string key)
         {
-            List<Event> eventList = GetEventList(type);
+            List<Event> eventList = GetEventList(GetKey(type));
             if (eventList != null)
             {
                 foreach (Event e in eventList)
@@ -81,7 +81,7 @@ namespace Gj
             }
         }
 
-        public void Off(string type, string category, string key)
+        public void Off(byte type, byte category, string key)
         {
             List<Event> eventList = GetEventList(GetKey(type, category));
             if (eventList != null)
@@ -96,11 +96,11 @@ namespace Gj
             }
         }
 
-        private List<Event> GetEventList(string type)
+        private List<Event> GetEventList(string key)
         {
-            if (eventDic.ContainsKey(type))
+            if (eventDic.ContainsKey(key))
             {
-                return eventDic[type];
+                return eventDic[key];
             }
             else
             {
@@ -108,9 +108,9 @@ namespace Gj
             }
         }
 
-        public void Emit(string type, string category, float value)
+        public void Emit(byte type, byte category, float value)
         {
-            List<Event> eventList = GetEventList(type);
+            List<Event> eventList = GetEventList(GetKey(type));
             if (eventList != null)
             {
                 foreach (Event e in eventList)
@@ -129,7 +129,7 @@ namespace Gj
                     }
                 }
             }
-            if (category != null) {
+            if (category != 0) {
                 eventList = GetEventList(GetKey(type, category));
                 if (eventList != null)
                 {
@@ -152,19 +152,24 @@ namespace Gj
             }
         }
 
-        public void Emit(string type)
+        public void Emit(byte type)
         {
-            Emit(type, null, 0);
+            Emit(type, 0, 0);
         }
 
-        public void Emit(string type, string category)
+        public void Emit(byte type, byte category)
         {
             Emit(type, category, 0);
         }
 
-        private string GetKey(string type, string category)
+        private string GetKey(byte type, byte category)
         {
             return type + "-" + category;
+        }
+
+        private string GetKey(byte type)
+        {
+            return type + "*";
         }
     }
 }

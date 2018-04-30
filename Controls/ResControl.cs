@@ -9,7 +9,7 @@ namespace Gj
         {
             if (IsCurrentPlayer(other.gameObject))
             {
-                EventService.single.Emit(name + "-enter");
+                EventService.single.Emit(1);
             }
         }
 
@@ -17,7 +17,7 @@ namespace Gj
         {
             if (IsCurrentPlayer(other.gameObject))
             {
-                EventService.single.Emit(name + "-exit");
+                EventService.single.Emit(1);
             }
         }
 

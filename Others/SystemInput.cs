@@ -6,8 +6,8 @@
         public static float lv;
         public static float rh;
         public static float rv;
-        public static string lk;
-        public static string rk;
+        public static int lk;
+        public static int rk;
         public static float sh;
         public static float sv;
     }

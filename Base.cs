@@ -7,7 +7,7 @@ namespace Gj
 {
     public interface UISystem
     {
-        void UIClick(string key);
+        void UIClick(int key);
     }
 
     public interface TargetEntity
@@ -31,30 +31,45 @@ namespace Gj
         void Die();
     }
 
+    public static class TARGETATTR {
+        public const string NAME = "name";
+        public const string SHOW_NAME = "showName";
+        public const string SPEED = "speed";
+        public const string ROTATE = "rotate";
+        public const string RADIO = "radio";
+        public const string HEALTH = "health";
+        public const string NUMBER = "number";
+        public const string BLOCK = "block";
+        public const string MAGIC = "magic";
+        public const string ENERGY = "energy";
+        public const string SCAN_RADIUS = "scanRadius";
+        public const string EXTEND = "extend";
+    }
+
     public class TargetAttr
     {
         public TargetAttr(JSONObject json) {
-            name = json["name"];
-            showName = json["showName"];
-            speed = json["speed"].AsFloat;
-            rotate = json["rotate"].AsFloat;
+            name = json[TARGETATTR.NAME];
+            showName = json[TARGETATTR.SHOW_NAME];
+            speed = json[TARGETATTR.SPEED].AsFloat;
+            rotate = json[TARGETATTR.ROTATE].AsFloat;
             auto = false;
             kill = 0;
             star = 0;
-            radio = json["radio"].AsFloat;
-            health = json["health"].AsFloat;
-            healthTotal = json["health"].AsFloat;
-            number = json["number"].AsFloat;
+            radio = json[TARGETATTR.RADIO].AsFloat;
+            health = json[TARGETATTR.HEALTH].AsFloat;
+            healthTotal = json[TARGETATTR.HEALTH].AsFloat;
+            number = json[TARGETATTR.NUMBER].AsFloat;
             isHot = false;
             hot = 0;
             wait = 0;
-            block = json["block"].AsFloat;
-            magic = json["magic"].AsFloat;
-            magicTotal = json["magic"].AsFloat;
-            energy = json["energy"].AsFloat;
-            energyTotal = json["energy"].AsFloat;
-            scanRadius = json["scanRadius"].AsFloat;
-            extend = json["extend"].AsObject;
+            block = json[TARGETATTR.BLOCK].AsFloat;
+            magic = json[TARGETATTR.MAGIC].AsFloat;
+            magicTotal = json[TARGETATTR.MAGIC].AsFloat;
+            energy = json[TARGETATTR.ENERGY].AsFloat;
+            energyTotal = json[TARGETATTR.ENERGY].AsFloat;
+            scanRadius = json[TARGETATTR.SCAN_RADIUS].AsFloat;
+            extend = json[TARGETATTR.EXTEND].AsObject;
         }
         public string name;
         public string showName;
@@ -79,42 +94,65 @@ namespace Gj
         public JSONObject extend;
     }
 
+    public static class SKILLEXTRA
+    {
+        public const string VALUE = "value";
+        public const string INTERVAL_TIME = "intervalTime";
+        public const string EXTRA_TYPE = "extraType";
+        public const string HANDLE_TYPE = "handleType";
+    }
+
     public class SkillExtra
     {
         public SkillExtra (JSONObject json) {
-            value = json["value"].AsFloat;
-            intervalTime = json["intervalTime"].AsFloat;
-            targetRelation = (TargetRelation) json["targetRelation"].AsInt;
-            extraType = (ExtraType) json["extraType"].AsInt;
-            handleType = (HandleType) json["handleType"].AsInt;
-            numType = (NumType) json["numType"].AsInt;
+            value = json[SKILLEXTRA.VALUE].AsFloat;
+            intervalTime = json[SKILLEXTRA.INTERVAL_TIME].AsFloat;
+            extraType = (ExtraType) json[SKILLEXTRA.EXTRA_TYPE].AsInt;
+            handleType = (HandleType) json[SKILLEXTRA.HANDLE_TYPE].AsInt;
         }
         public float value;
         public float intervalTime;
-        public TargetRelation targetRelation;
         public ExtraType extraType;
         public HandleType handleType;
-        public NumType numType;
     }
+
+    public static class SKILL
+    {
+        public const string NAME = "name";
+        public const string VALUE = "value";
+        public const string NEED = "need";
+        public const string RANG = "rang";
+        public const string READY_TIME = "readyTime";
+        public const string CAST_TIME = "castTime";
+        public const string INTERVAL_TIME = "intervalTime";
+        public const string SUSTAINED_TIME = "sustainedTime";
+        public const string TARGET_RELATION = "targetRelation";
+        public const string TARGET_NUM = "targetNum";
+        public const string TARGET_NEED = "targetNeed";
+        public const string SKILL_TYPE = "skillType";
+        public const string CAST_TYPE = "castType";
+        public const string NEED_TYPE = "needType";
+    }
+
 
     public class Skill
     {
         public Skill(JSONObject json)
         {
-            name = json["name"];
-            value = json["value"].AsFloat;
-            need = json["need"].AsFloat;
-            range = json["rang"].AsFloat;
-            readyTime = json["readyTime"].AsFloat;
-            castTime = json["castTime"].AsFloat;
-            intervalTime = json["intervalTime"].AsFloat;
-            sustainedTime = json["sustainedTime"].AsFloat;
-            targetRelation = (TargetRelation)json["targetRelation"].AsInt;
-            targetNum = (TargetNum)json["targetNum"].AsInt;
-            targetNeed = (TargetNeed)json["targetNeed"].AsInt;
-            skillType = (SkillType)json["skillType"].AsInt;
-            castType = (CastType)json["castType"].AsInt;
-            needType = (NeedType)json["needType"].AsInt;
+            name = json[SKILL.NAME];
+            value = json[SKILL.VALUE].AsFloat;
+            need = json[SKILL.NEED].AsFloat;
+            range = json[SKILL.RANG].AsFloat;
+            readyTime = json[SKILL.READY_TIME].AsFloat;
+            castTime = json[SKILL.CAST_TIME].AsFloat;
+            intervalTime = json[SKILL.INTERVAL_TIME].AsFloat;
+            sustainedTime = json[SKILL.SUSTAINED_TIME].AsFloat;
+            targetRelation = (TargetRelation)json[SKILL.TARGET_RELATION].AsInt;
+            targetNum = (TargetNum)json[SKILL.TARGET_NUM].AsInt;
+            targetNeed = (TargetNeed)json[SKILL.TARGET_NEED].AsInt;
+            skillType = (SkillType)json[SKILL.SKILL_TYPE].AsInt;
+            castType = (CastType)json[SKILL.CAST_TYPE].AsInt;
+            needType = (NeedType)json[SKILL.NEED_TYPE].AsInt;
         }
         public string name;
         public float value;
@@ -139,13 +177,6 @@ namespace Gj
         Subtract = 1,
         Multiply = 2,
         Divide = 3
-    }
-
-    public enum NumType
-    {
-        Only = 0,
-        TargetOnly = 1,
-        None = 2
     }
 
     public enum ExtraType

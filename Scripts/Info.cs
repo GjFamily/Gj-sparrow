@@ -22,7 +22,6 @@ namespace Gj
         [HideInInspector]
         public TargetAttr attr;
 
-        private Dictionary<string, float> attributeMap = new Dictionary<string, float>();
         private Category category = Category.Empty;
         public enum Category
         {
@@ -40,33 +39,6 @@ namespace Gj
             Partner,
             Enemy,
             Empty
-        }
-
-        public void Init(JSONObject json)
-        {
-
-        }
-
-        public object GetAll()
-        {
-            return "";
-        }
-
-        public float GetAttribute(string key)
-        {
-            return attributeMap.ContainsKey(key) ? attributeMap[key] : 0;
-        }
-
-        public void SetAttribute(string key, float value)
-        {
-            if (attributeMap.ContainsKey(key))
-            {
-                attributeMap[key] = value;
-            }
-            else
-            {
-                attributeMap.Add(key, value);
-            }
         }
 
         public void SetCategory(Category c)

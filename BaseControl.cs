@@ -72,12 +72,14 @@ namespace Gj
             Info.live = true;
         }
 
+        protected const string CLOSE = "Close";
+
         protected void Close()
         {
             Info.live = false;
             ControlService.single.DestroyControl(gameObject);
         }
 
-        protected virtual void Command(string type, string category, float value) { }
+        protected virtual void Command(byte type, byte category, float value) { }
     }
 }

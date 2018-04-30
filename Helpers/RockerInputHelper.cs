@@ -13,7 +13,7 @@ namespace Gj
         public float offsetY;
         public bool left;
         public bool hide;
-        public string key;
+        public int key;
         // Use this for initialization
         void Start()
         {
@@ -77,11 +77,11 @@ namespace Gj
 
             if (left)
             {
-                SystemInput.lk = null;
+                SystemInput.lk = 0;
             }
             else
             {
-                SystemInput.rk = null;
+                SystemInput.rk = 0;
             }
         }
 

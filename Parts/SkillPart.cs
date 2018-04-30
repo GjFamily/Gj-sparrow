@@ -46,9 +46,8 @@ namespace Gj
             }
         }
 
-        public void Cast(string skillName)
+        public void Cast(Skill skill)
         {
-            Skill skill = EngineService.single.GetSkill(skillName);
             if (inspect != null && inspect(skill))
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
@@ -56,9 +55,8 @@ namespace Gj
             }
         }
 
-        public void Cast(string skillName, GameObject target)
+        public void Cast(Skill skill, GameObject target)
         {
-            Skill skill = EngineService.single.GetSkill(skillName);
             if (CoreTools.AllowTarget(skill, gameObject, target) && CoreTools.AllowRange(skill, gameObject, target) && inspect != null && inspect(skill))
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
@@ -67,9 +65,8 @@ namespace Gj
             }
         }
 
-        public void Cast(string skillName, Transform transform)
+        public void Cast(Skill skill, Transform transform)
         {
-            Skill skill = EngineService.single.GetSkill(skillName);
             if (CoreTools.AllowRange(skill, gameObject, transform) && inspect != null && inspect(skill))
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);

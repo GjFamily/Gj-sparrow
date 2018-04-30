@@ -75,39 +75,6 @@ namespace Gj
             return Vector3.Distance(master.transform.position, transform.position) <= skill.range;
         }
 
-        public static AllowSync AllowSync(Component c, GameObject t)
-        {
-            foreach (object attributes in c.GetType().GetCustomAttributes(typeof(AllowSync), true))
-            {
-                AllowSync allowSync = attributes as AllowSync;
-                if (null != allowSync)
-                {
-                    allowSync.Register(c, t);
-                    return allowSync;
-                }
-            }
-            return null;
-        }
-
-        public static void InfoSync(Component c, GameObject t)
-        {
-            foreach (FieldInfo fieldInfo in c.GetType().GetFields())
-            {
-                if (fieldInfo.FieldType == typeof(GameObject))
-                {
-                    GameObject obj = fieldInfo.GetValue(c) as GameObject;
-                    foreach (object attributes in fieldInfo.GetCustomAttributes(typeof(InfoSync), false))
-                    {
-                        InfoSync infoSync = attributes as InfoSync;
-                        if (null != infoSync)
-                        {
-                            infoSync.Register(c, t, obj);
-                        }
-                    }
-                }
-            }
-        }
-
         public static bool IsEnv(GameObject obj)
         {
             return obj.tag == "Env";

@@ -16,7 +16,7 @@ namespace Gj
         private struct Notic
         {
             public Action<float> notic;
-            public Action<string, float> cateNotic;
+            public Action<byte, float> cateNotic;
         }
 
         static StatisticsService()
@@ -30,14 +30,14 @@ namespace Gj
             noticDic = new Dictionary<string, List<Notic>>();
         }
 
-        public void OnChange(string type, string category, Action<float> action)
+        public void OnChange(byte type, byte category, Action<float> action)
         {
-            OnChange(type, new Notic { notic = action });
+            OnChange(GetKey(type, category), new Notic { notic = action });
         }
 
-        public void OnChange(string type, Action<string, float> action)
+        public void OnChange(byte type, Action<byte, float> action)
         {
-            OnChange(type, new Notic { cateNotic = action });
+            OnChange(GetKey(type), new Notic { cateNotic = action });
         }
 
         private void OnChange(string key, Notic n)
@@ -49,21 +49,21 @@ namespace Gj
             noticDic[key].Add(n);
         }
 
-        public void Record(GameObject player, GameObject target, string type, string category, float value)
+        public void Record(GameObject player, GameObject target, byte type, byte category, float value)
         {
             Debug.LogFormat("{0} -> {1}: {2} {3} {4}", player.name, target.name, type, category, value);
             SaveLog(type, category, value);
         }
 
-        public void Event(GameObject player, string type, string category, float value)
+        public void Event(GameObject player, byte type, byte category, float value)
         {
             Debug.LogFormat("{0}: {1} {2} {3}", player.name, type, category, value);
             SaveLog(type, category, value);
         }
 
-        private void SaveLog(string type, string category, float value)
+        private void SaveLog(byte type, byte category, float value)
         {
-            SaveLog(type, value);
+            SaveLog(GetKey(type), value);
             SaveLog(GetKey(type, category), value);
 
             Broadcast(type, category, value);
@@ -80,11 +80,11 @@ namespace Gj
             }
         }
 
-        private List<Notic> GetNoticList(string type)
+        private List<Notic> GetNoticList(string key)
         {
-            if (noticDic.ContainsKey(type))
+            if (noticDic.ContainsKey(key))
             {
-                return noticDic[type];
+                return noticDic[key];
             }
             else
             {
@@ -92,9 +92,9 @@ namespace Gj
             }
         }
 
-        private void Broadcast(string type, string category, float value)
+        private void Broadcast(byte type, byte category, float value)
         {
-            List<Notic> noticList = GetNoticList(type);
+            List<Notic> noticList = GetNoticList(GetKey(type));
             if (noticList != null)
             {
                 foreach (Notic n in noticList)
@@ -109,7 +109,7 @@ namespace Gj
                     }
                 }
             }
-            if (category != null)
+            if (category != 0)
             {
                 noticList = GetNoticList(GetKey(type, category));
                 if (noticList != null)
@@ -129,9 +129,9 @@ namespace Gj
             }
         }
 
-        public float LoadLog(string type, string category)
+        public float LoadLog(byte type, byte category)
         {
-            if (type != null && category != null)
+            if (type != 0 && category != 0)
             {
                 return LoadLog(GetKey(type, category));
             }
@@ -139,6 +139,11 @@ namespace Gj
             {
                 return 0;
             }
+        }
+
+        public float LoadLog(byte type)
+        {
+            return LoadLog(GetKey(type));
         }
 
         public float LoadLog(string key)
@@ -153,7 +158,12 @@ namespace Gj
             }
         }
 
-        private string GetKey(string type, string category)
+        private string GetKey(byte type)
+        {
+            return type + "*";
+        }
+
+        private string GetKey(byte type, byte category)
         {
             return type + "-" + category;
         }

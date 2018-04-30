@@ -28,7 +28,7 @@ namespace Gj
         {
             foreach (JSONObject json in jSONArray)
             {
-                targetMap.Add(json["name"], json);
+                targetMap.Add(json[TARGETATTR.NAME], json);
             }
         }
 

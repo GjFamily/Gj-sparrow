@@ -53,8 +53,10 @@ namespace Gj
             startTime = Time.time;
             readyCast(skill);
             waiting = true;
-            if (auto) Invoke("ReadyEnd", skill.readyTime);
+            if (auto) Invoke(READY_END, skill.readyTime);
         }
+
+        private const string READY_END = "ReadyEnd";
 
         public void ReadyEnd()
         {
@@ -63,6 +65,8 @@ namespace Gj
             waiting = false;
             Now();
         }
+
+        private const string END = "End";
 
         private void End()
         {
@@ -75,30 +79,32 @@ namespace Gj
         {
             if (waiting)
             {
-                if (auto) CancelInvoke("ReadyEnd");
+                if (auto) CancelInvoke(READY_END);
                 waiting = false;
                 cancelCast(skill);
             }
             else if (sustaining)
             {
-                CancelInvoke("End");
+                CancelInvoke(END);
                 sustaining = false;
                 cancelCast(skill);
             }
         }
 
+        private const string CAST = "Cast";
+
         public void Now()
         {
             startCast(skill);
-            Invoke("Cast", 0);
+            Invoke(CAST, 0);
             if (skill.castType == CastType.Sustained || skill.castType == CastType.ReadyAndSustained)
             {
                 sustaining = true;
-                Invoke("End", skill.sustainedTime);
+                Invoke(END, skill.sustainedTime);
             }
             else
             {
-                Invoke("End", skill.castTime);
+                Invoke(END, skill.castTime);
             }
         }
 

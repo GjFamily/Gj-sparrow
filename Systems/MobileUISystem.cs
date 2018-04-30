@@ -18,8 +18,8 @@ namespace Gj
         private bool rightRochkerTouch = false;
         private bool screenRockerTouch = false;
 
-        private string leftRockerKey = "";
-        private string rightRockerKey = "";
+        private int leftRockerKey = 0;
+        private int rightRockerKey = 0;
 
         protected PlayerControl player;
 
@@ -41,7 +41,7 @@ namespace Gj
                 if (leftRockerTouch)
                 {
                     LeftRockerExit(leftRockerKey);
-                    leftRockerKey = "";
+                    leftRockerKey = 0;
                     leftRockerTouch = false;
                 }
             }
@@ -61,7 +61,7 @@ namespace Gj
                 if (rightRochkerTouch)
                 {
                     RightRockerExit(rightRockerKey);
-                    rightRockerKey = "";
+                    rightRockerKey = 0;
                     rightRochkerTouch = false;
                 }
             }
@@ -96,7 +96,7 @@ namespace Gj
             return Mathf.Atan2(h, v) * Mathf.Rad2Deg;
         }
 
-        protected virtual void LeftRockerEnter(string key)
+        protected virtual void LeftRockerEnter(int key)
         {
             if (player != null)
             {
@@ -113,7 +113,7 @@ namespace Gj
             }
         }
 
-        protected virtual void LeftRockerExit(string key)
+        protected virtual void LeftRockerExit(int key)
         {
 
             if (player != null)
@@ -122,7 +122,7 @@ namespace Gj
             }
         }
 
-        protected virtual void RightRockerEnter(string key)
+        protected virtual void RightRockerEnter(int key)
         {
 
             if (player != null)
@@ -139,7 +139,7 @@ namespace Gj
             }
         }
 
-        protected virtual void RightRockerExit(string key)
+        protected virtual void RightRockerExit(int key)
         {
 
             if (player != null)

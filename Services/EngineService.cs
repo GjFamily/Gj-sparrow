@@ -28,7 +28,7 @@ namespace Gj
         {
             foreach (JSONObject json in jSONArray)
             {
-                skillMap.Add(json["name"], new Skill(json));
+                skillMap.Add(json[SKILL.NAME], new Skill(json));
             }
         }
 
