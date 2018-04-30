@@ -41,7 +41,7 @@ namespace Gj.Galaxy.Scripts
 
         Extrapolated extrapolated;
 
-        NetworkEntity entity;
+        NetworkEsse esse;
 
         bool receivedNetworkUpdate = false;
 
@@ -52,7 +52,6 @@ namespace Gj.Galaxy.Scripts
 
         void Awake()
         {
-            this.entity = GetComponent<NetworkEntity>();
             this.extrapolated = new Extrapolated(this.options);
 
             this.positionControl = new TransformViewPosition(this.options, this.extrapolated);
@@ -68,7 +67,7 @@ namespace Gj.Galaxy.Scripts
 
         void Update()
         {
-            if (this.entity == null || this.entity.isMine == true || PeerClient.connected == false)
+            if (this.esse == null || this.esse.isMine == true || PeerClient.connected == false)
             {
                 return;
             }
@@ -126,7 +125,7 @@ namespace Gj.Galaxy.Scripts
             this.rotationControl.SetSynchronizedValues(turnSpeed);
         }
 
-        public void OnSerializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnSerialize(StreamBuffer stream, MessageInfo info)
         {
             switch (this.transformParam)
             {
@@ -150,13 +149,13 @@ namespace Gj.Galaxy.Scripts
                     break;
             }
 
-            if (this.entity.isMine == false && this.options.DrawErrorGizmo == true)
+            if (this.esse.isMine == false && this.options.DrawErrorGizmo == true)
             {
                 this.DoDrawEstimatedPositionError();
             }
         }
 
-        public void OnDeserializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnDeserialize(StreamBuffer stream, MessageInfo info)
         {
             switch (this.transformParam)
             {
@@ -180,7 +179,7 @@ namespace Gj.Galaxy.Scripts
                     break;
             }
 
-            if (this.entity.isMine == false && this.options.DrawErrorGizmo == true)
+            if (this.esse.isMine == false && this.options.DrawErrorGizmo == true)
             {
                 this.DoDrawEstimatedPositionError();
             }
@@ -212,9 +211,9 @@ namespace Gj.Galaxy.Scripts
             Debug.DrawLine(targetPosition, targetPosition + Vector3.up, Color.red, 2f);
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void Bind(NetworkEsse esse)
         {
-            this.entity = entity;
+            this.esse = esse;
         }
     }
 

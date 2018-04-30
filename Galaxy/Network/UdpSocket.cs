@@ -107,7 +107,24 @@ namespace Gj.Galaxy.Network
 
         public void Read(ref byte[] content, Action callback)
         {
-            state.Read(ref content, callback);
+            if (content.Length > 0)
+            {
+                state.Read(ref content, callback);
+            }
+            else
+            {
+                callback();
+            }
+        }
+
+        public void Read(ref byte[] content)
+        {
+            state.Read(ref content);
+        }
+
+        public void Release()
+        {
+            state.Release();
         }
     }
 
@@ -124,6 +141,7 @@ namespace Gj.Galaxy.Network
         public Action ReadCallback;
         public byte[] tmp_head;
         public byte[] content;
+        public bool process = false;
 
         private ByteBuf writeBuf;
         private ByteBuf readBuf;
@@ -152,13 +170,6 @@ namespace Gj.Galaxy.Network
             this.writeBuf = new ByteBuf(this.bufferSize);
             this.readBuf = new ByteBuf(this.bufferSize);
             this.receiveBuf = new ByteBuf(this.bufferSize);
-        }
-
-        public void Read(ref byte[] content, Action callback)
-        {
-            ReadCallback = callback;
-            this.content = content;
-            ReadTest();
         }
 
         void init_kcp(int conv, IPEndPoint point)
@@ -222,30 +233,21 @@ namespace Gj.Galaxy.Network
             update(iclock());
         }
 
-        public bool Send(byte[] head, byte[] body)
-        {
-            writeBuf.Clear();
-            //writeBuf.WriteBytes(new byte[] { 0x08, 0x21 });
-            writeBuf.WriteBytes(head);
-            writeBuf.WriteBytes(body);
-            kcp.Send(writeBuf);
-            kcp.Flush(false);
-            mNeedUpdateFlag = true;
-            return true;
-        }
-
         public void ReadTest()
         {
-            if(ReadCallback != null){
-                if(readBuf.ReadableBytes() >= content.Length){
+            if (ReadCallback != null)
+            {
+                if (readBuf.ReadableBytes() >= content.Length)
+                {
                     readBuf.Read(content, 0, content.Length);
                     ReadCallback();
-                    this.ReadCallback = null;
-                    ReadTest();
+                    ReadCallback = null;
                 }
+            }else if(process){
+                
             }else if(readBuf.ReadableBytes()>=tmp_head.Length){
                 readBuf.Read(tmp_head, 0, tmp_head.Length);
-
+                process = true;
                 message();
             }else if(readBuf.ReadableBytes() == 0){
                 readBuf.Clear();
@@ -272,6 +274,36 @@ namespace Gj.Galaxy.Network
                 // try to receive again.
                 client.BeginReceive(ReceiveCallback, this);
             }
+        }
+
+        public void Read(ref byte[] content, Action callback)
+        {
+            ReadCallback = callback;
+            this.content = content;
+            ReadTest();
+        }
+
+        public bool Send(byte[] head, byte[] body)
+        {
+            writeBuf.Clear();
+            //writeBuf.WriteBytes(new byte[] { 0x08, 0x21 });
+            writeBuf.WriteBytes(head);
+            writeBuf.WriteBytes(body);
+            kcp.Send(writeBuf);
+            kcp.Flush(false);
+            mNeedUpdateFlag = true;
+            return true;
+        }
+
+        public void Read(ref byte[] content)
+        {
+            readBuf.Read(content, 0, content.Length);
+        }
+
+        public void Release()
+        {
+            process = false;
+            ReadTest();
         }
 
     }

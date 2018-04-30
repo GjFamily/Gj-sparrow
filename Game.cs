@@ -43,7 +43,6 @@ namespace Gj
                 }
 
             };
-
             PeerClient.Connect();
 		}
 

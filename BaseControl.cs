@@ -1,11 +1,15 @@
 using UnityEngine;
 using System.Collections;
 using SimpleJSON;
+using Gj.Galaxy.Logic;
+using System;
+using Gj.Galaxy.Scripts;
 
 namespace Gj
 {
     [RequireComponent(typeof(Info))]
-    public class BaseControl : MonoBehaviour
+    [RequireComponent(typeof(NetworkEsse))]
+    public class BaseControl : MonoBehaviour, EsseBehaviour
     {
         private Info _info;
         public Info Info
@@ -19,6 +23,18 @@ namespace Gj
                 return _info;
             }
         }
+        private NetworkEsse _esse;
+        public NetworkEsse Esse{
+            get
+            {
+                if (_esse == null)
+                {
+                    _esse = GetComponent<NetworkEsse>();
+                }
+                return _esse;
+            }
+        }
+
 
         protected GameObject entity;
 
@@ -70,14 +86,59 @@ namespace Gj
         protected void Open()
         {
             Info.live = true;
+            // 关联同步关系
+            if (Esse != null)
+                Esse.Relation("", InstanceRelation.Player);
         }
 
         protected void Close()
         {
             Info.live = false;
+            if (Esse != null)
+                Esse.Destroy();
             ControlService.single.DestroyControl(gameObject);
         }
 
-        protected virtual void Command(string type, string category, float value) { }
+        protected virtual void Command(string type, string category, float value)
+        {
+            if (Esse != null)
+                Esse.Command(type, category, value, () =>
+                {
+
+                });
+        }
+
+        public bool GetData(StreamBuffer stream)
+        {
+            return false;
+        }
+
+        public void UpdateData(StreamBuffer stream)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnCommand(GamePlayer player, object type, object category, object value)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void InitSync(NetworkEsse esse)
+        {
+            esse.synchronization = Synchronization.Reliable;
+            esse.ownershipTransfer = OwnershipOption.Request;
+            var transformView = gameObject.AddComponent(typeof(TransformView)) as TransformView;
+            esse.BindComponent(transformView);
+            // 自定义同步信息
+            transformView.transformParam = TransformParam.PositionAndRotation;
+            // 速度同步
+            transformView.options.positionParam = PositionParam.FixedSpeed;
+            transformView.options.positionSpeed = 3f;
+        }
     }
 }

@@ -5,15 +5,8 @@ using UnityEngine;
 using Gj.Galaxy.Utils;
 
 namespace Gj.Galaxy.Logic{
-    public class GamePlayer : IComparable<GamePlayer>, IComparable<int>, IEquatable<GamePlayer>, IEquatable<int>
+    public class GamePlayer : IEquatable<GamePlayer>, IEquatable<string>
     {
-        public int Id
-        {
-            get { return this.id; }
-        }
-
-        internal int id = -1;
-
         public string UserId { get; internal set; }
 
         public readonly bool IsLocal = false;
@@ -22,9 +15,7 @@ namespace Gj.Galaxy.Logic{
         public bool IsInactive { get; set; }    // needed for rejoins
         public bool IsReady { get; set; }    // needed for rejoins
 
-        public Dictionary<string, object> CustomProperties { get; internal set; }
-
-        public object TagObject;
+        public Dictionary<string, object> Properties { get; internal set; }
 
         public int number;
         public int initNumber;
@@ -46,53 +37,30 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public GamePlayer(bool isLocal, int id, string userId)
+        public GamePlayer(bool isLocal, string userId)
         {
-            this.CustomProperties = new Dictionary<string, object>();
+            this.Properties = new Dictionary<string, object>();
             this.IsLocal = isLocal;
-            this.id = id;
             this.UserId = userId;
         }
 
-        internal void AttachInfo(Dictionary<string, object> info)
+        internal void AttachInfo(Dictionary<string, object> _info)
         {
-            this.info = info;
+            this.info = _info;
         }
-
-        public override bool Equals(object p)
-        {
-            GamePlayer pp = p as GamePlayer;
-            return (pp != null && this.GetHashCode() == pp.GetHashCode());
-        }
-
-        public override int GetHashCode()
-        {
-            return this.Id;
-        }
-
-        //internal void InternalChangeLocalId(int newId)
-        //{
-        //    if (!this.IsLocal)
-        //    {
-        //        Debug.LogError("ERROR You should never change PhotonPlayer IDs!");
-        //        return;
-        //    }
-
-        //    this.id = newId;
-        //}
 
         internal void InternalProperties(Dictionary<string, object> properties)
         {
-            if (properties == null || properties.Count == 0 || this.CustomProperties.Equals(properties))
+            if (properties == null || properties.Count == 0 || this.Properties.Equals(properties))
             {
                 return;
             }
 
-            this.CustomProperties.MergeStringKeys(properties);
-            this.CustomProperties.StripKeysWithNullValues();
+            this.Properties.MergeStringKeys(properties);
+            this.Properties.StripKeysWithNullValues();
         }
 
-        internal void SetCustomProperties(Dictionary<string, object> propertiesToSet)
+        internal void SetProperties(Dictionary<string, object> propertiesToSet)
         {
             if (propertiesToSet == null)
             {
@@ -101,25 +69,6 @@ namespace Gj.Galaxy.Logic{
 
             this.InternalProperties(propertiesToSet);
         }
-
-        #region IComparable implementation
-
-        public int CompareTo(GamePlayer other)
-        {
-            if (other == null)
-            {
-                return 0;
-            }
-
-            return this.GetHashCode().CompareTo(other.GetHashCode());
-        }
-
-        public int CompareTo(int other)
-        {
-            return this.GetHashCode().CompareTo(other);
-        }
-
-        #endregion
 
         #region IEquatable implementation
 
@@ -130,12 +79,12 @@ namespace Gj.Galaxy.Logic{
                 return false;
             }
 
-            return this.GetHashCode().Equals(other.GetHashCode());
+            return UserId.Equals(other.UserId);
         }
 
-        public bool Equals(int other)
+        public bool Equals(string other)
         {
-            return this.GetHashCode().Equals(other);
+            return UserId.Equals(other);
         }
 
         #endregion
@@ -145,7 +94,7 @@ namespace Gj.Galaxy.Logic{
         /// </summary>
         public override string ToString()
         {
-            return string.Format("'{0}'{1}{2}", this.id, this.IsInactive ? " (inactive)" : " ", GameConnect.isMasterClient ? "(master)" : "");
+            return string.Format("'{0}'{1}", this.UserId, this.IsInactive ? " (inactive)" : " ");
         }
 
         /// <summary>
@@ -157,7 +106,7 @@ namespace Gj.Galaxy.Logic{
         /// </remarks>
         public string ToStringFull()
         {
-            return string.Format("#{0:00} '{1}'{2} {3}", this.Id, this.id, this.IsInactive ? " (inactive)" : "", this.CustomProperties.ToStringFull());
+            return string.Format("#{0} '{1}'{2}", this.UserId, this.IsInactive ? " (inactive)" : "", this.Properties.ToStringFull());
         }
 
     }

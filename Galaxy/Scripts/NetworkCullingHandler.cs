@@ -4,7 +4,7 @@ using Gj.Galaxy.Logic;
 
 namespace Gj.Galaxy.Scripts
 {
-    [RequireComponent(typeof(NetworkEntity))]
+    [RequireComponent(typeof(NetworkEsse))]
     public class NetworkCullingHandler : MonoBehaviour, GameObservable
     {
         #region VARIABLES
@@ -13,9 +13,9 @@ namespace Gj.Galaxy.Scripts
 
         private CullMap cull;
 
-        private List<byte> previousActiveCells, activeCells;
+        private List<string> previousActiveCells, activeCells;
 
-        private NetworkEntity entity;
+        private NetworkEsse esse;
 
         private Vector3 lastPosition, currentPosition;
 
@@ -28,11 +28,11 @@ namespace Gj.Galaxy.Scripts
         /// </summary>
         private void OnEnable()
         {
-            if (this.entity == null)
+            if (this.esse == null)
             {
-                this.entity = GetComponent<NetworkEntity>();
+                this.esse = GetComponent<NetworkEsse>();
 
-                if (!this.entity.isMine)
+                if (!this.esse.isMine)
                 {
                     return;
                 }
@@ -43,8 +43,8 @@ namespace Gj.Galaxy.Scripts
                 this.cull = FindObjectOfType<CullMap>();
             }
 
-            this.previousActiveCells = new List<byte>(0);
-            this.activeCells = new List<byte>(0);
+            this.previousActiveCells = new List<string>(0);
+            this.activeCells = new List<string>(0);
 
             this.currentPosition = this.lastPosition = transform.position;
         }
@@ -54,23 +54,23 @@ namespace Gj.Galaxy.Scripts
         /// </summary>
         private void Start()
         {
-            if (!this.entity.isMine)
+            if (!this.esse.isMine)
             {
                 return;
             }
 
-            if (GameConnect.inRoom)
+            if (this.esse)
             {
                 if (this.cull.NumberOfSubdivisions == 0)
                 {
-                    this.entity.group = this.cull.FIRST_GROUP_ID;
+                    this.esse.group = this.cull.FIRST_GROUP_ID.ToString();
 
-                    GameConnect.SetInterestGroups(new byte[] { this.cull.FIRST_GROUP_ID }, null);
+                    AreaConnect.SetGroups(new string[] { this.cull.FIRST_GROUP_ID.ToString() }, null);
                 }
                 else
                 {
                     // This is used to continuously update the active group.
-                    this.entity.ObservedComponents.Add(this);
+                    this.esse.ObservedComponents.Add(this);
                 }
             }
         }
@@ -80,7 +80,7 @@ namespace Gj.Galaxy.Scripts
         /// </summary>
         private void Update()
         {
-            if (!this.entity.isMine)
+            if (!this.esse.isMine)
             {
                 return;
             }
@@ -105,7 +105,7 @@ namespace Gj.Galaxy.Scripts
         /// </summary>
         private void OnGUI()
         {
-            if (!this.entity.isMine)
+            if (!this.esse.isMine)
             {
                 return;
             }
@@ -122,7 +122,7 @@ namespace Gj.Galaxy.Scripts
 
                 subscribedCells += this.activeCells[index] + " | ";
             }
-            GUI.Label(new Rect(20.0f, Screen.height - 120.0f, 200.0f, 40.0f), "<color=white>PhotonView Group: " + this.entity.group + "</color>", new GUIStyle() { alignment = TextAnchor.UpperLeft, fontSize = 16 });
+            GUI.Label(new Rect(20.0f, Screen.height - 120.0f, 200.0f, 40.0f), "<color=white>PhotonView Group: " + this.esse.group + "</color>", new GUIStyle() { alignment = TextAnchor.UpperLeft, fontSize = 16 });
             GUI.Label(new Rect(20.0f, Screen.height - 100.0f, 200.0f, 40.0f), "<color=white>" + subscribedAndActiveCells + "</color>", new GUIStyle() { alignment = TextAnchor.UpperLeft, fontSize = 16 });
             GUI.Label(new Rect(20.0f, Screen.height - 60.0f, 200.0f, 40.0f), "<color=white>" + subscribedCells + "</color>", new GUIStyle() { alignment = TextAnchor.UpperLeft, fontSize = 16 });
         }
@@ -140,14 +140,14 @@ namespace Gj.Galaxy.Scripts
                 return false;
             }
 
-            this.previousActiveCells = new List<byte>(this.activeCells);
-            this.activeCells = this.cull.GetActiveCells(transform.position);
+            this.previousActiveCells = new List<string>(this.activeCells);
+            this.activeCells = new List<string>(this.activeCells); // this.cull.GetActiveCells(transform.position);
 
             // If the player leaves the area we insert the whole area itself as an active cell.
             // This can be removed if it is sure that the player is not able to leave the area.
             while (this.activeCells.Count <= this.cull.NumberOfSubdivisions)
             {
-                this.activeCells.Add(this.cull.FIRST_GROUP_ID);
+                this.activeCells.Add(this.cull.FIRST_GROUP_ID.ToString());
             }
 
             if (this.activeCells.Count != this.previousActiveCells.Count)
@@ -168,52 +168,52 @@ namespace Gj.Galaxy.Scripts
         /// </summary>
         private void UpdateInterestGroups()
         {
-            List<byte> disable = new List<byte>(0);
+            List<string> disable = new List<string>(0);
 
-            foreach (byte groupId in this.previousActiveCells)
+            foreach (string groupId in this.previousActiveCells)
             {
                 if (!this.activeCells.Contains(groupId))
                 {
                     disable.Add(groupId);
                 }
             }
-            GameConnect.SetInterestGroups(disable.ToArray(), this.activeCells.ToArray());
+            AreaConnect.SetGroups(disable.ToArray(), this.activeCells.ToArray());
         }
 
         #region GameObservable implementation
 
-        public void OnSerializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnSerialize(StreamBuffer stream, MessageInfo info)
         {
             // If the player leaves the area we insert the whole area itself as an active cell.
             // This can be removed if it is sure that the player is not able to leave the area.
             while (this.activeCells.Count <= this.cull.NumberOfSubdivisions)
             {
-                this.activeCells.Add(this.cull.FIRST_GROUP_ID);
+                this.activeCells.Add(this.cull.FIRST_GROUP_ID.ToString());
             }
 
             if (this.cull.NumberOfSubdivisions == 1)
             {
                 this.orderIndex = (++this.orderIndex % this.cull.SUBDIVISION_FIRST_LEVEL_ORDER.Length);
-                this.entity.group = this.activeCells[this.cull.SUBDIVISION_FIRST_LEVEL_ORDER[this.orderIndex]];
+                this.esse.group = this.activeCells[this.cull.SUBDIVISION_FIRST_LEVEL_ORDER[this.orderIndex]];
             }
             else if (this.cull.NumberOfSubdivisions == 2)
             {
                 this.orderIndex = (++this.orderIndex % this.cull.SUBDIVISION_SECOND_LEVEL_ORDER.Length);
-                this.entity.group = this.activeCells[this.cull.SUBDIVISION_SECOND_LEVEL_ORDER[this.orderIndex]];
+                this.esse.group = this.activeCells[this.cull.SUBDIVISION_SECOND_LEVEL_ORDER[this.orderIndex]];
             }
             else if (this.cull.NumberOfSubdivisions == 3)
             {
                 this.orderIndex = (++this.orderIndex % this.cull.SUBDIVISION_THIRD_LEVEL_ORDER.Length);
-                this.entity.group = this.activeCells[this.cull.SUBDIVISION_THIRD_LEVEL_ORDER[this.orderIndex]];
+                this.esse.group = this.activeCells[this.cull.SUBDIVISION_THIRD_LEVEL_ORDER[this.orderIndex]];
             }
         }
 
-        public void OnDeserializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnDeserialize(StreamBuffer stream, MessageInfo info)
         {
 
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void Bind(NetworkEsse esse)
         {
             throw new System.NotImplementedException();
         }

@@ -78,7 +78,7 @@ namespace Gj.Galaxy.Scripts
         private Vector3 m_ReceiverPosition;
         private float m_LastDeserializeTime;
         private bool m_WasSynchronizeTypeChanged = true;
-        private NetworkEntity m_entity;
+        private NetworkEsse m_esse;
 
         List<string> m_raisedDiscreteTriggersCache = new List<string>();
 
@@ -95,12 +95,12 @@ namespace Gj.Galaxy.Scripts
 
         private void Update()
         {
-            if (this.m_Animator.applyRootMotion && this.m_entity.isMine == false)
+            if (this.m_Animator.applyRootMotion && this.m_esse.isMine == false)
             {
                 this.m_Animator.applyRootMotion = false;
             }
 
-            if (this.m_entity.isMine == true)
+            if (this.m_esse.isMine == true)
             {
                 this.SerializeDataContinuously();
 
@@ -470,7 +470,7 @@ namespace Gj.Galaxy.Scripts
             }
         }
 
-        public void OnSerializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnSerialize(StreamBuffer stream, MessageInfo info)
         {
             if (this.m_Animator == null)
             {
@@ -488,7 +488,7 @@ namespace Gj.Galaxy.Scripts
             this.SerializeDataDiscretly(stream);
         }
 
-        public void OnDeserializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnDeserialize(StreamBuffer stream, MessageInfo info)
         {
 
 #if GALAXY_DEVELOP
@@ -509,9 +509,9 @@ namespace Gj.Galaxy.Scripts
             }
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void Bind(NetworkEsse esse)
         {
-            throw new System.NotImplementedException();
+            this.m_esse = esse;
         }
 
         #endregion

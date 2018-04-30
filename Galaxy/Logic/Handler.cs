@@ -92,6 +92,7 @@ namespace Gj.Galaxy.Logic{
 
         protected void Update()
         {
+            if (PeerClient.offlineMode) return;
             if (PeerClient.connecting)
             {
                 // 提供client内部更新
