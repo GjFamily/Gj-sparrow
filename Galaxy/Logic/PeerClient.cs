@@ -48,7 +48,7 @@ namespace Gj.Galaxy.Logic{
 
         public static bool StartRpcsAsCoroutine = true;
 
-        private static bool isOfflineMode = false;
+        private static bool isOfflineMode = true;
         private static bool isConnect = false;
 
         public static int pingInterval = 1000 * 10; // 10s
@@ -212,7 +212,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        private static bool m_isMessageQueueRunning = false;
+        private static bool m_isMessageQueueRunning = true;
 
         private static bool UsePreciseTimer = true;
         static Stopwatch startupStopwatch;
@@ -437,7 +437,8 @@ namespace Gj.Galaxy.Logic{
 
         internal static void Update(){
             //Debug.Log("update");
-            GameConnect.Update();
+            if (!offlineMode)
+                AreaConnect.Update();
         }
 
         internal static void ClientUpdate(){

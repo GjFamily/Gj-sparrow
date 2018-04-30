@@ -100,6 +100,16 @@ namespace Gj.Galaxy.Network
         {
             state.Read(ref content, callback);
         }
+
+        public void Read(ref byte[] content)
+        {
+            state.Read(ref content);
+        }
+
+        public void Release()
+        {
+            state.Release();
+        }
     }
 
     internal class TcpStateObject
@@ -155,9 +165,19 @@ namespace Gj.Galaxy.Network
                 stream.BeginRead(content, 0, content.Length, new AsyncCallback(EndReadCallback), this);
             }else{
                 callback();
-
-                stream.BeginRead(tmp_head, 0, tmp_head.Length, new AsyncCallback(EndAcceptCallback), this);
             }
+        }
+
+        public void Read(ref byte[] content)
+        {
+            NetworkStream stream = tcpClient.GetStream();
+            stream.Read(content, 0, content.Length);
+        }
+
+        public void Release()
+        {
+            NetworkStream stream = tcpClient.GetStream();
+            stream.BeginRead(tmp_head, 0, tmp_head.Length, new AsyncCallback(EndAcceptCallback), this);
         }
 
         public void EndAcceptCallback(IAsyncResult ar)
@@ -183,7 +203,6 @@ namespace Gj.Galaxy.Network
             }else{
                 ReadCallback();
             }
-            stream.BeginRead(tmp_head, 0, tmp_head.Length, new AsyncCallback(EndAcceptCallback), this);
         }
 
         public void ConnectCallback(IAsyncResult ar)

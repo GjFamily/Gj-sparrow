@@ -43,7 +43,7 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<Type, object>(3)
+            lookup = new global::System.Collections.Generic.Dictionary<Type, object>(8)
             {
                 {typeof(global::Gj.Galaxy.Network.DataType), new MessagePack.Formatters.Gj.Galaxy.Network.DataTypeFormatter() },
                 {typeof(global::Gj.Galaxy.Network.AppPacket), new MessagePack.Formatters.Gj.Galaxy.Network.AppPacketFormatter() },
@@ -51,6 +51,9 @@ namespace MessagePack.Resolvers
                 {typeof(global::Gj.Galaxy.Network.NsData[]), new MessagePack.Formatters.ArrayFormatter<global::Gj.Galaxy.Network.NsData>() },
                 {typeof(global::System.Collections.Generic.Dictionary<byte, object>), new MessagePack.Formatters.DictionaryFormatter<byte, object>() },
                 {typeof(global::System.Collections.Generic.Dictionary<string, object>), new MessagePack.Formatters.DictionaryFormatter<string, object>() },
+                {typeof(global::System.Collections.Generic.List<object>), new MessagePack.Formatters.ListFormatter<object>() },
+                {typeof(global::System.Collections.Generic.List<object[]>), new MessagePack.Formatters.ListFormatter<object[]>() },
+                {typeof(global::System.Object[]), new MessagePack.Formatters.ArrayFormatter<object>() },
                 //{typeof(global::System.Collections.Hashtable), (object)MessagePack.Formatters.PrimitiveObjectFormatter.Instance },
             };
         }

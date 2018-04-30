@@ -8,34 +8,30 @@ using System.IO;
 namespace Gj.Galaxy.Logic{
     public interface GameObservable
     {
-        void OnSerializeEntity(StreamBuffer stream, MessageInfo info);
-        void OnDeserializeEntity(StreamBuffer stream, MessageInfo info);
-        void BindEntity(NetworkEntity entity);
+        void OnSerialize(StreamBuffer stream, MessageInfo info);
+        void OnDeserialize(StreamBuffer stream, MessageInfo info);
+        void Bind(NetworkEsse esse);
     }
 
-    public interface PrefabPool
+    public interface GameSync
     {
-        GameObject Instantiate(string prefabId, Vector3 position, Quaternion rotation);
-
-        void Destroy(GameObject gameObject);
+        void SendSyncData(StreamBuffer stream);
+        void ReceiveSyncData(StreamBuffer stream);
     }
 
-    /// <summary>
-    /// Container class for info about a particular message, RPC or update.
-    /// </summary>
-    /// \ingroup publicApi
+
     public struct MessageInfo
     {
         private readonly long timeInt;
         /// <summary>The sender of a message / event. May be null.</summary>
         public readonly GamePlayer sender;
-        public readonly NetworkEntity entity;
+        public readonly NetworkEsse esse;
 
-        public MessageInfo(GamePlayer player, NetworkEntity entity)
+        public MessageInfo(GamePlayer player, NetworkEsse esse)
         {
             this.sender = player;
             this.timeInt = PeerClient.LocalTimestamp;
-            this.entity = entity;
+            this.esse = esse;
         }
 
         public double timestamp
@@ -62,9 +58,6 @@ namespace Gj.Galaxy.Logic{
         internal MemoryStream stream = new MemoryStream();
         internal byte currentItem = 0; //Used to track the next item to receive
 
-        /// <summary>
-        /// Creates a stream and initializes it. Used by PUN internally.
-        /// </summary>
         public StreamBuffer(bool write, object[] incomingData)
         {
             this.write = write;
@@ -150,7 +143,6 @@ namespace Gj.Galaxy.Logic{
             return obj;
         }
 
-        /// <summary>Add another piece of data to send it when isWriting is true.</summary>
         public void SendNext(object obj)
         {
             if (!this.write)
@@ -160,109 +152,12 @@ namespace Gj.Galaxy.Logic{
             }
             this.writeData.Enqueue(obj);
         }
-        //public void SendNext<T>(T obj)
-        //{
-        //    if (!this.write)
-        //    {
-        //        Debug.LogError("Error: you cannot write/send to this stream that you are reading!");
-        //        return;
-        //    }
-        //    this.writeData.Enqueue(obj);
-        //}
 
-        /// <summary>Turns the stream into a new object[].</summary>
         public object[] ToArray()
         {
             return this.isWriting ? this.writeData.ToArray() : this.readData;
         }
 
-        ///// <summary>
-        ///// Will read or write the value, depending on the stream's isWriting value.
-        ///// </summary>
-        //public void Serialize(ref NetworkPlayer obj)
-        //{
-        //    this.writeData.Enqueue(obj);
-        //}
-
-        //public bool DeSerialize(ref NetworkPlayer obj)
-        //{
-        //    if (this.readData.Length > currentItem)
-        //    {
-        //        obj = (NetworkPlayer)this.readData[currentItem];
-        //        currentItem++;
-        //        return true;
-        //    }else{
-        //        obj = new NetworkPlayer(false, 0, "");
-        //        return false;
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Will read or write the value, depending on the stream's isWriting value.
-        ///// </summary>
-        //public void Serialize(ref Vector3 obj)
-        //{
-        //    this.writeData.Enqueue(obj);
-        //}
-
-        //public bool DeSerialize(ref Vector3 obj)
-        //{
-        //    if (this.readData.Length > currentItem)
-        //    {
-        //        obj = (Vector3)this.readData[currentItem];
-        //        currentItem++;
-        //        return true;
-        //    }else{
-        //        obj = Vector3.zero;
-        //        return false;
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Will read or write the value, depending on the stream's isWriting value.
-        ///// </summary>
-        //public void Serialize(ref Vector2 obj)
-        //{
-        //    this.writeData.Enqueue(obj);
-        //}
-
-        //public bool DeSerialize(ref Vector2 obj)
-        //{
-        //    if (this.readData.Length > currentItem)
-        //    {
-        //        obj = (Vector2)this.readData[currentItem];
-        //        currentItem++;
-        //        return true;
-        //    }else{
-        //        obj = Vector2.zero;
-        //        return false;
-        //    }
-        //}
-
-        ///// <summary>
-        ///// Will read or write the value, depending on the stream's isWriting value.
-        ///// </summary>
-        //public void Serialize(ref Quaternion obj)
-        //{
-        //    this.writeData.Enqueue(obj);
-        //}
-
-        //public bool DeSerialize(ref Quaternion obj)
-        //{
-        //    if (this.readData.Length > currentItem)
-        //    {
-        //        obj = (Quaternion)this.readData[currentItem];
-        //        currentItem++;
-        //        return true;
-        //    }else{
-        //        obj = new Quaternion();
-        //        return false;
-        //    }
-        //}
-
-        /// <summary>
-        /// Will read or write the value, depending on the stream's isWriting value.
-        /// </summary>
         public void Serialize<T>(ref T obj)
         {
             this.writeData.Enqueue(obj);

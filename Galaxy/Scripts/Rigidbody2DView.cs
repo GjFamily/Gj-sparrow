@@ -16,7 +16,7 @@ namespace Gj.Galaxy.Logic
             this.m_Body = GetComponent<Rigidbody2D>();
         }
 
-        public void OnSerializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnSerialize(StreamBuffer stream, MessageInfo info)
         {
             switch (this.rigidBodyParam)
             {
@@ -32,7 +32,7 @@ namespace Gj.Galaxy.Logic
                     break;
             }
         }
-        public void OnDeserializeEntity(StreamBuffer stream, MessageInfo info)
+        public void OnDeserialize(StreamBuffer stream, MessageInfo info)
         {
             switch (this.rigidBodyParam)
             {
@@ -49,9 +49,8 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        public void BindEntity(NetworkEntity entity)
+        public void Bind(NetworkEsse esse)
         {
-            throw new System.NotImplementedException();
         }
     }
 }

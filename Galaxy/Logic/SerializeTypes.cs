@@ -155,15 +155,15 @@ namespace Gj.Galaxy.Logic{
         internal static readonly PlayerSerializeFormatter instance = new PlayerSerializeFormatter();
         public byte[] Serialize(object customobject)
         {
-            int ID = ((GamePlayer)customobject).Id;
+            string ID = ((GamePlayer)customobject).UserId;
 
-            return BitConverter.GetBytes(ID);
+            return System.Text.Encoding.Default.GetBytes(ID);
         }
 
         public object Deserialize(byte[] stream)
         {
-            int ID = BitConverter.ToInt32(stream, 0);
-            return GameConnect.Room.GetPlayerWithId(ID);
+            string ID = BitConverter.ToString(stream, 0);
+            return RoomConnect.Room.GetPlayer(ID);
         }
 
         public short Size()

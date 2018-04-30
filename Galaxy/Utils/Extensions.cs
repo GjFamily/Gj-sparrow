@@ -24,14 +24,14 @@ namespace Gj.Galaxy.Utils{
             return result;
         }
 
-        public static NetworkEntity[] GetEntitysInChildren(this UnityEngine.GameObject go)
-        {
-            return go.GetComponentsInChildren<NetworkEntity>(true) as NetworkEntity[];
-        }
+        //public static NetworkEntity[] GetEntitysInChildren(this UnityEngine.GameObject go)
+        //{
+        //    return go.GetComponentsInChildren<NetworkEntity>(true) as NetworkEntity[];
+        //}
 
-        public static NetworkEntity GetEntity(this UnityEngine.GameObject go)
+        public static NetworkEsse GetEsse(this UnityEngine.GameObject go)
         {
-            return go.GetComponent<NetworkEntity>() as NetworkEntity;
+            return go.GetComponent<NetworkEsse>() as NetworkEsse;
         }
 
         /// <summary>compares the squared magnitude of target - second to given float value</summary>

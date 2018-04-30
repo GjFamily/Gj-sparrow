@@ -18,10 +18,10 @@ namespace Gj.Galaxy.Network
     public class Namespace
     {
         public NamespaceListener listener;
-        public ConnectionState state = ConnectionState.Disconnected;
-        internal CompressType compress = CompressType.None;
+        private ConnectionState state = ConnectionState.Disconnected;
+        internal bool compress = false;
         internal ProtocolType protocol = ProtocolType.Default;
-        internal MessageQueue messageQueue = MessageQueue.Off;
+        //internal MessageQueue messageQueue = MessageQueue.Off;
         //internal byte ns;
         internal byte[] nsp;
         //internal byte[] parent;
@@ -33,6 +33,13 @@ namespace Gj.Galaxy.Network
 
         private string query;
         internal bool needConnect = false;
+
+        public ConnectionState State
+        {
+            get{
+                return state;
+            }
+        }
 
         public Namespace(Client client)
         {
@@ -141,8 +148,8 @@ namespace Gj.Galaxy.Network
             packet(data);
         }
 
-        public void SetCompressType(CompressType type){
-            this.compress = type;
+        public void SetCompress(bool compress){
+            this.compress = compress;
         }
 
         internal void ack(int id, object[] result){

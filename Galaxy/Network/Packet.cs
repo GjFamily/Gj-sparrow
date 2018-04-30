@@ -2,24 +2,35 @@ using UnityEngine;
 using System.Collections;
 using System.IO;
 using MessagePack;
+using System;
 
 namespace Gj.Galaxy.Network
 {
     
     internal enum MessageType:byte{
         Open = 0,
+        Reopen,
         Close,
         Ping,
         Pong,
         Protocol,
         Namespace,
-        Speed,
         Application
     }
     internal class Message{
         internal MessageType type;
-        //internal int time;
+        internal ProtocolConn conn;
         internal Stream reader;
+        //internal int time;
+        internal Action<Action<Stream>> GetReader;
+        //internal void GetReader(Action<Stream> action)
+        //{
+            
+        //}
+        internal void Close()
+        {
+            conn.Release();
+        }
     }
     public enum DataType:byte{
         Connect = 0,

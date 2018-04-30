@@ -9,188 +9,224 @@ using UnityEditor;
 #endif
 
 namespace Gj.Galaxy.Logic{
-    public class NetworkEntity : MonoBehaviour
+    public interface EsseBehaviour
+    {
+        void InitSync(NetworkEsse esse);
+        bool GetData(StreamBuffer stream);
+        void UpdateData(StreamBuffer stream);
+        void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer);
+        void OnCommand(GamePlayer player, object type, object category, object value);
+    }
+    public class NetworkEsse : MonoBehaviour
     {
         // 拥有人id
-        public int ownerId;
-        // 创建人id
-        public int creatorId;
-
-        public byte group = 0;
-        // NOTE: this is now an integer because unity won't serialize short (needed for instantiation). we SEND only a short though!
-        // NOTE: prefabs have a prefixBackup of -1. this is replaced with any currentLevelPrefix that's used at runtime. instantiated GOs get their prefix set pre-instantiation (so those are not -1 anymore)
-        public int prefix
+        public string ownerId
         {
             get
             {
-                if (this.prefixBackup == -1)
-                {
-                    this.prefixBackup = GameConnect.currentLevelPrefix;
-                }
-
-                return this.prefixBackup;
+                return owner != null ? owner.UserId : "";
             }
-            set { this.prefixBackup = value; }
         }
 
-        // this field is serialized by unity. that means it is copied when instantiating a persistent obj into the scene
-        public int prefixBackup = -1;
+        internal GamePlayer owner;
+        // 创建人id
+        public string creatorId;
+
+        public string hash;
+
+        internal string group = "";
+        public string Group
+        {
+            get
+            {
+                return group;
+            }
+            set
+            {
+                AreaConnect.ChangeLocation(this, value, level);
+            }
+        }
+
+        internal byte level = 0;
+        public byte Level
+        {
+            get
+            {
+                return Level;
+            }
+            set
+            {
+                AreaConnect.ChangeLocation(this, group, value);
+            }
+        }
 
         protected internal bool mixedModeIsReliable = false;
 
-        /// <summary>
-        /// Flag to check if ownership of this photonView was set during the lifecycle. Used for checking when joining late if event with mismatched owner and sender needs addressing.
-        /// </summary>
-        /// <value><c>true</c> if owner ship was transfered; otherwise, <c>false</c>.</value>
         public bool OwnerShipWasTransfered;
 
-        //public object[] instantiationData
-        //{
-        //    get
-        //    {
-        //        if (!this.didAwake)
-        //        {
-        //            // even though viewID and instantiationID are setup before the GO goes live, this data can't be set. as workaround: fetch it if needed
-        //            this.instantiationDataField = GameConnect.FetchInstantiationData(this.instantiationId);
-        //        }
-        //        return this.instantiationDataField;
-        //    }
-        //    set { this.instantiationDataField = value; }
-        //}
-
-        //internal object[] instantiationDataField;
-
-        protected internal object[] lastOnSerializeDataSent = null;
-
-        protected internal object[] lastOnSerializeDataReceived = null;
-
-        public EntitySynchronization synchronization;
-
-        public OwnershipOption ownershipTransfer = OwnershipOption.Fixed;
-
-        public List<Component> ObservedComponents = new List<Component>();
-
-        [SerializeField]
-        private int idField = 0;
-    
-        public int entityId
-        {
-            get { return this.idField; }
-            set
-            {
-                bool register = this.didAwake && this.idField == 0;
-
-                this.idField = value;
-
-                if (register)
-                {
-                    GameConnect.RegisterEntity(this);
-                }
-            }
-        }
-
-        public int instantiationId; 
-        /// <summary>True if the PhotonView was loaded with the scene (game object) or instantiated with InstantiateSceneObject.</summary>
-        /// <remarks>
-        /// Scene objects are not owned by a particular player but belong to the scene. Thus they don't get destroyed when their
-        /// creator leaves the game and the current Master Client can control them (whoever that is).
-        /// The ownerId is 0 (player IDs are 1 and up).
-        /// </remarks>
-        public bool isScene
-        {
-            get { return this.creatorId < 0; }
-        }
-
-        public GamePlayer owner
-        {
-            get
-            {
-                return GameConnect.Room.Find(this.ownerId);
-            }
-        }
-
-        public int OwnerId
-        {
-            get { return this.ownerId; }
-        }
-
-        public bool isOwnerActive
-        {
-            get { return this.ownerId != 0 && GameConnect.Room.mPlayers.ContainsKey(this.ownerId); }
-        }
-
-        public int CreatorId
-        {
-            get { return this.creatorId; }
-        }
-
-        public bool isMine
-        {
-            get
-            {
-                return SyncId == GameConnect.Room.LocalClientId;
-            }
-        }
-
-        public int SyncId
-        {
-            get
-            {
-                return this.ownerId > 0 ? this.ownerId : Math.Abs(creatorId);
-            }
-        }
-
-        protected internal bool didAwake;
+        protected internal EsseBehaviour behaviour;
 
         [SerializeField]
         protected internal bool isRuntimeInstantiated;
 
         protected internal bool removedFromLocalList;
 
-        //internal MonoBehaviour[] RpcMonoBehaviours;
+        protected internal string prefabs;
 
-        protected internal void Awake()
+        protected internal int version = 0;
+
+        protected internal object[] lastOnSerializeDataSent = null;
+
+        protected internal object[] lastOnSerializeDataReceived = null;
+
+        public Synchronization synchronization;
+
+        public OwnershipOption ownershipTransfer = OwnershipOption.Fixed;
+
+        public List<Component> ObservedComponents = new List<Component>();
+
+        public string Id
         {
-            if (this.entityId != 0)
+            get { return this.hash; }
+            set
             {
-                // registration might be too late when some script (on this GO) searches this view BUT GetPhotonView() can search ALL in that case
-                GameConnect.RegisterEntity(this);
-                //this.instantiationDataField = GameConnect.FetchInstantiationData(this.instantiationId);
-            }
+                this.hash = value;
 
-            this.didAwake = true;
+                if (behaviour == null)
+                {
+                    behaviour = GetComponent<EsseBehaviour>() as EsseBehaviour;
+                    // todo behaviour null
+                }
+                if (behaviour != null)
+                    behaviour.InitSync(this);
+                AreaConnect.Register(this);
+            }
         }
 
-        internal int OnTransferOwnership(int newOwnerId)
+        public string OwnerId
         {
-            int _oldOwnerID = ownerId;
-            OwnerShipWasTransfered = true;
-            ownerId = newOwnerId;
-            return _oldOwnerID;
+            get { return owner != null ? owner.UserId : ""; }
+        }
+
+        public string CreatorId
+        {
+            get { return this.creatorId; }
+        }
+
+        public string SyncId
+        {
+            get
+            {
+                return this.ownerId != "" ? this.ownerId : this.creatorId;
+            }
+        }
+
+        public bool isMine
+        {
+            get
+            {
+                return SyncId == AreaConnect.localId;
+            }
+        }
+
+        protected internal bool GetData(StreamBuffer stream)
+        {
+            if (behaviour != null)
+                return behaviour.GetData(stream);
+            else
+                return false;
+        }
+
+        protected internal void UpdateData(StreamBuffer stream)
+        {
+            if (behaviour != null)
+                behaviour.UpdateData(stream);
+        }
+
+		public void UpdateInfo()
+		{
+            AreaConnect.ChangeInfo(this);
+		}
+
+        internal void OnTransferOwnership(GamePlayer newPlayer)
+        {
+            behaviour.OnOwnership(owner, newPlayer);
+            owner = newPlayer;
+        }
+
+        public void Takeover(Action<bool> callback)
+        {
+            if (ownerId == AreaConnect.localId)
+            {
+                callback(true);
+            }
+            else
+            {
+                AreaConnect.Ownership(this, false, callback);
+            }
+        }
+
+        public void Giveout(Action<bool> callback)
+        {
+            if (ownerId != AreaConnect.localId)
+            {
+                callback(false);
+            }
+            else
+            {
+                AreaConnect.Ownership(this, true, (b)=>{
+                    callback(!b);
+                });
+            }
+        }
+
+        public void Command(object type, object category, object value, Action callback)
+        {
+            AreaConnect.Command(this, callback, type, category, value);
+        }
+
+        internal void OnCommand(GamePlayer player, object type, object category, object value)
+        {
+            behaviour.OnCommand(player, type, category, value);
+        }
+
+        internal void OnSurvey()
+        {
+            
+        }
+        public void Destroy()
+        {
+            AreaConnect.Destroy(this);
         }
 
         protected internal void OnDestroy()
         {
             if (!this.removedFromLocalList)
             {
-                bool wasInList = GameConnect.LocalCleanEntity(this);
+                bool wasInList = AreaConnect.LocalClean(this);
 
-                if (wasInList && this.instantiationId > 0 && !Handler.AppQuits && PeerClient.logLevel >= Network.LogLevel.Info)
+                if (wasInList && !Handler.AppQuits && PeerClient.logLevel >= Network.LogLevel.Info)
                 {
                     Debug.Log("instantiated '" + this.gameObject.name + "' got destroyed by engine. This is OK when loading levels. Otherwise use: Destroy().");
                 }
             }
         }
 
-        public const int SyncViewId = 0;
-        public const int SyncCreatorId = 1;
-        public const int SyncCompressed = 2;
-        public const int SyncNullValues = 3;
+        // 关联数据对象，
+        public void Relation(string prefabName, InstanceRelation relation)
+        {
+            AreaConnect.RelationInstance(this, prefabName, relation, this.gameObject);
+        }
+
+        public const int SyncHash = 0;
+        public const int SyncCompressed = 1;
+        public const int SyncNullValues = 2;
+        public const int SyncVersion = 3;
         public const int SyncFirstValue = 4;
 
         internal object[] OnSerializeWrite(StreamBuffer stream, GamePlayer player)
         {
-            if (synchronization == EntitySynchronization.Off)
+            if (synchronization == Synchronization.Off)
             {
                 return null;
             }
@@ -213,18 +249,17 @@ namespace Gj.Galaxy.Logic{
 
 
             object[] currentValues = stream.ToArray();
-            currentValues[0] = entityId;
-            currentValues[1] = creatorId;
-            currentValues[2] = false;
-            currentValues[3] = null;
+            currentValues[SyncHash] = creatorId;
+            currentValues[SyncCompressed] = false;
+            currentValues[SyncNullValues] = null;
 
-            if (synchronization == EntitySynchronization.Unreliable)
+            if (synchronization == Synchronization.Unreliable)
             {
-                return currentValues;
+                currentValues[SyncVersion] = version++;
+                return SerializeStream(ref currentValues);
             }
 
-            // ViewSynchronization: Off, Unreliable, UnreliableOnChange, ReliableDeltaCompressed
-            if (synchronization == EntitySynchronization.UnreliableOnChange)
+            if (synchronization == Synchronization.UnreliableOnChange)
             {
                 if (AlmostEquals(currentValues, lastOnSerializeDataSent))
                 {
@@ -242,29 +277,30 @@ namespace Gj.Galaxy.Logic{
                     lastOnSerializeDataSent = currentValues;
                 }
 
-                return currentValues;
+                currentValues[SyncVersion] = version++;
+                return SerializeStream(ref currentValues);
             }
 
-            if (synchronization == EntitySynchronization.Reliable)
+            if (synchronization == Synchronization.Reliable)
             {
                 object[] dataToSend = DeltaCompressionWrite(lastOnSerializeDataSent, currentValues);
 
                 lastOnSerializeDataSent = currentValues;
 
-                return dataToSend;
+                if (dataToSend == null) return null;
+
+                dataToSend[SyncVersion] = version++;
+                return SerializeStream(ref dataToSend);
             }
 
             return null;
         }
 
-        internal void OnSerializeRead(StreamBuffer stream, GamePlayer player, object[] data, short correctPrefix)
+        internal void OnSerializeRead(StreamBuffer stream, GamePlayer player, object[] data)
         {
-            if (prefix > 0 && correctPrefix != prefix)
-            {
-                Debug.LogError("Received OnSerialization for view ID " + this + " with prefix " + correctPrefix + ". Our prefix is " + prefix);
-                return;
-            }
-            if (synchronization == EntitySynchronization.Reliable)
+            var v = data[SyncVersion].ConverInt();
+            if (v < version) return;
+            if (synchronization == Synchronization.Reliable)
             {
                 object[] uncompressed = this.DeltaCompressionRead(lastOnSerializeDataReceived, data);
                 if (uncompressed == null)
@@ -281,6 +317,7 @@ namespace Gj.Galaxy.Logic{
             stream.SetReadStream(data, SyncFirstValue);
 
             Deserialize(stream, info);
+            version = v;
         }
 
         private object[] DeltaCompressionWrite(object[] previousContent, object[] currentContent)
@@ -343,7 +380,7 @@ namespace Gj.Galaxy.Logic{
                 }
             }
 
-            compressedContent[SyncViewId] = currentContent[SyncViewId];
+            compressedContent[SyncHash] = currentContent[SyncHash];
             return compressedContent;    // some data was compressed but we need to send something
         }
 
@@ -463,6 +500,41 @@ namespace Gj.Galaxy.Logic{
             return true;
         }
 
+        private static object[] SerializeStream(ref object[] data)
+        {
+            SerializeFormatter formatter;
+            var result = new object[data.Length];
+            for (var i = 0; i < data.Length; i++)
+            {
+                var r = data[i];
+                if (r == null)
+                {
+                    result[i] = r;
+                }
+                else
+                {
+                    formatter = SerializeTypes.GetFormatter(r.GetType());
+                    if (formatter == null)
+                    {
+                        result[i] = r;
+                    }
+                    else
+                    {
+                        result[i] = formatter.Serialize(r);
+                    }
+                }
+            }
+            return result;
+        }
+
+        public void BindComponent(Component observable)
+        {
+            ObservedComponents.Add(observable);
+            var r = observable as GameObservable;
+            if (r != null)
+                r.Bind(this);
+        }
+
         public void Serialize(StreamBuffer stream, MessageInfo info)
         {
             if (this.ObservedComponents != null && this.ObservedComponents.Count > 0)
@@ -498,7 +570,7 @@ namespace Gj.Galaxy.Logic{
                 GameObservable observable = component as GameObservable;
                 if (observable != null)
                 {
-                    observable.OnDeserializeEntity(stream, info);
+                    observable.OnDeserialize(stream, info);
                 }
                 else
                 {
@@ -523,7 +595,7 @@ namespace Gj.Galaxy.Logic{
                 GameObservable observable = component as GameObservable;
                 if (observable != null)
                 {
-                    observable.OnSerializeEntity(stream, info);
+                    observable.OnSerialize(stream, info);
                 }
                 else
                 {
@@ -536,29 +608,19 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        //public void RefreshRpcMonoBehaviourCache()
-        //{
-        //    this.RpcMonoBehaviours = this.GetComponents<MonoBehaviour>();
-        //}
-
-        //public void RPC(string methodName, SyncTargets target, params object[] parameters)
-        //{
-        //    GameConnect.RPC(this, methodName, target, parameters);
-        //}
-
-        public static NetworkEntity Get(Component component)
+        public static NetworkEsse Get(Component component)
         {
-            return component.GetComponent<NetworkEntity>();
+            return component.GetComponent<NetworkEsse>();
         }
 
-        public static NetworkEntity Get(GameObject gameObj)
+        public static NetworkEsse Get(GameObject gameObj)
         {
-            return gameObj.GetComponent<NetworkEntity>();
+            return gameObj.GetComponent<NetworkEsse>();
         }
 
         public override string ToString()
         {
-            return string.Format("View {0} on {1} {2}", this.entityId, (this.gameObject != null) ? this.gameObject.name : "GO==null", (this.isScene) ? "(scene)" : string.Empty);
+            return string.Format("Id {0} on {1}", this.Id, (this.gameObject != null) ? this.gameObject.name : "GO==null");
         }
     }
 }

@@ -14,7 +14,8 @@ namespace Gj.Galaxy.Logic
         public const byte LobbyLeave = 1;
         public const byte LobbyExist = 2;
         public const byte TeamCreate = 3;
-        public const byte PropChanged = 4;
+        public const byte ChangeProp = 4;
+        public const byte UserProp = 5;
         public const byte TeamInvite = 254;
         public const byte GameConnect = 253;
         public const byte Prop = 252;
@@ -43,13 +44,13 @@ namespace Gj.Galaxy.Logic
         public delegate void OnInvitedTeamDelegate(string userId, string teamId);
         public delegate void OnPlayerInitDelegate(GamePlayer player);
 
-        public event OnJoinedGameDelegate OnJoinedGame;
-        public event OnInvitedTeamDelegate OnInvitedTeam;
-        public event OnPlayerInitDelegate OnPlayerInit;
+        public OnJoinedGameDelegate OnJoinedGame;
+        public OnInvitedTeamDelegate OnInvitedTeam;
+        public OnPlayerInitDelegate OnPlayerInit;
 
         private Action<bool> OnConnectAction;
 
-        public static GamePlayer player;
+        public static GamePlayer player = new GamePlayer(true, "");
 
         static SceneConnect()
         {
@@ -70,7 +71,7 @@ namespace Gj.Galaxy.Logic
         public static void Connect(Action<bool> a)
         {
             Listener.OnConnectAction = a;
-            n.Connect("abc=123");
+            n.Connect();
         }
 
         public static void Disconnect()
@@ -106,22 +107,22 @@ namespace Gj.Galaxy.Logic
             n.Emit(SceneEvent.LobbyExist, new object[] { }, (obj) => callback((bool)obj[0]));
         }
 
-        public static void SetCustomProperties(Dictionary<string, object> customProperties)
+        public static void SetProperties(Dictionary<string, object> customProperties)
         {
             if (customProperties == null)
             {
                 customProperties = new Dictionary<string, object>();
-                foreach (object k in player.CustomProperties.Keys)
+                foreach (object k in player.Properties.Keys)
                 {
                     customProperties[(string)k] = null;
                 }
             }
-            player.SetCustomProperties(customProperties);
-            emitPlayerProp(player.CustomProperties);
+            player.SetProperties(customProperties);
+            emitPlayerProp(player.Properties);
         }
-        public static void RemoveCustomProperties(string[] customPropertiesToDelete)
+        public static void RemoveProperties(string[] customPropertiesToDelete)
         {
-            var props = player.CustomProperties;
+            var props = player.Properties;
             for (int i = 0; i < customPropertiesToDelete.Length; i++)
             {
                 string key = customPropertiesToDelete[i];
@@ -130,14 +131,18 @@ namespace Gj.Galaxy.Logic
                     props.Remove(key);
                 }
             }
-            player.CustomProperties = new Dictionary<string, object>();
-            player.SetCustomProperties(props);
-            emitPlayerProp(player.CustomProperties);
+            player.Properties = new Dictionary<string, object>();
+            player.SetProperties(props);
+            emitPlayerProp(player.Properties);
+        }
+        public static void UserProp(string userId, Action<Dictionary<string, object>, Dictionary<string, object>> callback)
+        {
+            n.Emit(SceneEvent.UserProp, new object[] { userId }, (object[] obj) => callback((Dictionary<string, object>)obj[0],(Dictionary<string, object>)obj[1]));
         }
 
         internal static void emitPlayerProp(Dictionary<string, object> prop)
         {
-            n.Emit(SceneEvent.PropChanged, new object[] { prop });
+            n.Emit(SceneEvent.ChangeProp, new object[] { prop });
         }
 
         public void OnError(string message)
@@ -160,7 +165,7 @@ namespace Gj.Galaxy.Logic
                     break;
                 case SceneEvent.Prop:
                     var userId = (string)param[0];
-                    player = new GamePlayer(true, -1, userId);
+                    player.UserId = userId;
                     player.AttachInfo(((Dictionary<object, object>)param[1]).ConverString());
                     player.InternalProperties(((Dictionary<object, object>)param[2]).ConverString());
                     if (OnPlayerInit != null) OnPlayerInit(player);

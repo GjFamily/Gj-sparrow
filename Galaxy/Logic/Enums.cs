@@ -5,12 +5,13 @@ namespace Gj.Galaxy.Logic{
     {
         Auth = 0,
         Scene = 1,
-        Chat = 2
+        Chat = 2,
+        Area = 3
     }
 
     public enum SceneRoom
     {
-        Game = 1,
+        Room = 1,
         Team = 2
     }
 
@@ -55,7 +56,7 @@ namespace Gj.Galaxy.Logic{
         public const byte Secret2 = 2;
     }
 
-    public enum EntitySynchronization:byte { Off, Reliable, Unreliable, UnreliableOnChange }
+    public enum Synchronization:byte { Off, Reliable, Unreliable, UnreliableOnChange }
 
     /// <summary>
     /// Options to define how Ownership Transfer is handled per PhotonView.

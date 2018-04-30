@@ -21,35 +21,20 @@ namespace Gj
             StatisticsService.single.Start();
         }
 
-        public void OnCommand(NetworkEntity entity, GamePlayer player, string type, string category, float value)
-        {
-            TargetEntity targetEntity = entity.GetComponent<TargetEntity>();
-        }
-
         public void OnDestroyInstance(GameObject gameObject, GamePlayer player)
         {
             Debug.Log("destroy");
             TargetEntity targetEntity = gameObject.GetComponent<TargetEntity>();
         }
 
-        public void OnFinish(bool exit, Dictionary<string, object> result)
+        public virtual void OnFinish(Dictionary<string, object> result)
         {
             Debug.Log("[ SOCKET ] Finish Game");
-        }
-
-        public GameObject OnInstance(string prefabName, GamePlayer player, object data)
-        {
-            return null;
         }
 
         public void OnLeaveGame()
         {
             Debug.Log("[ SOCKET ] Leave Game");
-        }
-
-        public void OnOwnership(NetworkEntity entity, GamePlayer oldPlayer)
-        {
-            Debug.Log("[ SOCKET ] entity ownership change");
         }
 
         public virtual void OnStart()
@@ -85,6 +70,21 @@ namespace Gj
         public virtual void OnReadyAll()
         {
             Debug.Log("[ SOCKET ] Player Ready");
+        }
+
+        public virtual void OnEnter(bool success)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public virtual GameObject OnInstance(string prefabName, GamePlayer player, Vector3 position, Quaternion rotation)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public virtual void OnSync(bool success)
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

@@ -21,6 +21,7 @@ namespace Gj.Galaxy.Network
         private SwitchQueue<byte[]> m_Messages = new SwitchQueue<byte[]>(128);
         private byte[] current_data;
         private byte[] tmp_head;
+        private int position = 0;
 
         WebSocket m_Socket;
         bool m_IsConnected = false;
@@ -159,10 +160,8 @@ namespace Gj.Galaxy.Network
             while(!m_Messages.Empty())
             {
                 current_data = Recv();
-                for (var i = 0; i < tmp_head.Length; i++)
-                {
-                    tmp_head[i] = current_data[i];
-                }
+                Array.Copy(current_data, tmp_head, tmp_head.Length);
+                position += tmp_head.Length;
                 message();
             }
         }
@@ -176,9 +175,24 @@ namespace Gj.Galaxy.Network
         public void Read(ref byte[] content, Action callback)
         {
             if(content.Length > 0){
-                Array.Copy(current_data, tmp_head.Length, content, 0, content.Length);
+                Array.Copy(current_data, position, content, 0, content.Length);
+                position += content.Length;
             }
             callback();
+        }
+
+        public void Read(ref byte[] content)
+        {
+            if (content.Length > 0)
+            {
+                Array.Copy(current_data, position, content, 0, content.Length);
+                position += content.Length;
+            }
+        }
+
+        public void Release()
+        {
+            position = 0;
         }
     }
 }
