@@ -101,10 +101,7 @@ namespace Gj
             ControlService.single.DestroyControl(gameObject);
         }
 
-<<<<<<< HEAD
-        protected virtual void Command(byte type, byte category, float value) { }
-=======
-        protected virtual void Command(string type, string category, float value)
+        protected virtual void Command(byte type, byte category, float value)
         {
             if (Esse != null)
                 Esse.Command(type, category, value, () =>
@@ -113,27 +110,27 @@ namespace Gj
                 });
         }
 
-        public bool GetData(StreamBuffer stream)
+        public virtual bool GetData(StreamBuffer stream)
         {
             return false;
         }
 
-        public void UpdateData(StreamBuffer stream)
+        public virtual void UpdateData(StreamBuffer stream)
         {
             throw new NotImplementedException();
         }
 
-        public void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
+        public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
         {
             throw new System.NotImplementedException();
         }
 
-        public void OnCommand(GamePlayer player, object type, object category, object value)
+        public virtual void OnCommand(GamePlayer player, object type, object category, object value)
         {
             throw new System.NotImplementedException();
         }
 
-        public void InitSync(NetworkEsse esse)
+        public virtual void InitSync(NetworkEsse esse)
         {
             esse.synchronization = Synchronization.Reliable;
             esse.ownershipTransfer = OwnershipOption.Request;
@@ -145,6 +142,5 @@ namespace Gj
             transformView.options.positionParam = PositionParam.FixedSpeed;
             transformView.options.positionSpeed = 3f;
         }
->>>>>>> c05089e0cd83c76d6e7b2d388af9f9a94ec591bd
     }
 }
