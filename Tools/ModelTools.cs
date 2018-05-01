@@ -49,7 +49,7 @@ namespace Gj
 
         public static void RotateAngle(GameObject obj, float angle)
         {
-            obj.transform.rotation = Quaternion.Euler(0, angle, 0);
+            obj.transform.rotation = Quaternion.Euler(obj.transform.rotation.eulerAngles.x, angle, obj.transform.rotation.eulerAngles.z);
         }
 
         public static void AddTriggersListener(GameObject obj, EventTriggerType eventID, UnityAction<BaseEventData> action)
