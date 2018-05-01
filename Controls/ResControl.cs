@@ -9,6 +9,13 @@ namespace Gj
         {
             if (IsCurrentPlayer(other.gameObject))
             {
+                if (Esse != null)
+                {
+                    Esse.Takeover((bool obj) =>
+                    {
+                        
+                    });
+                }
             }
         }
 

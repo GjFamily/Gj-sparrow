@@ -37,16 +37,16 @@ namespace Gj
             return new ObjectAttr(targetMap[targetName]);
         }
 
-        public BaseControl MakeControl(string targetName, ObjectControl control, Vector3 position, Quaternion rotation)
+        public BaseControl MakeControl(string targetName, ObjectControl control, Vector3 position, Quaternion rotation, bool isLocal = true)
         {
-            return MakeControl(targetName, control, position, rotation, null);
+            return MakeControl(targetName, control, position, rotation, null, isLocal);
         }
 
-        public BaseControl MakeControl(string targetName, ObjectControl control, Vector3 position, Quaternion rotation, GameObject master)
+        public BaseControl MakeControl(string targetName, ObjectControl control, Vector3 position, Quaternion rotation, GameObject master, bool isLocal = true)
         {
             ObjectAttr attr = GetTarget(targetName);
             BaseControl baseControl = ObjectService.single.MakeEmpty(controlMap[attr.name], attr.name, position, rotation) as BaseControl;
-            baseControl.Init(attr, control, master);
+            baseControl.Init(attr, control, master, isLocal);
             baseControl.gameObject.SetActive(true);
             return baseControl;
         }
