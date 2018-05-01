@@ -33,7 +33,7 @@ namespace Gj.Galaxy.Logic{
         // 创建人id
         public string creatorId;
 
-        public string hash;
+        internal string hash;
 
         internal string group = "";
         public string Group

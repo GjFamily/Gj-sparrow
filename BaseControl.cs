@@ -33,7 +33,7 @@ namespace Gj
                 {
                     _esse = GetComponent<NetworkEsse>();
                 }
-                return _esse;
+                return _esse != null && _esse.Id != "" ? _esse : null;
             }
         }
 
@@ -119,13 +119,15 @@ namespace Gj
             Open();
         }
 
-        public void Init(ObjectAttr attr, ObjectControl control, GameObject obj)
+        public void Init(ObjectAttr attr, ObjectControl control, GameObject obj, bool isLocal)
         {
             Info.attr = attr;
             Info.master = obj;
             Info.control = control;
             FormatExtend(attr.extend);
             SetEntity(attr.entity);
+            // 关联同步关系, master不同步
+            if (isLocal && obj == null) SyncRelation(attr, control);
             Init();
             if (first)
             {
@@ -139,6 +141,7 @@ namespace Gj
                         InitOtherPlayerPlugin();
                         break;
                     case ObjectControl.Ai:
+                        Debug.Log("InitAiPlugin");
                         InitAiPlugin();
                         break;
                 }
@@ -149,9 +152,6 @@ namespace Gj
         protected void Open()
         {
             Info.live = true;
-            // 关联同步关系
-            if (Esse != null)
-                Esse.Relation("", InstanceRelation.Player);
         }
 
         protected const string CLOSE = "Close";
@@ -164,13 +164,42 @@ namespace Gj
             ControlService.single.DestroyControl(gameObject);
         }
 
+        protected virtual void OnCommand(byte type, byte category, float value)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected virtual void OnOwnership(BaseControl baseControl)
+        {
+            
+        }
+
+        protected virtual void SyncRelation(ObjectAttr attr, ObjectControl control)
+        {
+            if (Esse == null) return;
+            switch (control)
+            {
+                case ObjectControl.Player:
+                    Esse.Relation(attr.name, InstanceRelation.Player);
+                    break;
+                case ObjectControl.OtherPlayer:
+                    Esse.Relation(attr.name, InstanceRelation.OtherPlayer);
+                    break;
+                case ObjectControl.Ai:
+                    Esse.Relation(attr.name, InstanceRelation.Scene);
+                    break;
+            }
+        }
+
         protected virtual void Command(byte type, byte category, float value)
         {
             if (Esse != null)
                 Esse.Command(type, category, value, () =>
                 {
-
+                    OnCommand(type, category, value);
                 });
+            else
+                OnCommand(type, category, value);
         }
 
         public virtual bool GetData(StreamBuffer stream)
@@ -185,12 +214,12 @@ namespace Gj
 
         public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
         {
-            throw new System.NotImplementedException();
+            
         }
 
         public virtual void OnCommand(GamePlayer player, object type, object category, object value)
         {
-            throw new System.NotImplementedException();
+            this.OnCommand((byte)type, (byte)category, (float)value);
         }
 
         public virtual void InitSync(NetworkEsse esse)

@@ -174,7 +174,7 @@ namespace Gj.Galaxy.Logic
 
         public object[] OnEvent(byte code, object[] param)
         {
-            Debug.Log(code);
+            //Debug.Log(code);
             switch (code)
             {
                 case AreaEvent.Instance:
@@ -466,7 +466,7 @@ namespace Gj.Galaxy.Logic
         internal GameObject OnInstance(string sendId, string hash, string group, byte level, Dictionary<byte, object> evData, GameObject go)
         {
             string prefabName = (string)evData[(byte)0];
-            Debug.Log("Instance:" + sendId + "," + hash);
+            //Debug.Log("Instance:" + sendId + "," + hash);
             // 负数是该用户创建的场景物体
             var player = players.GetPlayer(sendId);
 
@@ -739,7 +739,10 @@ namespace Gj.Galaxy.Logic
         internal static void Update()
         {
             if (n.State == ConnectionState.Connected)
+            {
                 listener.UpdateEsse();
+                // todo移除request过期数据
+            }
         }
 
         private void UpdateEsse()
@@ -901,23 +904,17 @@ namespace Gj.Galaxy.Logic
                 string hash = (string)d[NetworkEsse.SyncHash];
                 //Debug.Log("serialize:" + creatorId + ',' + entityId);
                 NetworkEsse esse = Get(hash);
+
                 if (esse == null)
                 {
-                    if (players.GetPlayer(esse.CreatorId) == null)
+                    List<object[]> list;
+                    if (!waitInstanceData.TryGetValue(hash, out list))
                     {
-                        Debug.LogWarning("Received OnSerialization for  ID " + hash + ". Ignored this. State: " + AreaConnect.n.State);
+                        list = new List<object[]>();
+                        waitInstanceData.Add(hash, list);
                     }
-                    else
-                    {
-                        List<object[]> list;
-                        if (!waitInstanceData.TryGetValue(hash, out list))
-                        {
-                            list = new List<object[]>();
-                            waitInstanceData.Add(hash, list);
-                        }
-                        list.Add(d);
-                        Debug.Log("Wait Received Instance:" + esse.CreatorId + ',' + hash);
-                    }
+                    list.Add(d);
+                    Debug.Log("Wait Received Instance:" + ',' + hash);
                     return;
                 }
 

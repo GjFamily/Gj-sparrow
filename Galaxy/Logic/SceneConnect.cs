@@ -137,7 +137,9 @@ namespace Gj.Galaxy.Logic
         }
         public static void UserProp(string userId, Action<Dictionary<string, object>, Dictionary<string, object>> callback)
         {
-            n.Emit(SceneEvent.UserProp, new object[] { userId }, (object[] obj) => callback((Dictionary<string, object>)obj[0],(Dictionary<string, object>)obj[1]));
+            n.Emit(SceneEvent.UserProp, new object[] { userId }, (object[] obj) => {
+                callback(((Dictionary<object, object>)obj[0]).ConverString(), ((Dictionary<object, object>)obj[1]).ConverString());
+            });
         }
 
         internal static void emitPlayerProp(Dictionary<string, object> prop)

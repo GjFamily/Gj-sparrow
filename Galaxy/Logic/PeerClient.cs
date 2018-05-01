@@ -32,7 +32,7 @@ namespace Gj.Galaxy.Logic{
 
         public static LogLevel logLevel = LogLevel.Error;
 
-        public static float precisionForVectorSynchronization = 0.001f; // 0.000099f;
+        public static float precisionForVectorSynchronization = 0.0001f; // 0.000099f;
 
         public static float precisionForQuaternionSynchronization = 1.0f;
 
@@ -55,7 +55,7 @@ namespace Gj.Galaxy.Logic{
 
         private static int sendInterval = 50; // in miliseconds.
 
-        private static int sendIntervalOnSerialize = 100; // in miliseconds. I.e. 100 = 100ms which makes 10 times/second
+        private static int sendIntervalOnSerialize = 60; // in miliseconds. I.e. 100 = 100ms which makes 10 times/second
 
         private static long inDataLength = 0;
         private static long outDataLength = 0;
