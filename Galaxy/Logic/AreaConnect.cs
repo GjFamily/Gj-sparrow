@@ -31,7 +31,7 @@ namespace Gj.Galaxy.Logic
         public const byte Affect = 2;
     }
 
-    public enum InstanceRelation
+    public enum InstanceRelation:byte
     {
         Player,
         Scene,
@@ -40,7 +40,7 @@ namespace Gj.Galaxy.Logic
 
     public interface AreaListener
     {
-        GameObject OnInstance(string prefabName, GamePlayer player, Vector3 position, Quaternion rotation);
+        GameObject OnInstance(string prefabName, InstanceRelation relation, GamePlayer player, Vector3 position, Quaternion rotation);
         void OnDestroyInstance(GameObject gameObject, GamePlayer player);
         void OnRequest(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
     }
@@ -51,7 +51,7 @@ namespace Gj.Galaxy.Logic
     }
     public class AreaDelegate : AreaListener
     {
-        public delegate GameObject OnInstanceDelegate(string prefabName, GamePlayer player, Vector3 position, Quaternion rotation);
+        public delegate GameObject OnInstanceDelegate(string prefabName, InstanceRelation relation, GamePlayer player, Vector3 position, Quaternion rotation);
         public delegate void OnDestroyInstanceDelegate(GameObject gameObject, GamePlayer player);
         public delegate void OnRequestDelegate(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
 
@@ -66,9 +66,9 @@ namespace Gj.Galaxy.Logic
             OnRequestEvent = listener.OnRequest;
         }
 
-        public GameObject OnInstance(string prefabName, GamePlayer player, Vector3 position, Quaternion rotation)
+        public GameObject OnInstance(string prefabName, InstanceRelation relation, GamePlayer player, Vector3 position, Quaternion rotation)
         {
-            if (OnInstanceEvent != null) return OnInstanceEvent(prefabName, player, position, rotation);
+            if (OnInstanceEvent != null) return OnInstanceEvent(prefabName, relation, player, position, rotation);
             return null;
         }
 
@@ -302,7 +302,7 @@ namespace Gj.Galaxy.Logic
                 return;
             }
             Debug.Log(esse);
-            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, prefabGo);
+            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, prefabGo, relation);
             listener.OnInstance(esse.CreatorId, esse.hash, esse.group, esse.level, instantiateEvent, prefabGo);
         }
 
@@ -406,27 +406,27 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        internal Dictionary<byte, object> EmitInstantiate(NetworkEsse esse, string prefabName, GameObject go)
+        internal Dictionary<byte, object> EmitInstantiate(NetworkEsse esse, string prefabName, GameObject go, InstanceRelation relation)
         {
             Dictionary<byte, object> instantiateEvent = new Dictionary<byte, object>();
 
             instantiateEvent[(byte)0] = prefabName;
-
+            instantiateEvent[(byte)1] = (byte)relation;
             if (go.transform.position != Vector3.zero)
             {
-                instantiateEvent[(byte)1] = Vector3SerializeFormatter.instance.Serialize(go.transform.position);
+                instantiateEvent[(byte)2] = Vector3SerializeFormatter.instance.Serialize(go.transform.position);
             }
 
             if (go.transform.rotation != Quaternion.identity)
             {
-                instantiateEvent[(byte)2] = QuaternionSerializeFormatter.instance.Serialize(go.transform.rotation);
+                instantiateEvent[(byte)3] = QuaternionSerializeFormatter.instance.Serialize(go.transform.rotation);
             }
 
             var data = esse.GetData(pStream);
 
             if (data)
             {
-                instantiateEvent[(byte)3] = pStream.ToArray();
+                instantiateEvent[(byte)4] = pStream.ToArray();
             }
             if (!PeerClient.offlineMode)
                 n.Emit(AreaEvent.Instance, new object[] { esse.hash, esse.group, esse.level, MessagePackSerializer.Serialize(instantiateEvent) });
@@ -466,6 +466,8 @@ namespace Gj.Galaxy.Logic
         internal GameObject OnInstance(string sendId, string hash, string group, byte level, Dictionary<byte, object> evData, GameObject go)
         {
             string prefabName = (string)evData[(byte)0];
+            InstanceRelation relation = (InstanceRelation)evData[(byte)1];
+
             //Debug.Log("Instance:" + sendId + "," + hash);
             // 负数是该用户创建的场景物体
             var player = players.GetPlayer(sendId);
@@ -476,16 +478,16 @@ namespace Gj.Galaxy.Logic
                 return null; // Ignore group
             }
             Vector3 position = Vector3.zero;
-            if (evData.ContainsKey((byte)1))
+            if (evData.ContainsKey((byte)2))
             {
-                var positionBytes = (byte[])evData[(byte)1];
+                var positionBytes = (byte[])evData[(byte)2];
                 position = (Vector3)Vector3SerializeFormatter.instance.Deserialize(positionBytes);
             }
 
             Quaternion rotation = Quaternion.identity;
-            if (evData.ContainsKey((byte)2))
+            if (evData.ContainsKey((byte)3))
             {
-                var ratationBytes = (byte[])evData[(byte)2];
+                var ratationBytes = (byte[])evData[(byte)3];
                 rotation = (Quaternion)QuaternionSerializeFormatter.instance.Deserialize(ratationBytes);
             }
 
@@ -493,7 +495,7 @@ namespace Gj.Galaxy.Logic
             {
                 // 统计到该用户的初始化进度中
                 players.OnInstance(sendId);
-                go = Delegate.OnInstance(prefabName, players.GetPlayer(sendId), position, rotation);
+                go = Delegate.OnInstance(prefabName, relation, players.GetPlayer(sendId), position, rotation);
                 if (go == null)
                 {
                     Debug.LogError("error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
