@@ -777,6 +777,7 @@ namespace Gj.Galaxy.Logic
                 }
 
                 object[] evData = esse.OnSerializeWrite(pStream, players.GetPlayer(localId));
+                //Debug.Log(MessagePackSerializer.Serialize(evData).Length);
                 if (evData == null)
                 {
                     continue;

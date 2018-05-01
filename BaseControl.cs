@@ -143,6 +143,10 @@ namespace Gj
             // 速度同步
             transformView.options.positionParam = PositionParam.FixedSpeed;
             transformView.options.positionSpeed = 3f;
+            transformView.options.extrapolatedParam = ExtrapolatedParam.FixedSpeed;
+            transformView.options.extrapolatedPositionSpeed = 3f;
+            transformView.options.rotationParam = RotationParam.FixedSpeed;
+            transformView.options.rotationSpeed = 180;
         }
 
         public virtual void OnSurvey(Dictionary<byte, object> data)

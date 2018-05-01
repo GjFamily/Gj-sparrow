@@ -19,7 +19,7 @@ namespace Gj.Galaxy.Scripts
     public enum RotationParam : byte
     {
         Disabled,
-        RotateTowards,
+        FixedSpeed,
         SynchronizeValues,
         Lerp,
     }
@@ -237,7 +237,7 @@ namespace Gj.Galaxy.Scripts
             }
         );
 
-        public RotationParam rotationParam = RotationParam.RotateTowards;
+        public RotationParam rotationParam = RotationParam.FixedSpeed;
         public float rotationSpeed = 180;
 
         public ScaleParam scaleParam = ScaleParam.Disabled;

@@ -322,7 +322,7 @@ public class TransformViewEditor : Editor
 
         switch (interpolateOption)
         {
-            case RotationParam.RotateTowards:
+            case RotationParam.FixedSpeed:
             case RotationParam.Lerp:
                 containerHeight += EDITOR_LINE_HEIGHT;
                 break;
@@ -341,7 +341,7 @@ public class TransformViewEditor : Editor
 
         switch (interpolateOption)
         {
-            case RotationParam.RotateTowards:
+            case RotationParam.FixedSpeed:
                 EditorGUI.PropertyField(propertyRect, serializedObject.FindProperty("m_RotationModel.InterpolateRotateTowardsSpeed"),
                     new GUIContent("RotateTowards Speed"));
                 break;

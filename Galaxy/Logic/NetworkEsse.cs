@@ -74,7 +74,7 @@ namespace Gj.Galaxy.Logic{
 
         protected internal string prefabs;
 
-        protected internal int version = 0;
+        protected internal UInt16 version = 0;
 
         protected internal object[] lastOnSerializeDataSent = null;
 
@@ -247,10 +247,10 @@ namespace Gj.Galaxy.Logic{
             {
                 return null;
             }
-
+            //Debug.Log(stream.Count);
 
             object[] currentValues = stream.ToArray();
-            currentValues[SyncHash] = creatorId;
+            currentValues[SyncHash] = hash;
             currentValues[SyncCompressed] = false;
             currentValues[SyncNullValues] = null;
 
@@ -299,7 +299,7 @@ namespace Gj.Galaxy.Logic{
 
         internal void OnSerializeRead(StreamBuffer stream, GamePlayer player, object[] data)
         {
-            var v = data[SyncVersion].ConverInt();
+            var v = data[SyncVersion].ConverUInt16();
             if (v < version) return;
             if (synchronization == Synchronization.Reliable)
             {
