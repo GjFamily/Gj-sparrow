@@ -5,13 +5,14 @@ namespace Gj
 {
     public class MinimapCamera : MonoBehaviour
     {
-        public float distance = 10;
         GameObject target;
         Vector3 offsetPosition;
+        Quaternion offsetRotation;
 
 		void Start()
-		{
-            offsetPosition = new Vector3(0, distance, 0);
+        {
+            offsetPosition = transform.position;
+            offsetRotation = transform.rotation;
 		}
 
 		// Update is called once per frame

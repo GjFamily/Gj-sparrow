@@ -22,7 +22,7 @@ namespace Gj
         protected GameObject target;
 
         private GameObject master;
-        private Skill skill;
+        protected Skill skill;
 
         public void Init(GameObject obj, Skill s)
         {
