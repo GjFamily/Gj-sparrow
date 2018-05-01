@@ -59,6 +59,11 @@ namespace Gj.Galaxy.Utils{
             return Convert.ToInt32(target);
         }
 
+        public static UInt16 ConverUInt16(this object target)
+        {
+            return Convert.ToUInt16(target);
+        }
+
         public static Dictionary<string, object> ConverString(this IDictionary target){
             var d = new Dictionary<string, object>();
             foreach (object key in target.Keys)

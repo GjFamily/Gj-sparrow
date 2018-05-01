@@ -36,7 +36,7 @@ namespace Gj.Galaxy.Scripts{
                 default:
                 case RotationParam.Disabled:
                     return targetRotation;
-                case RotationParam.RotateTowards:
+                case RotationParam.FixedSpeed:
                     return Quaternion.RotateTowards(currentRotation, targetRotation, options.rotationSpeed * Time.deltaTime);
                 case RotationParam.SynchronizeValues:
                     if (m_SynchronizedTurnSpeed == 0)
