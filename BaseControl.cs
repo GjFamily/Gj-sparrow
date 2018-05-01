@@ -126,8 +126,6 @@ namespace Gj
             Info.control = control;
             FormatExtend(attr.extend);
             SetEntity(attr.entity);
-            // 关联同步关系, master不同步
-            if (isLocal && obj == null) SyncRelation(attr, control);
             Init();
             if (first)
             {
@@ -147,6 +145,8 @@ namespace Gj
                 }
                 first = false;
             }
+            // 关联同步关系, master不同步
+            if (isLocal && obj == null) SyncRelation(attr, control);
         }
 
         protected void Open()
