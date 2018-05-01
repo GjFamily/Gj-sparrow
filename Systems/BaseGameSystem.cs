@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Gj.Galaxy.Logic;
+using System;
 
 namespace Gj
 {
@@ -85,6 +86,11 @@ namespace Gj
         public virtual void OnSync(bool success)
         {
             throw new System.NotImplementedException();
+        }
+
+        public virtual void OnRequest(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
+        {
+            throw new NotImplementedException();
         }
     }
 }

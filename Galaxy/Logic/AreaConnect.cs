@@ -21,14 +21,14 @@ namespace Gj.Galaxy.Logic
         public const byte Ownership = 7;
         public const byte Survey = 8;
         public const byte Serialize = 9;
+        public const byte Request = 10;
+        public const byte Response = 11;
     }
 
     internal class SyncEvent
     {
-        public const byte Request = 0;
-        public const byte Response = 1;
-        public const byte Command = 3;
-        public const byte Affect = 4;
+        public const byte Command = 1;
+        public const byte Affect = 2;
     }
 
     public enum InstanceRelation
@@ -42,6 +42,7 @@ namespace Gj.Galaxy.Logic
     {
         GameObject OnInstance(string prefabName, GamePlayer player, Vector3 position, Quaternion rotation);
         void OnDestroyInstance(GameObject gameObject, GamePlayer player);
+        void OnRequest(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
     }
     public interface PlayerFactory
     {
@@ -52,14 +53,17 @@ namespace Gj.Galaxy.Logic
     {
         public delegate GameObject OnInstanceDelegate(string prefabName, GamePlayer player, Vector3 position, Quaternion rotation);
         public delegate void OnDestroyInstanceDelegate(GameObject gameObject, GamePlayer player);
+        public delegate void OnRequestDelegate(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
 
         public OnInstanceDelegate OnInstanceEvent;
         public OnDestroyInstanceDelegate OnDestroyInstanceEvent;
+        public OnRequestDelegate OnRequestEvent;
 
         internal void Bind(AreaListener listener)
         {
             OnInstanceEvent = listener.OnInstance;
             OnDestroyInstanceEvent = listener.OnDestroyInstance;
+            OnRequestEvent = listener.OnRequest;
         }
 
         public GameObject OnInstance(string prefabName, GamePlayer player, Vector3 position, Quaternion rotation)
@@ -71,6 +75,11 @@ namespace Gj.Galaxy.Logic
         public void OnDestroyInstance(GameObject gameObject, GamePlayer player)
         {
             if (OnDestroyInstanceEvent != null) OnDestroyInstanceEvent(gameObject, player);
+        }
+
+        public void OnRequest(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
+        {
+            if (OnRequestEvent != null) OnRequestEvent(player, code, value, callback);
         }
     }
 
@@ -97,6 +106,7 @@ namespace Gj.Galaxy.Logic
         internal static string localId = "";
         internal static int lastUsedViewSubId = 0;
         internal static int lastUsedViewSubIdScene = 0;
+        internal static int lastRequestId = 0;
 
         private static HashSet<string> allowedReceivingGroups = new HashSet<string>();
         private static HashSet<string> blockSendingGroups = new HashSet<string>();
@@ -105,15 +115,15 @@ namespace Gj.Galaxy.Logic
         private readonly StreamBuffer pStream = new StreamBuffer(true, null);        // only used in OnSerializeWrite()
         private readonly Dictionary<string, Dictionary<byte, List<object[]>>> dataPerGroupReliable = new Dictionary<string, Dictionary<byte, List<object[]>>>();    // only used in RunViewUpdate()
         private readonly Dictionary<string, Dictionary<byte, List<object[]>>> dataPerGroupUnreliable = new Dictionary<string, Dictionary<byte, List<object[]>>>();  // only used in RunViewUpdate()
-        private readonly Dictionary<string, Action> surveyCache = new Dictionary<string, Action>();
 
+        private readonly Dictionary<string, Action<Dictionary<byte, object>>> requestCache = new Dictionary<string, Action<Dictionary<byte, object>>>();
         private readonly Dictionary<string, List<object[]>> waitInstanceData = new Dictionary<string, List<object[]>>();
 
 
         static AreaConnect()
         {
             n = PeerClient.Of(NamespaceId.Area);
-            //n.compress = CompressType.Snappy;
+            n.compress = true;
             n.protocol = ProtocolType.Speed;
             //n.messageQueue = MessageQueue.On;
             listener = new AreaConnect();
@@ -130,6 +140,7 @@ namespace Gj.Galaxy.Logic
             localId = userId;
             listener.players = factory;
             userHash = new HashidsNet.Hashids(token + localId);
+            sceneHash = new HashidsNet.Hashids(token);
 
             if (PeerClient.offlineMode){
                 action(true);
@@ -167,7 +178,7 @@ namespace Gj.Galaxy.Logic
             switch (code)
             {
                 case AreaEvent.Instance:
-                    // userId, hash, 
+                    // userId, hash, group, level, value
                     listener.OnInstance((string)param[0], (string)param[1], (string)param[2], (byte)param[3], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[4]), null);
                     break;
                 case AreaEvent.ChangeInfo:
@@ -179,8 +190,8 @@ namespace Gj.Galaxy.Logic
                     listener.OnSerialize(players.GetPlayer((string)param[0]), MessagePackSerializer.Deserialize<List<object[]>>((byte[])param[1]), (string)param[2], (byte)param[3]);
                     break;
                 case AreaEvent.Sync:
-                    // code, userId, value, group, level
-                    listener.OnSync((byte)param[0], (string)param[1], (byte[])param[2], (string)param[3], (byte)param[4]);
+                    // code, userId, value
+                    listener.OnSync((byte)param[0], (string)param[1], (byte[])param[2]);
                     break;
                 case AreaEvent.Ownership:
                     // esse, userId
@@ -192,7 +203,15 @@ namespace Gj.Galaxy.Logic
                     break;
                 case AreaEvent.Survey:
                     // hash, data
-                    listener.OnSurvey((string)param[0], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[1]));
+                    listener.OnSurvey(Get((string)param[0]), (string)param[1], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[2]));
+                    break;
+                case AreaEvent.Request:
+                    // userId, key, data
+                    listener.OnRequest(players.GetPlayer((string)param[0]), (byte)param[1], (string)param[2], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]));
+                    break;
+                case AreaEvent.Response:
+                    // userId, key, data
+                    listener.OnResponse(players.GetPlayer((string)param[0]), (byte)param[1], (string)param[2], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]));
                     break;
                 default:
                     Debug.Log("AreaEvent is error:" + code);
@@ -225,19 +244,13 @@ namespace Gj.Galaxy.Logic
             byte[] info = MessagePackSerializer.Serialize(value);
             n.Emit(AreaEvent.Serialize, new object[] { info, group, level });
         }
-        private void OnSync(byte code, string sendId, byte[] value, string group, byte level)
+        private void OnSync(byte code, string sendId, byte[] value)
         {
             GamePlayer player = players.GetPlayer(sendId);
             switch (code)
             {
                 case SyncEvent.Command:
                     listener.OnCommand(player, MessagePackSerializer.Deserialize<Dictionary<byte, object>>(value));
-                    break;
-                case SyncEvent.Request:
-                    listener.OnRequest(player, MessagePackSerializer.Deserialize<Dictionary<byte, object>>(value));
-                    break;
-                case SyncEvent.Response:
-                    listener.OnResponse(player, MessagePackSerializer.Deserialize<Dictionary<byte, object>>(value));
                     break;
                 case SyncEvent.Affect:
                     listener.OnAffect(player, MessagePackSerializer.Deserialize<Dictionary<byte, object>>(value));
@@ -260,12 +273,15 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        public static void Survey(NetworkEsse esse, Action<bool> callback)
+        public static void Survey(NetworkEsse esse, Dictionary<byte, object> value, int seconds)
         {
-            Emit(AreaEvent.Survey, esse, null, (object[] obj) =>
-            {
+            var hash = sceneHash.EncodeLong(PeerClient.LocalTimestamp);
 
-            });
+            if (PeerClient.offlineMode){
+                listener.OnEvent(AreaEvent.Survey, new object[]{ esse.hash, hash, MessagePackSerializer.Serialize(value) });
+            } else{
+                n.Emit(AreaEvent.Survey, new object[]{ esse.hash, esse.group, esse.level, hash, MessagePackSerializer.Serialize(value), seconds });
+            }
         }
 
         public static void RelationInstance(NetworkEsse esse, string prefabName, InstanceRelation relation, GameObject prefabGo)
@@ -322,9 +338,11 @@ namespace Gj.Galaxy.Logic
             });
         }
 
-        public static void Request(NetworkEsse esse)
+        public static void Request(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
         {
-            
+            var key = userHash.Encode(lastRequestId++);
+            listener.requestCache[key] = callback;
+            n.Emit(AreaEvent.Request, new object[] { player.UserId, code, key, MessagePackSerializer.Serialize(value) });
         }
 
         public static void SetGroups(string[] disableGroups, string[] enableGroups)
@@ -440,17 +458,9 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        private void OnSurvey(string hash, Dictionary<byte, object> data)
+        private void OnSurvey(NetworkEsse esse, string hash, Dictionary<byte, object> data)
         {
-            Action callback;
-            if (surveyCache.TryGetValue(hash, out callback))
-            {
-                callback();
-            }
-            else
-            {
-                //Delegate.OnSurvey(esse, data);
-            }
+            esse.OnSurvey(data);
         }
 
         internal GameObject OnInstance(string sendId, string hash, string group, byte level, Dictionary<byte, object> evData, GameObject go)
@@ -520,14 +530,25 @@ namespace Gj.Galaxy.Logic
             return go;
         }
 
-        private void OnRequest(GamePlayer player, Dictionary<byte, object> data)
+        private void OnRequest(GamePlayer player, byte code, string key, Dictionary<byte, object> data)
         {
-            
+            Delegate.OnRequest(player, code, data, (r) =>
+            {
+                n.Emit(AreaEvent.Response, new object[] { player.UserId, code, key, MessagePackSerializer.Serialize(r) });
+            });
         }
 
-        private void OnResponse(GamePlayer player, Dictionary<byte, object> data)
+        private void OnResponse(GamePlayer player, byte code, string key, Dictionary<byte, object> data)
         {
-            
+            Action<Dictionary<byte, object>> action;
+            bool found = requestCache.TryGetValue(key, out action);
+            if (found) {
+                action(data);
+                requestCache.Remove(key);
+            } else {
+                Debug.Log("Request not exist");
+            }
+
         }
 
         private void OnAffect(GamePlayer player, Dictionary<byte, object> data)

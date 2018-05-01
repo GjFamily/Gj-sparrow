@@ -4,6 +4,7 @@ using SimpleJSON;
 using Gj.Galaxy.Logic;
 using System;
 using Gj.Galaxy.Scripts;
+using System.Collections.Generic;
 
 namespace Gj
 {
@@ -142,6 +143,11 @@ namespace Gj
             // 速度同步
             transformView.options.positionParam = PositionParam.FixedSpeed;
             transformView.options.positionSpeed = 3f;
+        }
+
+        public virtual void OnSurvey(Dictionary<byte, object> data)
+        {
+            throw new NotImplementedException();
         }
     }
 }

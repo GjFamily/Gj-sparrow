@@ -483,6 +483,7 @@ namespace Gj.Galaxy.Logic
             stage = GameStage.None;
             //PeerClient.isMessageQueueRunning = false;
             Room.Clear();
+            Room.localPlayer.IsReady = false;
             if(callback != null) callback();
         }
 
