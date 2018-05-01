@@ -9,7 +9,6 @@ namespace Gj
         {
             if (IsCurrentPlayer(other.gameObject))
             {
-                EventService.single.Emit(1);
             }
         }
 
@@ -17,7 +16,6 @@ namespace Gj
         {
             if (IsCurrentPlayer(other.gameObject))
             {
-                EventService.single.Emit(1);
             }
         }
 
