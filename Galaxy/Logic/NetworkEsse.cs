@@ -16,6 +16,7 @@ namespace Gj.Galaxy.Logic{
         void UpdateData(StreamBuffer stream);
         void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer);
         void OnCommand(GamePlayer player, object type, object category, object value);
+        void OnSurvey(Dictionary<byte, object> data);
     }
     public class NetworkEsse : MonoBehaviour
     {
@@ -190,9 +191,9 @@ namespace Gj.Galaxy.Logic{
             behaviour.OnCommand(player, type, category, value);
         }
 
-        internal void OnSurvey()
+        internal void OnSurvey(Dictionary<byte, object> data)
         {
-            
+            behaviour.OnSurvey(data);
         }
         public void Destroy()
         {
