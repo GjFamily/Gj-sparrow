@@ -12,19 +12,19 @@ public class PowerPart : BasePart
     private bool IsEnoughConsume(Skill skill)
     {
         bool result = true;
-        switch (skill.needType)
+        switch (skill.consume)
         {
-            case NeedType.Hot:
+            case SKillConsume.Hot:
                 if (Info.attr.isHot) {
                     result = false;
                 }
                 break;
-            case NeedType.Block:
+            case SKillConsume.Block:
                 if (Info.attr.block < skill.need) {
                     result = false;
                 }
                 break;
-            case NeedType.Number:
+            case SKillConsume.Number:
                 if (Info.attr.number < skill.need)
                 {
                     result = false;
@@ -38,9 +38,9 @@ public class PowerPart : BasePart
 
     private void Consume(Skill skill)
     {
-        switch (skill.needType)
+        switch (skill.consume)
         {
-            case NeedType.Hot:
+            case SKillConsume.Hot:
                 float hot = Info.attr.hot;
                 hot += skill.need;
                 if (hot >= 100)
@@ -50,10 +50,10 @@ public class PowerPart : BasePart
                 }
                 Info.attr.hot = hot;
                 break;
-            case NeedType.Block:
+            case SKillConsume.Block:
                 Info.attr.block -= skill.need;
                 break;
-            case NeedType.Number:
+            case SKillConsume.Number:
                 Info.attr.number -= skill.need;
                 break;
             default:

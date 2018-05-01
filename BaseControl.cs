@@ -75,10 +75,11 @@ namespace Gj
             Open();
         }
 
-        public void Init(TargetAttr attr, GameObject obj)
+        public void Init(ObjectAttr attr, ObjectControl control, GameObject obj)
         {
             Info.attr = attr;
             Info.master = obj;
+            Info.control = control;
             FormatExtend(attr.extend);
             Init();
         }

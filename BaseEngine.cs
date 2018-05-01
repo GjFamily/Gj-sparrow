@@ -37,7 +37,7 @@ namespace Gj
             readyCast = ready;
             cancelCast = cancel;
             this.auto = b;
-            if (skill.castType == CastType.Now || skill.castType == CastType.Sustained)
+            if (skill.castType == SkillCastType.Now || skill.castType == SkillCastType.Sustained)
             {
                 Now();
             }
@@ -97,7 +97,7 @@ namespace Gj
         {
             startCast(skill);
             Invoke(CAST, 0);
-            if (skill.castType == CastType.Sustained || skill.castType == CastType.ReadyAndSustained)
+            if (skill.castType == SkillCastType.Sustained || skill.castType == SkillCastType.ReadyAndSustained)
             {
                 sustaining = true;
                 Invoke(END, skill.sustainedTime);

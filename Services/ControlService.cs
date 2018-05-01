@@ -28,25 +28,25 @@ namespace Gj
         {
             foreach (JSONObject json in jSONArray)
             {
-                targetMap.Add(json[TARGETATTR.NAME], json);
+                targetMap.Add(json[OBJECTATTR.NAME], json);
             }
         }
 
-        public TargetAttr GetTarget(string targetName)
+        public ObjectAttr GetTarget(string targetName)
         {
-            return new TargetAttr(targetMap[targetName]);
+            return new ObjectAttr(targetMap[targetName]);
         }
 
-        public BaseControl MakeControl(string targetName, Vector3 position)
+        public BaseControl MakeControl(string targetName, ObjectControl control, Vector3 position, Quaternion rotation)
         {
-            return MakeControl(targetName, position, null);
+            return MakeControl(targetName, control, position, rotation, null);
         }
 
-        public BaseControl MakeControl(string targetName, Vector3 position, GameObject master)
+        public BaseControl MakeControl(string targetName, ObjectControl control, Vector3 position, Quaternion rotation, GameObject master)
         {
-            TargetAttr attr = GetTarget(targetName);
-            BaseControl baseControl = ObjectService.single.MakeEmpty(controlMap[attr.name], attr.name, position) as BaseControl;
-            baseControl.Init(attr, master);
+            ObjectAttr attr = GetTarget(targetName);
+            BaseControl baseControl = ObjectService.single.MakeEmpty(controlMap[attr.name], attr.name, position, rotation) as BaseControl;
+            baseControl.Init(attr, control, master);
             baseControl.gameObject.SetActive(true);
             return baseControl;
         }

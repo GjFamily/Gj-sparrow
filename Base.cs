@@ -31,9 +31,11 @@ namespace Gj
         void Die();
     }
 
-    public static class TARGETATTR {
+    public static class OBJECTATTR {
         public const string NAME = "name";
         public const string SHOW_NAME = "showName";
+        public const string CATEGORY = "category";
+        public const string IDENTITY = "identity";
         public const string SPEED = "speed";
         public const string ROTATE = "rotate";
         public const string RADIO = "radio";
@@ -46,33 +48,37 @@ namespace Gj
         public const string EXTEND = "extend";
     }
 
-    public class TargetAttr
+    public class ObjectAttr
     {
-        public TargetAttr(JSONObject json) {
-            name = json[TARGETATTR.NAME];
-            showName = json[TARGETATTR.SHOW_NAME];
-            speed = json[TARGETATTR.SPEED].AsFloat;
-            rotate = json[TARGETATTR.ROTATE].AsFloat;
+        public ObjectAttr(JSONObject json) {
+            name = json[OBJECTATTR.NAME];
+            showName = json[OBJECTATTR.SHOW_NAME];
+            category = (ObjectCategory)json[OBJECTATTR.CATEGORY].AsInt;
+            identity = (ObjectIdentity)json[OBJECTATTR.IDENTITY].AsInt;
+            speed = json[OBJECTATTR.SPEED].AsFloat;
+            rotate = json[OBJECTATTR.ROTATE].AsFloat;
             auto = false;
             kill = 0;
             star = 0;
-            radio = json[TARGETATTR.RADIO].AsFloat;
-            health = json[TARGETATTR.HEALTH].AsFloat;
-            healthTotal = json[TARGETATTR.HEALTH].AsFloat;
-            number = json[TARGETATTR.NUMBER].AsFloat;
+            radio = json[OBJECTATTR.RADIO].AsFloat;
+            health = json[OBJECTATTR.HEALTH].AsFloat;
+            healthTotal = json[OBJECTATTR.HEALTH].AsFloat;
+            number = json[OBJECTATTR.NUMBER].AsFloat;
             isHot = false;
             hot = 0;
             wait = 0;
-            block = json[TARGETATTR.BLOCK].AsFloat;
-            magic = json[TARGETATTR.MAGIC].AsFloat;
-            magicTotal = json[TARGETATTR.MAGIC].AsFloat;
-            energy = json[TARGETATTR.ENERGY].AsFloat;
-            energyTotal = json[TARGETATTR.ENERGY].AsFloat;
-            scanRadius = json[TARGETATTR.SCAN_RADIUS].AsFloat;
-            extend = json[TARGETATTR.EXTEND].AsObject;
+            block = json[OBJECTATTR.BLOCK].AsFloat;
+            magic = json[OBJECTATTR.MAGIC].AsFloat;
+            magicTotal = json[OBJECTATTR.MAGIC].AsFloat;
+            energy = json[OBJECTATTR.ENERGY].AsFloat;
+            energyTotal = json[OBJECTATTR.ENERGY].AsFloat;
+            scanRadius = json[OBJECTATTR.SCAN_RADIUS].AsFloat;
+            extend = json[OBJECTATTR.EXTEND].AsObject;
         }
         public string name;
         public string showName;
+        public ObjectCategory category;
+        public ObjectIdentity identity;
         public float speed;
         public float rotate;
         public float kill;
@@ -107,13 +113,13 @@ namespace Gj
         public SkillExtra (JSONObject json) {
             value = json[SKILLEXTRA.VALUE].AsFloat;
             intervalTime = json[SKILLEXTRA.INTERVAL_TIME].AsFloat;
-            extraType = (ExtraType) json[SKILLEXTRA.EXTRA_TYPE].AsInt;
-            handleType = (HandleType) json[SKILLEXTRA.HANDLE_TYPE].AsInt;
+            extraType = (SkillExtraType) json[SKILLEXTRA.EXTRA_TYPE].AsInt;
+            handleType = (SkillExtraHandleType) json[SKILLEXTRA.HANDLE_TYPE].AsInt;
         }
         public float value;
         public float intervalTime;
-        public ExtraType extraType;
-        public HandleType handleType;
+        public SkillExtraType extraType;
+        public SkillExtraHandleType handleType;
     }
 
     public static class SKILL
@@ -131,7 +137,7 @@ namespace Gj
         public const string TARGET_NEED = "targetNeed";
         public const string SKILL_TYPE = "skillType";
         public const string CAST_TYPE = "castType";
-        public const string NEED_TYPE = "needType";
+        public const string CONSUME = "consume";
     }
 
 
@@ -148,11 +154,9 @@ namespace Gj
             intervalTime = json[SKILL.INTERVAL_TIME].AsFloat;
             sustainedTime = json[SKILL.SUSTAINED_TIME].AsFloat;
             targetRelation = (TargetRelation)json[SKILL.TARGET_RELATION].AsInt;
-            targetNum = (TargetNum)json[SKILL.TARGET_NUM].AsInt;
-            targetNeed = (TargetNeed)json[SKILL.TARGET_NEED].AsInt;
             skillType = (SkillType)json[SKILL.SKILL_TYPE].AsInt;
-            castType = (CastType)json[SKILL.CAST_TYPE].AsInt;
-            needType = (NeedType)json[SKILL.NEED_TYPE].AsInt;
+            castType = (SkillCastType)json[SKILL.CAST_TYPE].AsInt;
+            consume = (SKillConsume)json[SKILL.CONSUME].AsInt;
         }
         public string name;
         public float value;
@@ -163,15 +167,13 @@ namespace Gj
         public float castTime;
         public float sustainedTime;
         public TargetRelation targetRelation;
-        public TargetNum targetNum;
-        public TargetNeed targetNeed;
         public SkillType skillType;
-        public CastType castType;
-        public NeedType needType;
+        public SkillCastType castType;
+        public SKillConsume consume;
         public SkillExtra extra;
     }
 
-    public enum HandleType
+    public enum SkillExtraHandleType
     {
         Add = 0,
         Subtract = 1,
@@ -179,14 +181,14 @@ namespace Gj
         Divide = 3
     }
 
-    public enum ExtraType
+    public enum SkillExtraType
     {
         Cast = 0,
         Attribute = 1,
         Special = 2
     }
 
-    public enum CastType
+    public enum SkillCastType
     {
         Now = 0,
         Ready = 1,
@@ -198,31 +200,18 @@ namespace Gj
     {
         Attack = 0,
         Defense = 1,
-        Prop = 2,
-        Attr = 3
+        Plus = 2,
+        Minus = 3
     }
 
-    public enum TargetNeed
+    public enum SKillConsume
     {
-        Target = 0,
-        Region = 1,
-        None = 2
-    }
-
-    public enum TargetNum
-    {
-        One = 0,
-        Some = 1
-    }
-
-    public enum NeedType
-    {
-        Number = 0,
-        Hot = 1,
-        Block = 2,
-        Energy = 3,
-        Magic = 4,
-        Empty = 5
+        Empty = 0,
+        Number = 1,
+        Hot = 2,
+        Block = 3,
+        Energy = 4,
+        Magic = 5
     }
 
     public enum TargetRelation
@@ -230,5 +219,24 @@ namespace Gj
         Self = 0,
         Partner = 1,
         Enemy = 2
+    }
+
+    public enum ObjectCategory
+    {
+        Target = 0,
+        Object = 1
+    }
+
+    public enum ObjectIdentity
+    {
+        Partner = 0,
+        Enemy = 1
+    }
+
+    public enum ObjectControl
+    {
+        Player,
+        OtherPlayer,
+        Ai
     }
 }

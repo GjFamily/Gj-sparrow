@@ -75,18 +75,19 @@ namespace Gj
             return obj;
         }
 
-        public Component MakeObj(Type type, string objName, Vector3 position)
+        public Component MakeObj(Type type, string objName, Vector3 position, Quaternion rotation)
         {
             GameObject obj = MakeObj(objName);
             if (obj != null)
             {
                 obj.transform.SetParent(container.transform, false);
                 obj.transform.position = position;
+                obj.transform.rotation = rotation;
             }
             return obj.AddComponent(type);
         }
 
-        public Component MakeEmpty(Type type, string objName, Vector3 position)
+        public Component MakeEmpty(Type type, string objName, Vector3 position, Quaternion rotation)
         {
             GameObject obj = CacheService.single.GetCache(objName);
             if (obj == null)
@@ -97,25 +98,10 @@ namespace Gj
             {
                 obj.transform.SetParent(container.transform, false);
                 obj.transform.position = position;
+                obj.transform.rotation = rotation;
             }
             obj.name = objName;
             return obj.AddComponent(type);
-        }
-
-        public T MakeTarget<T>(string objName, Vector3 position) where T : Component
-        {
-            GameObject obj = CacheService.single.GetCache(objName);
-            if (obj == null)
-            {
-                obj = ModelTools.Create(null);
-            }
-            if (obj != null)
-            {
-                obj.transform.SetParent(container.transform, false);
-                obj.transform.position = position;
-            }
-            obj.name = objName;
-            return obj.AddComponent<T>();
         }
 
         public void DestroyObj(GameObject obj)

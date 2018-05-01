@@ -26,7 +26,7 @@ namespace Gj
             Info info = CoreTools.GetInfo(obj);
             if (info != null)
             {
-                return info.player;
+                return ObjectControl.Player == info.control;
             }
             else
             {

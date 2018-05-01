@@ -39,7 +39,7 @@ namespace Gj
 
         public BaseEngine MakeEngine(GameObject obj, Skill skill)
         {
-            BaseEngine baseEngine = ObjectService.single.MakeObj(engineMap[skill.name], skill.name, obj.transform.position) as BaseEngine;
+            BaseEngine baseEngine = ObjectService.single.MakeObj(engineMap[skill.name], skill.name, obj.transform.position, obj.transform.rotation) as BaseEngine;
             baseEngine.Init(obj, skill);
             baseEngine.gameObject.SetActive(true);
             return baseEngine;

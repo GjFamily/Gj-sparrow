@@ -10,79 +10,31 @@ namespace Gj
     {
         [HideInInspector]
         public bool live;
-        [HideInInspector]
-        public bool ai;
-        [HideInInspector]
-        public bool player;
-        [HideInInspector]
-        public bool otherPlayer;
 
         [HideInInspector]
         public GameObject master;
         [HideInInspector]
-        public TargetAttr attr;
-
-        private Category category = Category.Empty;
-        public enum Category
-        {
-            Build,
-            Empty,
-            Skill,
-            Target,
-            BuildTarget,
-            SkillTarget
-        }
-
-        private Identity identity = Identity.Empty;
-        public enum Identity
-        {
-            Partner,
-            Enemy,
-            Empty
-        }
-
-        public void SetCategory(Category c)
-        {
-            category = c;
-        }
+        public ObjectAttr attr;
+        [HideInInspector]
+        public ObjectControl control;
 
         public bool HaveBody() {
-            return category != Category.Empty && category != Category.Skill;
-        }
-
-        public bool IsEmpty()
-        {
-            return category == Category.Empty;
-        }
-
-        public bool IsSkill()
-        {
-            return category == Category.Skill || category == Category.SkillTarget;
+            return attr.category != ObjectCategory.Object;
         }
 
         public bool IsTarget()
         {
-            return category == Category.Target || category == Category.BuildTarget || category == Category.SkillTarget;
-        }
-
-        public bool IsBuild()
-        {
-            return category == Category.Build || category == Category.BuildTarget;
-        }
-
-        public void SetIdentity(Identity i)
-        {
-            identity = i;
+            return attr.category == ObjectCategory.Target;
         }
 
         public bool IsPartner()
         {
-            return identity == Identity.Partner;
+            return attr.identity == ObjectIdentity.Partner;
         }
 
         public bool IsEnemy()
         {
-            return identity == Identity.Enemy;
+            return attr.identity == ObjectIdentity.Enemy;
         }
 
         public bool IsPartner(GameObject obj)
@@ -100,13 +52,13 @@ namespace Gj
 
         public bool IsPartner(Info info)
         {
-            if (identity == Identity.Enemy)
+            if (attr.identity == ObjectIdentity.Enemy)
             {
-                return info.identity == Identity.Enemy;
+                return info.attr.identity == ObjectIdentity.Enemy;
             }
-            else if (identity == Identity.Partner)
+            else if (attr.identity == ObjectIdentity.Partner)
             {
-                return info.identity == Identity.Partner;
+                return info.attr.identity == ObjectIdentity.Partner;
             }
             else
             {
@@ -129,13 +81,13 @@ namespace Gj
 
         public bool IsEnemy(Info info)
         {
-            if (identity == Identity.Enemy)
+            if (attr.identity == ObjectIdentity.Enemy)
             {
-                return info.identity == Identity.Partner;
+                return info.attr.identity == ObjectIdentity.Partner;
             }
-            else if (identity == Identity.Partner)
+            else if (attr.identity == ObjectIdentity.Partner)
             {
-                return info.identity == Identity.Enemy;
+                return info.attr.identity == ObjectIdentity.Enemy;
             }
             else
             {
