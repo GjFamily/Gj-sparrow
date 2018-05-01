@@ -31,14 +31,68 @@ namespace Gj
         void Die();
     }
 
-    public static class OBJECTATTR {
-        public const string NAME = "name";
-        public const string SHOW_NAME = "showName";
+    public static class BASEATTR
+    {
         public const string CATEGORY = "category";
         public const string IDENTITY = "identity";
+        public const string COLLIDER = "collider";
+        public const string RADIUS = "radius";
+        public const string SIZEX = "sizeX";
+        public const string SIZEY = "sizeY";
+        public const string SIZEZ = "sizeZ";
+        public const string CENTERX = "centerX";
+        public const string CENTERY = "centerY";
+        public const string CENTERZ = "centerZ";
+        public const string TRIGGER = "trigger";
+        public const string RIGIDBODY = "rigidbody";
+        public const string GRAVITY = "gravity";
+        public const string KINEMATIC = "kinematic";
+    }
+
+    public class BaseAttr
+    {
+        public BaseAttr(JSONObject json)
+        {
+            category = (ObjectCategory)json[BASEATTR.CATEGORY].AsInt;
+            identity = (ObjectIdentity)json[BASEATTR.IDENTITY].AsInt;
+            collider = (ObjectCollider)json[BASEATTR.COLLIDER].AsInt;
+            radius = json[BASEATTR.RADIUS].AsFloat;
+            sizeX = json[BASEATTR.SIZEX].AsFloat;
+            sizeY = json[BASEATTR.SIZEY].AsFloat;
+            sizeZ = json[BASEATTR.SIZEZ].AsFloat;
+            centerX = json[BASEATTR.CENTERX].AsFloat;
+            centerY = json[BASEATTR.CENTERY].AsFloat;
+            centerZ = json[BASEATTR.CENTERZ].AsFloat;
+            trigger = json[BASEATTR.TRIGGER].AsBool;
+            rigidbody = json[BASEATTR.RIGIDBODY].AsBool;
+            gravity = json[BASEATTR.GRAVITY].AsBool;
+            kinematic = json[BASEATTR.KINEMATIC].AsBool;
+        }
+        public ObjectCategory category;
+        public ObjectIdentity identity;
+        public ObjectCollider collider;
+        public float radius;
+        public float sizeX;
+        public float sizeY;
+        public float sizeZ;
+        public float centerX;
+        public float centerY;
+        public float centerZ;
+        public bool trigger;
+        public bool rigidbody;
+        public bool gravity;
+        public bool kinematic;
+    }
+
+
+    public static class OBJECTATTR
+    {
+        public const string NAME = "name";
+        public const string SHOW_NAME = "showName";
+        public const string BASE = "base";
+        public const string ENTITY = "entity";
         public const string SPEED = "speed";
         public const string ROTATE = "rotate";
-        public const string RADIO = "radio";
         public const string HEALTH = "health";
         public const string NUMBER = "number";
         public const string BLOCK = "block";
@@ -50,17 +104,17 @@ namespace Gj
 
     public class ObjectAttr
     {
-        public ObjectAttr(JSONObject json) {
+        public ObjectAttr(JSONObject json)
+        {
             name = json[OBJECTATTR.NAME];
             showName = json[OBJECTATTR.SHOW_NAME];
-            category = (ObjectCategory)json[OBJECTATTR.CATEGORY].AsInt;
-            identity = (ObjectIdentity)json[OBJECTATTR.IDENTITY].AsInt;
+            baseAttr = new BaseAttr(json[OBJECTATTR.BASE].AsObject);
+            entity = json[OBJECTATTR.ENTITY];
             speed = json[OBJECTATTR.SPEED].AsFloat;
             rotate = json[OBJECTATTR.ROTATE].AsFloat;
             auto = false;
             kill = 0;
             star = 0;
-            radio = json[OBJECTATTR.RADIO].AsFloat;
             health = json[OBJECTATTR.HEALTH].AsFloat;
             healthTotal = json[OBJECTATTR.HEALTH].AsFloat;
             number = json[OBJECTATTR.NUMBER].AsFloat;
@@ -77,8 +131,8 @@ namespace Gj
         }
         public string name;
         public string showName;
-        public ObjectCategory category;
-        public ObjectIdentity identity;
+        public BaseAttr baseAttr;
+        public string entity;
         public float speed;
         public float rotate;
         public float kill;
@@ -110,11 +164,12 @@ namespace Gj
 
     public class SkillExtra
     {
-        public SkillExtra (JSONObject json) {
+        public SkillExtra(JSONObject json)
+        {
             value = json[SKILLEXTRA.VALUE].AsFloat;
             intervalTime = json[SKILLEXTRA.INTERVAL_TIME].AsFloat;
-            extraType = (SkillExtraType) json[SKILLEXTRA.EXTRA_TYPE].AsInt;
-            handleType = (SkillExtraHandleType) json[SKILLEXTRA.HANDLE_TYPE].AsInt;
+            extraType = (SkillExtraType)json[SKILLEXTRA.EXTRA_TYPE].AsInt;
+            handleType = (SkillExtraHandleType)json[SKILLEXTRA.HANDLE_TYPE].AsInt;
         }
         public float value;
         public float intervalTime;
@@ -230,7 +285,8 @@ namespace Gj
     public enum ObjectIdentity
     {
         Partner = 0,
-        Enemy = 1
+        Enemy = 1,
+        Other = 2
     }
 
     public enum ObjectControl
@@ -238,5 +294,12 @@ namespace Gj
         Player,
         OtherPlayer,
         Ai
+    }
+
+    public enum ObjectCollider
+    {
+        Empty = 0,
+        Box = 1,
+        Sphere = 2
     }
 }

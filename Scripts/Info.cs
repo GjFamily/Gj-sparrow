@@ -19,22 +19,22 @@ namespace Gj
         public ObjectControl control;
 
         public bool HaveBody() {
-            return attr.category != ObjectCategory.Object;
+            return attr.baseAttr.category != ObjectCategory.Object;
         }
 
         public bool IsTarget()
         {
-            return attr.category == ObjectCategory.Target;
+            return attr.baseAttr.category == ObjectCategory.Target;
         }
 
         public bool IsPartner()
         {
-            return attr.identity == ObjectIdentity.Partner;
+            return attr.baseAttr.identity == ObjectIdentity.Partner;
         }
 
         public bool IsEnemy()
         {
-            return attr.identity == ObjectIdentity.Enemy;
+            return attr.baseAttr.identity == ObjectIdentity.Enemy;
         }
 
         public bool IsPartner(GameObject obj)
@@ -52,13 +52,13 @@ namespace Gj
 
         public bool IsPartner(Info info)
         {
-            if (attr.identity == ObjectIdentity.Enemy)
+            if (attr.baseAttr.identity == ObjectIdentity.Enemy)
             {
-                return info.attr.identity == ObjectIdentity.Enemy;
+                return info.attr.baseAttr.identity == ObjectIdentity.Enemy;
             }
-            else if (attr.identity == ObjectIdentity.Partner)
+            else if (attr.baseAttr.identity == ObjectIdentity.Partner)
             {
-                return info.attr.identity == ObjectIdentity.Partner;
+                return info.attr.baseAttr.identity == ObjectIdentity.Partner;
             }
             else
             {
@@ -81,13 +81,13 @@ namespace Gj
 
         public bool IsEnemy(Info info)
         {
-            if (attr.identity == ObjectIdentity.Enemy)
+            if (attr.baseAttr.identity == ObjectIdentity.Enemy)
             {
-                return info.attr.identity == ObjectIdentity.Partner;
+                return info.attr.baseAttr.identity == ObjectIdentity.Partner;
             }
-            else if (attr.identity == ObjectIdentity.Partner)
+            else if (attr.baseAttr.identity == ObjectIdentity.Partner)
             {
-                return info.attr.identity == ObjectIdentity.Enemy;
+                return info.attr.baseAttr.identity == ObjectIdentity.Enemy;
             }
             else
             {
