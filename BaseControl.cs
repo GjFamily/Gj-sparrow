@@ -13,6 +13,7 @@ namespace Gj
     public class BaseControl : MonoBehaviour, EsseBehaviour
     {
         private Info _info;
+        private Rigidbody body;
         public Info Info
         {
             get
@@ -39,6 +40,14 @@ namespace Gj
 
         private bool first = true;
         protected GameObject entity;
+
+        void FixedUpdate()
+        {
+            // 去掉物理速度防止反弹
+            if (body) {
+                body.velocity = Vector3.zero;
+            }
+        }
 
         protected void SetEntity(string entityName)
         {
@@ -91,22 +100,25 @@ namespace Gj
 
             if (baseAttr.rigidbody)
             {
-                Rigidbody body = gameObject.AddComponent<Rigidbody>();
+                body = gameObject.AddComponent<Rigidbody>();
                 body.isKinematic = baseAttr.kinematic;
                 body.useGravity = baseAttr.gravity;
             }
         }
 
-        protected virtual void InitPlayerPlugin () {
-            
+        protected virtual void InitPlayerPlugin()
+        {
+
         }
 
-        protected virtual void InitOtherPlayerPlugin () {
-            
+        protected virtual void InitOtherPlayerPlugin()
+        {
+
         }
 
-        protected virtual void InitAiPlugin () {
-            
+        protected virtual void InitAiPlugin()
+        {
+
         }
 
         public virtual void FormatExtend(JSONObject json)
@@ -171,7 +183,7 @@ namespace Gj
 
         protected virtual void OnOwnership(BaseControl baseControl)
         {
-            
+
         }
 
         protected virtual void SyncRelation(ObjectAttr attr, ObjectControl control)
@@ -214,7 +226,7 @@ namespace Gj
 
         public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
         {
-            
+
         }
 
         public virtual void OnCommand(GamePlayer player, object type, object category, object value)

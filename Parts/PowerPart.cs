@@ -48,6 +48,7 @@ public class PowerPart : BasePart
                     Info.attr.isHot = true;
                     hot = 100;
                 }
+                Debug.Log(hot);
                 Info.attr.hot = hot;
                 break;
             case SKillConsume.Block:
