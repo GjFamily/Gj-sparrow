@@ -1,40 +1,81 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Gj
 {
     public class DefensePart : BasePart
     {
-        private Action<GameObject, Skill> hitNotic;
-        private Action<GameObject, Skill> dieNotic;
+        private Action<Skill, bool> cureNotic;
+        private Action<Skill, bool> injuredNotic;
+        private Action<Skill> addNotic;
+        private Action<Skill> delNotic;
 
-        public void SetNotic(Action<GameObject, Skill> die, Action<GameObject, Skill> hit)
+        public void SetNotic(Action<Skill, bool> cure, Action<Skill, bool> injured, Action<Skill> addStatus, Action<Skill> delStatus)
         {
-            dieNotic = die;
-            hitNotic = hit;
+            cureNotic = cure;
+            injuredNotic = injured;
+            addNotic = addStatus;
+            delNotic = delStatus;
         }
 
         public void BeCast(GameObject target, Skill skill)
         {
-            float health = Info.attr.health;
-            if (skill.value < 0)
-            {
-                if (hitNotic != null)
-                {
-                    hitNotic(target, skill);
+            switch (skill.skillType) {
+                case SkillType.Injured:
+                    if (injuredNotic != null) {
+                        injuredNotic(skill, false);
+                    }
+                    break;
+                case SkillType.Cure:
+                    if (cureNotic != null) {
+                        cureNotic(skill, false);
+                    }
+                    break;
+            }
+            if (skill.hasExtra) {
+                if (Info.attr.statusList.Count == 0) {
+                    InvokeRepeating(CHECK_STATUS, 1, 1);
+                }
+                if (addNotic != null) {
+                    addNotic(skill);
                 }
             }
-            health += skill.value;
-            if (health <= 0)
+        }
+
+        private const string CHECK_STATUS = "CheckStatus";
+
+        private void CheckStatus () {
+            if (Info.attr.statusList.Count == 0)
             {
-                if (dieNotic != null)
-                {
-                    dieNotic(target, skill);
-                }
-                health = 0;
+                CancelInvoke(CHECK_STATUS);
             }
-            Info.attr.health = health;
+            float time = Time.time;
+            foreach(Status status in Info.attr.statusList) {
+                switch (status.Skill.extra.extraType)
+                {
+                    case SkillExtraType.Injured:
+                    case SkillExtraType.InjuredAndStatus:
+                        if (injuredNotic != null)
+                        {
+                            injuredNotic(status.Skill, false);
+                        }
+                        break;
+                    case SkillExtraType.Cure:
+                    case SkillExtraType.CureAndStatus:
+                        if (cureNotic != null)
+                        {
+                            cureNotic(status.Skill, false);
+                        }
+                        break;
+                }
+                if (status.time + status.Skill.extra.sustainedTime < time) {
+                    if (delNotic != null) {
+                        delNotic(status.Skill);
+                    }
+                }
+            }
         }
     }
 }

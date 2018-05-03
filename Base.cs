@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using System;
 using SimpleJSON;
 
@@ -31,7 +32,7 @@ namespace Gj
         void Die();
     }
 
-    public static class BASEATTR
+    public static class BASE_ATTR
     {
         public const string CATEGORY = "category";
         public const string IDENTITY = "identity";
@@ -53,20 +54,20 @@ namespace Gj
     {
         public BaseAttr(JSONObject json)
         {
-            category = (ObjectCategory)json[BASEATTR.CATEGORY].AsInt;
-            identity = (ObjectIdentity)json[BASEATTR.IDENTITY].AsInt;
-            collider = (ObjectCollider)json[BASEATTR.COLLIDER].AsInt;
-            radius = json[BASEATTR.RADIUS].AsFloat;
-            sizeX = json[BASEATTR.SIZEX].AsFloat;
-            sizeY = json[BASEATTR.SIZEY].AsFloat;
-            sizeZ = json[BASEATTR.SIZEZ].AsFloat;
-            centerX = json[BASEATTR.CENTERX].AsFloat;
-            centerY = json[BASEATTR.CENTERY].AsFloat;
-            centerZ = json[BASEATTR.CENTERZ].AsFloat;
-            trigger = json[BASEATTR.TRIGGER].AsBool;
-            rigidbody = json[BASEATTR.RIGIDBODY].AsBool;
-            gravity = json[BASEATTR.GRAVITY].AsBool;
-            kinematic = json[BASEATTR.KINEMATIC].AsBool;
+            category = (ObjectCategory)json[BASE_ATTR.CATEGORY].AsInt;
+            identity = (ObjectIdentity)json[BASE_ATTR.IDENTITY].AsInt;
+            collider = (ObjectCollider)json[BASE_ATTR.COLLIDER].AsInt;
+            radius = json[BASE_ATTR.RADIUS].AsFloat;
+            sizeX = json[BASE_ATTR.SIZEX].AsFloat;
+            sizeY = json[BASE_ATTR.SIZEY].AsFloat;
+            sizeZ = json[BASE_ATTR.SIZEZ].AsFloat;
+            centerX = json[BASE_ATTR.CENTERX].AsFloat;
+            centerY = json[BASE_ATTR.CENTERY].AsFloat;
+            centerZ = json[BASE_ATTR.CENTERZ].AsFloat;
+            trigger = json[BASE_ATTR.TRIGGER].AsBool;
+            rigidbody = json[BASE_ATTR.RIGIDBODY].AsBool;
+            gravity = json[BASE_ATTR.GRAVITY].AsBool;
+            kinematic = json[BASE_ATTR.KINEMATIC].AsBool;
         }
         public ObjectCategory category;
         public ObjectIdentity identity;
@@ -85,7 +86,7 @@ namespace Gj
     }
 
 
-    public static class OBJECTATTR
+    public static class OBJECT_ATTR
     {
         public const string NAME = "name";
         public const string SHOW_NAME = "showName";
@@ -106,28 +107,29 @@ namespace Gj
     {
         public ObjectAttr(JSONObject json)
         {
-            name = json[OBJECTATTR.NAME];
-            showName = json[OBJECTATTR.SHOW_NAME];
-            baseAttr = new BaseAttr(json[OBJECTATTR.BASE].AsObject);
-            entity = json[OBJECTATTR.ENTITY];
-            speed = json[OBJECTATTR.SPEED].AsFloat;
-            rotate = json[OBJECTATTR.ROTATE].AsFloat;
+            name = json[OBJECT_ATTR.NAME];
+            showName = json[OBJECT_ATTR.SHOW_NAME];
+            baseAttr = new BaseAttr(json[OBJECT_ATTR.BASE].AsObject);
+            entity = json[OBJECT_ATTR.ENTITY];
+            speed = json[OBJECT_ATTR.SPEED].AsFloat;
+            rotate = json[OBJECT_ATTR.ROTATE].AsFloat;
             auto = false;
             kill = 0;
             star = 0;
-            health = json[OBJECTATTR.HEALTH].AsFloat;
-            healthTotal = json[OBJECTATTR.HEALTH].AsFloat;
-            number = json[OBJECTATTR.NUMBER].AsFloat;
+            health = json[OBJECT_ATTR.HEALTH].AsFloat;
+            healthTotal = json[OBJECT_ATTR.HEALTH].AsFloat;
+            number = json[OBJECT_ATTR.NUMBER].AsFloat;
             isHot = false;
             hot = 0;
             wait = 0;
-            block = json[OBJECTATTR.BLOCK].AsFloat;
-            magic = json[OBJECTATTR.MAGIC].AsFloat;
-            magicTotal = json[OBJECTATTR.MAGIC].AsFloat;
-            energy = json[OBJECTATTR.ENERGY].AsFloat;
-            energyTotal = json[OBJECTATTR.ENERGY].AsFloat;
-            scanRadius = json[OBJECTATTR.SCAN_RADIUS].AsFloat;
-            extend = json[OBJECTATTR.EXTEND].AsObject;
+            block = json[OBJECT_ATTR.BLOCK].AsFloat;
+            magic = json[OBJECT_ATTR.MAGIC].AsFloat;
+            magicTotal = json[OBJECT_ATTR.MAGIC].AsFloat;
+            energy = json[OBJECT_ATTR.ENERGY].AsFloat;
+            energyTotal = json[OBJECT_ATTR.ENERGY].AsFloat;
+            scanRadius = json[OBJECT_ATTR.SCAN_RADIUS].AsFloat;
+            extend = json[OBJECT_ATTR.EXTEND].AsObject;
+            statusList = new List<Status>();
         }
         public string name;
         public string showName;
@@ -151,30 +153,43 @@ namespace Gj
         public float energy;
         public float energyTotal;
         public float scanRadius;
+        public List<Status> statusList;
         public JSONObject extend;
     }
 
-    public static class SKILLEXTRA
+    public struct Status
+    {
+        public float time;
+        public Skill Skill;
+    }
+
+    public static class SKILL_EXTRA
     {
         public const string VALUE = "value";
         public const string INTERVAL_TIME = "intervalTime";
+        public const string SUSTAINED_TIME = "sustainedTime";
         public const string EXTRA_TYPE = "extraType";
-        public const string HANDLE_TYPE = "handleType";
+        public const string EXTRA_STATUS = "extraStatus";
+        public const string STATUS_VALUE = "statusValue";
     }
 
     public class SkillExtra
     {
         public SkillExtra(JSONObject json)
         {
-            value = json[SKILLEXTRA.VALUE].AsFloat;
-            intervalTime = json[SKILLEXTRA.INTERVAL_TIME].AsFloat;
-            extraType = (SkillExtraType)json[SKILLEXTRA.EXTRA_TYPE].AsInt;
-            handleType = (SkillExtraHandleType)json[SKILLEXTRA.HANDLE_TYPE].AsInt;
+            value = json[SKILL_EXTRA.VALUE].AsFloat;
+            intervalTime = json[SKILL_EXTRA.INTERVAL_TIME].AsFloat;
+            sustainedTime = json[SKILL_EXTRA.SUSTAINED_TIME].AsFloat;
+            extraType = (SkillExtraType)json[SKILL_EXTRA.EXTRA_TYPE].AsInt;
+            extraStatus = (SkillExtraStatus)json[SKILL_EXTRA.EXTRA_STATUS].AsInt;
+            statusValue = json[SKILL_EXTRA.STATUS_VALUE].AsFloat;
         }
         public float value;
         public float intervalTime;
+        public float sustainedTime;
         public SkillExtraType extraType;
-        public SkillExtraHandleType handleType;
+        public SkillExtraStatus extraStatus;
+        public float statusValue;
     }
 
     public static class SKILL
@@ -193,6 +208,8 @@ namespace Gj
         public const string SKILL_TYPE = "skillType";
         public const string CAST_TYPE = "castType";
         public const string CONSUME = "consume";
+        public const string HAS_EXTRA = "hasExtra";
+        public const string EXTRA = "extra";
     }
 
 
@@ -212,6 +229,8 @@ namespace Gj
             skillType = (SkillType)json[SKILL.SKILL_TYPE].AsInt;
             castType = (SkillCastType)json[SKILL.CAST_TYPE].AsInt;
             consume = (SKillConsume)json[SKILL.CONSUME].AsInt;
+            hasExtra = json[SKILL.HAS_EXTRA].AsBool;
+            extra = new SkillExtra(json[SKILL.EXTRA].AsObject);
         }
         public string name;
         public float value;
@@ -225,22 +244,26 @@ namespace Gj
         public SkillType skillType;
         public SkillCastType castType;
         public SKillConsume consume;
+        public bool hasExtra;
         public SkillExtra extra;
     }
 
-    public enum SkillExtraHandleType
+    public enum SkillExtraStatus
     {
-        Add = 0,
-        Subtract = 1,
-        Multiply = 2,
-        Divide = 3
+        frozen = 0,
+        fire = 1,
+        dizzy = 2,
+        Fear = 3,
+        Aim = 4
     }
 
     public enum SkillExtraType
     {
-        Cast = 0,
-        Attribute = 1,
-        Special = 2
+        Injured = 0,
+        Cure = 1,
+        Status = 2,
+        InjuredAndStatus = 3,
+        CureAndStatus = 4,
     }
 
     public enum SkillCastType
@@ -253,10 +276,8 @@ namespace Gj
 
     public enum SkillType
     {
-        Attack = 0,
-        Defense = 1,
-        Plus = 2,
-        Minus = 3
+        Injured = 0,
+        Cure = 1
     }
 
     public enum SKillConsume

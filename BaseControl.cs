@@ -41,14 +41,6 @@ namespace Gj
         private bool first = true;
         protected GameObject entity;
 
-        void FixedUpdate()
-        {
-            // 去掉物理速度防止反弹
-            if (body) {
-                body.velocity = Vector3.zero;
-            }
-        }
-
         protected void SetEntity(string entityName)
         {
             if (entity != null)
@@ -176,12 +168,47 @@ namespace Gj
             ControlService.single.DestroyControl(gameObject);
         }
 
+        public virtual void OnUpdateData(object obj) {
+            
+        }
+
+        protected virtual void OnUpdateData(byte index, float value)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected virtual void UpdateData(byte index, float value)
+        {
+            OnUpdateData(index, value);
+        }
+
+        public virtual void OnCommand(GamePlayer player, object type, object category, object value)
+        {
+            this.OnCommand((byte)type, (byte)category, (float)value);
+        }
+
         protected virtual void OnCommand(byte type, byte category, float value)
         {
             throw new System.NotImplementedException();
         }
 
+        protected virtual void Command(byte type, byte category, float value)
+        {
+            if (Esse != null)
+                Esse.Command(type, category, value, () =>
+                {
+                    OnCommand(type, category, value);
+                });
+            else
+                OnCommand(type, category, value);
+        }
+
         protected virtual void OnOwnership(BaseControl baseControl)
+        {
+
+        }
+
+        public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
         {
 
         }
@@ -203,17 +230,6 @@ namespace Gj
             }
         }
 
-        protected virtual void Command(byte type, byte category, float value)
-        {
-            if (Esse != null)
-                Esse.Command(type, category, value, () =>
-                {
-                    OnCommand(type, category, value);
-                });
-            else
-                OnCommand(type, category, value);
-        }
-
         public virtual bool GetData(StreamBuffer stream)
         {
             return false;
@@ -222,16 +238,6 @@ namespace Gj
         public virtual void UpdateData(StreamBuffer stream)
         {
             throw new NotImplementedException();
-        }
-
-        public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
-        {
-
-        }
-
-        public virtual void OnCommand(GamePlayer player, object type, object category, object value)
-        {
-            this.OnCommand((byte)type, (byte)category, (float)value);
         }
 
         public virtual void InitSync(NetworkEsse esse)
