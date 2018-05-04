@@ -129,7 +129,7 @@ namespace Gj
             energyTotal = json[OBJECT_ATTR.ENERGY].AsFloat;
             scanRadius = json[OBJECT_ATTR.SCAN_RADIUS].AsFloat;
             extend = json[OBJECT_ATTR.EXTEND].AsObject;
-            statusList = new List<Status>();
+            statusList = new List<Status?>();
         }
         public string name;
         public string showName;
@@ -153,14 +153,14 @@ namespace Gj
         public float energy;
         public float energyTotal;
         public float scanRadius;
-        public List<Status> statusList;
+        public List<Status?> statusList;
         public JSONObject extend;
     }
 
     public struct Status
     {
         public float time;
-        public Skill Skill;
+        public Skill skill;
     }
 
     public static class SKILL_EXTRA
@@ -232,6 +232,7 @@ namespace Gj
             hasExtra = json[SKILL.HAS_EXTRA].AsBool;
             extra = new SkillExtra(json[SKILL.EXTRA].AsObject);
         }
+        public int id;
         public string name;
         public float value;
         public float need;

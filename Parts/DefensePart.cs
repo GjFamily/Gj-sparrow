@@ -9,70 +9,125 @@ namespace Gj
     {
         private Action<Skill, bool> cureNotic;
         private Action<Skill, bool> injuredNotic;
-        private Action<Skill> addNotic;
-        private Action<Skill> delNotic;
+        private Action<int, int> statusNotic;
 
-        public void SetNotic(Action<Skill, bool> cure, Action<Skill, bool> injured, Action<Skill> addStatus, Action<Skill> delStatus)
+        public void SetNotic(Action<Skill, bool> cure, Action<Skill, bool> injured, Action<int, int> status)
         {
             cureNotic = cure;
             injuredNotic = injured;
-            addNotic = addStatus;
-            delNotic = delStatus;
+            statusNotic = status;
         }
 
         public void BeCast(GameObject target, Skill skill)
         {
-            switch (skill.skillType) {
+            switch (skill.skillType)
+            {
                 case SkillType.Injured:
-                    if (injuredNotic != null) {
+                    if (injuredNotic != null)
+                    {
                         injuredNotic(skill, false);
                     }
                     break;
                 case SkillType.Cure:
-                    if (cureNotic != null) {
+                    if (cureNotic != null)
+                    {
                         cureNotic(skill, false);
                     }
                     break;
             }
-            if (skill.hasExtra) {
-                if (Info.attr.statusList.Count == 0) {
+            if (skill.hasExtra)
+            {
+                if (Info.attr.statusList.Count == 0)
+                {
                     InvokeRepeating(CHECK_STATUS, 1, 1);
                 }
-                if (addNotic != null) {
-                    addNotic(skill);
+                int id = skill.id;
+                int index = -1;
+                for (int i = 0; i < Info.attr.statusList.Count; i++)
+                {
+                    Status? status = Info.attr.statusList[i];
+                    if (status != null && status.Value.skill.id == skill.id) {
+                        index = i;
+                    }
+                    if (index < 0 && status == null)
+                    {
+                        index = i;
+                    }
+                }
+                if (index < 0)
+                {
+                    index = Info.attr.statusList.Count;
+                }
+                if (statusNotic != null)
+                {
+                    statusNotic(index, id);
                 }
             }
         }
 
+        public void UpdateStatus(int index, float time, float value)
+        {
+            int id = (int)value;
+            if (id > 0)
+            {
+                Status status = new Status
+                {
+                    time = time,
+                    skill = EngineService.single.GetSkill(id)
+                };
+                if (index > Info.attr.statusList.Count - 1)
+                {
+                    Info.attr.statusList.Insert(index, status);
+                } else {
+                    Info.attr.statusList[index] = status;
+                }
+            }else {
+                if (index <= Info.attr.statusList.Count - 1)
+                {
+                    Info.attr.statusList[index] = null;
+                }
+            }
+
+        }
+
         private const string CHECK_STATUS = "CheckStatus";
 
-        private void CheckStatus () {
+        private void CheckStatus()
+        {
             if (Info.attr.statusList.Count == 0)
             {
                 CancelInvoke(CHECK_STATUS);
             }
             float time = Time.time;
-            foreach(Status status in Info.attr.statusList) {
-                switch (status.Skill.extra.extraType)
+            for (int i = 0; i < Info.attr.statusList.Count; i++)
+            {
+                if (Info.attr.statusList[i] == null) continue;
+                Status status = Info.attr.statusList[i].Value;
+                if (status.time + status.skill.extra.sustainedTime < time)
                 {
-                    case SkillExtraType.Injured:
-                    case SkillExtraType.InjuredAndStatus:
-                        if (injuredNotic != null)
-                        {
-                            injuredNotic(status.Skill, false);
-                        }
-                        break;
-                    case SkillExtraType.Cure:
-                    case SkillExtraType.CureAndStatus:
-                        if (cureNotic != null)
-                        {
-                            cureNotic(status.Skill, false);
-                        }
-                        break;
+                    if (statusNotic != null)
+                    {
+                        statusNotic(i, 0);
+                    }
                 }
-                if (status.time + status.Skill.extra.sustainedTime < time) {
-                    if (delNotic != null) {
-                        delNotic(status.Skill);
+                else
+                {
+                    switch (status.skill.extra.extraType)
+                    {
+                        case SkillExtraType.Injured:
+                        case SkillExtraType.InjuredAndStatus:
+                            if (injuredNotic != null)
+                            {
+                                injuredNotic(status.skill, false);
+                            }
+                            break;
+                        case SkillExtraType.Cure:
+                        case SkillExtraType.CureAndStatus:
+                            if (cureNotic != null)
+                            {
+                                cureNotic(status.skill, false);
+                            }
+                            break;
                     }
                 }
             }
