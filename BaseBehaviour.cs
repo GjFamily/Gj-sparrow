@@ -17,5 +17,30 @@ namespace Gj
                 return _info;
             }
         }
+
+        private Rigidbody _rigidbody;
+        protected Rigidbody Rigidbody
+        {
+            get
+            {
+                if (_rigidbody == null)
+                {
+                    _rigidbody = GetComponent<Rigidbody>();
+                }
+                return _rigidbody;
+            }
+        }
+
+        protected bool init = false;
+        protected bool velocity = true;
+
+        void FixedUpdate()
+        {
+            // 去掉物理速度防止反弹
+            if (init && !velocity && Rigidbody != null)
+            {
+                _rigidbody.velocity = Vector3.zero;
+            }
+        }
     }
 }

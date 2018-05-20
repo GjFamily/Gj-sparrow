@@ -10,7 +10,9 @@ namespace Gj
         private Action enterAttackNotic;
         private Action exitAttackNotic;
         private Action attackNotic;
+        private float targetDistance;
         private float attackDistance;
+        private float attackRadius = 0.3f;
         private bool attacking = false;
 
         // Use this for initialization
@@ -24,26 +26,22 @@ namespace Gj
         {
             if (target != null)
             {
-                if (Vector3.Distance(target.transform.position, gameObject.transform.position) < attackDistance)
-                {
-                    if (!attacking)
-                    {
-                        if (enterAttackNotic != null)
-                        {
-                            enterAttackNotic();
-                        }
-                        attacking = true;
-                    }
-                }
-                else
-                {
-                    if (attacking)
-                    {
+                float distance = Vector3.Distance(target.transform.position, gameObject.transform.position);
+                if (attacking) {
+                    if (distance > targetDistance + attackRadius) {
                         if (exitAttackNotic != null)
                         {
                             exitAttackNotic();
                         }
                         attacking = false;
+                    }
+                } else {
+                    if (distance < targetDistance + (attackRadius / 2)) {
+                        if (enterAttackNotic != null)
+                        {
+                            enterAttackNotic();
+                        }
+                        attacking = true;
                     }
                 }
             }
@@ -57,8 +55,7 @@ namespace Gj
         public void SetAttackTarget(GameObject obj)
         {
             target = obj;
-            attackDistance = Info.attr.baseAttr.radius + CoreTools.GetInfo(obj).attr.baseAttr.radius;
-            attackDistance += attackDistance * 0.3f;
+            targetDistance = Info.attr.baseAttr.radius + CoreTools.GetInfo(obj).attr.baseAttr.radius;
         }
     }
 }

@@ -13,6 +13,7 @@ namespace Gj
     public class BaseControl : MonoBehaviour, EsseBehaviour
     {
         private Info _info;
+        private Rigidbody body;
         public Info Info
         {
             get
@@ -91,22 +92,25 @@ namespace Gj
 
             if (baseAttr.rigidbody)
             {
-                Rigidbody body = gameObject.AddComponent<Rigidbody>();
+                body = gameObject.AddComponent<Rigidbody>();
                 body.isKinematic = baseAttr.kinematic;
                 body.useGravity = baseAttr.gravity;
             }
         }
 
-        protected virtual void InitPlayerPlugin () {
-            
+        protected virtual void InitPlayerPlugin()
+        {
+
         }
 
-        protected virtual void InitOtherPlayerPlugin () {
-            
+        protected virtual void InitOtherPlayerPlugin()
+        {
+
         }
 
-        protected virtual void InitAiPlugin () {
-            
+        protected virtual void InitAiPlugin()
+        {
+
         }
 
         public virtual void FormatExtend(JSONObject json)
@@ -164,14 +168,49 @@ namespace Gj
             ControlService.single.DestroyControl(gameObject);
         }
 
+        public virtual void OnUpdateData(object obj) {
+            
+        }
+
+        protected virtual void OnUpdateData(byte index, float value)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected virtual void UpdateData(byte index, float value)
+        {
+            OnUpdateData(index, value);
+        }
+
+        public virtual void OnCommand(GamePlayer player, object type, object category, object value)
+        {
+            this.OnCommand((byte)type, (byte)category, (float)value);
+        }
+
         protected virtual void OnCommand(byte type, byte category, float value)
         {
             throw new System.NotImplementedException();
         }
 
+        protected virtual void Command(byte type, byte category, float value)
+        {
+            if (Esse != null)
+                Esse.Command(type, category, value, () =>
+                {
+                    OnCommand(type, category, value);
+                });
+            else
+                OnCommand(type, category, value);
+        }
+
         protected virtual void OnOwnership(BaseControl baseControl)
         {
-            
+
+        }
+
+        public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
+        {
+
         }
 
         protected virtual void SyncRelation(ObjectAttr attr, ObjectControl control)

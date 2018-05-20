@@ -22,7 +22,7 @@ namespace Gj
             consume = action;
         }
 
-        public void SetNotic(Action<Skill> ready, Action<Skill> start, Action<Skill> end, Action<Skill> cancel)
+        public void SetNotic(Action<Skill> start, Action<Skill> end, Action<Skill> ready, Action<Skill> cancel)
         {
             startCast = start;
             endCast = end;
@@ -51,7 +51,7 @@ namespace Gj
             if (inspect != null && inspect(skill))
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
-                Cast(baseEngine);
+                Cast(skill, baseEngine);
             }
         }
 
@@ -61,7 +61,7 @@ namespace Gj
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
                 baseEngine.Set(target);
-                Cast(baseEngine);
+                Cast(skill, baseEngine);
             }
         }
 
@@ -71,14 +71,15 @@ namespace Gj
             {
                 BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
                 baseEngine.Set(transform);
-                Cast(baseEngine);
+                Cast(skill, baseEngine);
             }
         }
 
-        public void Cast(BaseEngine baseEngine)
+        public void Cast(Skill skill, BaseEngine baseEngine)
         {
             engine = baseEngine;
             engine.Ignition(startCast, endCast, readyCast, cancelCast, Info.attr.auto);
+            consume(skill);
         }
     }
 }

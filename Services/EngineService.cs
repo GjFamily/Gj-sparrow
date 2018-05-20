@@ -10,7 +10,8 @@ namespace Gj
     {
         public static EngineService single;
 
-        private Dictionary<string, Skill> skillMap = new Dictionary<string, Skill>();
+        private Dictionary<string, int> skillMap = new Dictionary<string, int>();
+        private List<Skill> skillList = new List<Skill>();
         private Dictionary<string, Type> engineMap = new Dictionary<string, Type>();
 
         static EngineService()
@@ -28,13 +29,18 @@ namespace Gj
         {
             foreach (JSONObject json in jSONArray)
             {
-                skillMap.Add(json[SKILL.NAME], new Skill(json));
+                skillList.Add(new Skill(json));
+                skillMap.Add(json[SKILL.NAME], skillList.Count - 1);
             }
         }
 
         public Skill GetSkill(string skillName)
         {
-            return skillMap[skillName];
+            return GetSkill(skillMap[skillName]);
+        }
+
+        public Skill GetSkill(int id) {
+            return skillList[id];
         }
 
         public BaseEngine MakeEngine(GameObject obj, Skill skill)

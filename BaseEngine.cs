@@ -91,12 +91,12 @@ namespace Gj
             }
         }
 
-        private const string CAST = "Cast";
+        protected virtual void Cast() {}
 
         public void Now()
         {
             startCast(skill);
-            Invoke(CAST, 0);
+            Cast();
             if (skill.castType == SkillCastType.Sustained || skill.castType == SkillCastType.ReadyAndSustained)
             {
                 sustaining = true;
