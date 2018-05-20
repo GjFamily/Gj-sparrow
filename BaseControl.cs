@@ -177,27 +177,21 @@ namespace Gj
         protected virtual void SyncRelation(ObjectAttr attr, ObjectControl control)
         {
             if (Esse == null) return;
-            switch (control)
-            {
-                case ObjectControl.Player:
-                    Esse.Relation(attr.name, InstanceRelation.Player);
-                    break;
-                case ObjectControl.OtherPlayer:
-                    Esse.Relation(attr.name, InstanceRelation.OtherPlayer);
-                    break;
-                case ObjectControl.Ai:
-                    Esse.Relation(attr.name, InstanceRelation.Scene);
-                    break;
-            }
+            Esse.Relation(attr.name, (byte)control, control == ObjectControl.Player ? true : false);
         }
 
         protected virtual void Command(byte type, byte category, float value)
         {
-            if (Esse != null)
-                Esse.Command(type, category, value, () =>
+            if (Esse != null){
+                var data = new Dictionary<byte, object>();
+                data[0] = type;
+                data[1] = category;
+                data[2] = value;
+                Esse.Command(data, () =>
                 {
                     OnCommand(type, category, value);
                 });
+            }
             else
                 OnCommand(type, category, value);
         }
@@ -217,9 +211,9 @@ namespace Gj
             
         }
 
-        public virtual void OnCommand(GamePlayer player, object type, object category, object value)
+        public virtual void OnCommand(GamePlayer player, Dictionary<byte, object> data)
         {
-            this.OnCommand((byte)type, (byte)category, (float)value);
+            this.OnCommand((byte)data[0], (byte)data[1], (float)data[2]);
         }
 
         public virtual void InitSync(NetworkEsse esse)

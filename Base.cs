@@ -289,7 +289,7 @@ namespace Gj
         Other = 2
     }
 
-    public enum ObjectControl
+    public enum ObjectControl:byte
     {
         Player,
         OtherPlayer,

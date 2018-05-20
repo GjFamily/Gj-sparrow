@@ -15,7 +15,7 @@ namespace Gj.Galaxy.Logic{
         bool GetData(StreamBuffer stream);
         void UpdateData(StreamBuffer stream);
         void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer);
-        void OnCommand(GamePlayer player, object type, object category, object value);
+        void OnCommand(GamePlayer player, Dictionary<byte, object> data);
         void OnSurvey(Dictionary<byte, object> data);
     }
     public class NetworkEsse : MonoBehaviour
@@ -181,14 +181,14 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public void Command(object type, object category, object value, Action callback)
+        public void Command(Dictionary<byte, object> data, Action callback)
         {
-            AreaConnect.Command(this, callback, type, category, value);
+            AreaConnect.Command(this, callback, data);
         }
 
-        internal void OnCommand(GamePlayer player, object type, object category, object value)
+        internal void OnCommand(GamePlayer player, Dictionary<byte, object> data)
         {
-            behaviour.OnCommand(player, type, category, value);
+            behaviour.OnCommand(player, data);
         }
 
         internal void OnSurvey(Dictionary<byte, object> data)
@@ -214,9 +214,9 @@ namespace Gj.Galaxy.Logic{
         }
 
         // 关联数据对象，
-        public void Relation(string prefabName, InstanceRelation relation)
+        public void Relation(string prefabName, byte relation, bool isOwner)
         {
-            AreaConnect.RelationInstance(this, prefabName, relation, this.gameObject);
+            AreaConnect.RelationInstance(this, prefabName, relation, this.gameObject, isOwner);
         }
 
         public const int SyncHash = 0;

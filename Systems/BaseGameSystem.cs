@@ -78,7 +78,7 @@ namespace Gj
             throw new System.NotImplementedException();
         }
 
-        public virtual GameObject OnInstance(string prefabName, InstanceRelation relation, GamePlayer player, Vector3 position, Quaternion rotation)
+        public virtual GameObject OnInstance(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation)
         {
             throw new System.NotImplementedException();
         }

@@ -755,12 +755,7 @@ namespace Gj.Galaxy.Network
                 case MessageType.Pong:
                     //ServerTimestamp = new StreamReader(message.reader).ReadToEnd();
                     //Debug.Log("[ SOCKET ] accept pong:"+protocolType);
-                    message.GetReader((reader) =>
-                    {
-                        v = new StreamReader(reader).ReadToEnd();
-                        //Debug.Log("[ SOCKET ] accept open:" + v);
-                        OnPong(conn, protocolType);
-                    });
+					OnPong(conn, protocolType);
                     break;
                 case MessageType.Protocol:
                     message.GetReader((reader) =>
