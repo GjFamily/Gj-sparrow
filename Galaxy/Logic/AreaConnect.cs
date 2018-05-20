@@ -31,13 +31,6 @@ namespace Gj.Galaxy.Logic
         public const byte Affect = 2;
     }
 
-    public enum InstanceRelation:byte
-    {
-        Player,
-        Scene,
-        OtherPlayer
-    }
-
     public interface AreaListener
     {
         GameObject OnInstance(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation);
