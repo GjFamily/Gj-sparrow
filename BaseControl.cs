@@ -192,23 +192,7 @@ namespace Gj
             throw new System.NotImplementedException();
         }
 
-        protected virtual void Command(byte type, byte category, float value)
-        {
-            if (Esse != null)
-                Esse.Command(type, category, value, () =>
-                {
-                    OnCommand(type, category, value);
-                });
-            else
-                OnCommand(type, category, value);
-        }
-
         protected virtual void OnOwnership(BaseControl baseControl)
-        {
-
-        }
-
-        public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
         {
 
         }
