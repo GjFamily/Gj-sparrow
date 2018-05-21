@@ -13,32 +13,17 @@ namespace Gj
 {
     public class ModelTools
     {
-        public static GameObject Create(GameObject prefab)
+        public static GameObject Create(string name)
         {
-            if (prefab != null)
-            {
-                GameObject obj = GameObject.Instantiate(prefab);
-                obj.name = prefab.name;
-                return obj;
-            }
-            else
-            {
-                return new GameObject();
-            }
-        }
-
-        public static GameObject Create(GameObject prefab, GameObject parent)
-        {
-
-            GameObject obj = Create(prefab);
-            obj.transform.SetParent(parent.transform, false);
+            GameObject obj = new GameObject();
+            obj.name = name;
             return obj;
         }
 
-        public static GameObject Create(GameObject prefab, Canvas parent)
+        public static GameObject Create(GameObject prefab)
         {
-            GameObject obj = Create(prefab);
-            obj.transform.SetParent(parent.transform, false);
+            GameObject obj = GameObject.Instantiate(prefab);
+            obj.name = prefab.name;
             return obj;
         }
 

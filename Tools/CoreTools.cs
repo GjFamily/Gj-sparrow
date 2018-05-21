@@ -34,6 +34,26 @@ namespace Gj
             }
         }
 
+        public static T GetComponentRequire<T>(GameObject obj) where T : Component
+        {
+            T t = obj.GetComponent<T>();
+            if (t == null)
+            {
+                t = obj.AddComponent<T>();
+            }
+            return t;
+        }
+
+        public static Component GetComponentRequire(Type type, GameObject obj)
+        {
+            Component t = obj.GetComponent(type);
+            if (t == null)
+            {
+                t = obj.AddComponent(type);
+            }
+            return t;
+        }
+
         public static Info GetMasterInfo(GameObject obj)
         {
             return GetInfo(GetMaster(obj));
@@ -64,6 +84,12 @@ namespace Gj
             }
         }
 
+        public static bool AllowRange(Skill skill, GameObject master, Vector3 position)
+        {
+            if (skill.range <= 0) return true;
+            return Vector3.Distance(master.transform.position, position) <= skill.range;
+        }
+
         public static bool AllowRange(Skill skill, GameObject master, GameObject target)
         {
             return AllowRange(skill, master, target.transform);
@@ -71,8 +97,7 @@ namespace Gj
 
         public static bool AllowRange(Skill skill, GameObject master, Transform transform)
         {
-            if (skill.range <= 0) return true;
-            return Vector3.Distance(master.transform.position, transform.position) <= skill.range;
+            return AllowRange(skill, master, transform.position);
         }
 
         public static bool IsEnv(GameObject obj)

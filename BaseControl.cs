@@ -13,7 +13,6 @@ namespace Gj
     public class BaseControl : MonoBehaviour, EsseBehaviour
     {
         private Info _info;
-        private Rigidbody body;
         public Info Info
         {
             get
@@ -76,13 +75,13 @@ namespace Gj
                 switch (baseAttr.collider)
                 {
                     case ObjectCollider.Box:
-                        BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
+                        BoxCollider boxCollider = CoreTools.GetComponentRequire<BoxCollider>(gameObject);
                         boxCollider.isTrigger = baseAttr.trigger;
                         boxCollider.size = new Vector3(baseAttr.sizeX, baseAttr.sizeY, baseAttr.sizeZ);
                         boxCollider.center = new Vector3(baseAttr.centerX, baseAttr.centerY, baseAttr.centerZ);
                         break;
                     case ObjectCollider.Sphere:
-                        SphereCollider sphereCollider = gameObject.AddComponent<SphereCollider>();
+                        SphereCollider sphereCollider = CoreTools.GetComponentRequire<SphereCollider>(gameObject);
                         sphereCollider.isTrigger = baseAttr.trigger;
                         sphereCollider.radius = baseAttr.radius;
                         sphereCollider.center = new Vector3(baseAttr.centerX, baseAttr.centerY, baseAttr.centerZ);
@@ -92,9 +91,19 @@ namespace Gj
 
             if (baseAttr.rigidbody)
             {
-                body = gameObject.AddComponent<Rigidbody>();
-                body.isKinematic = baseAttr.kinematic;
-                body.useGravity = baseAttr.gravity;
+                Rigidbody r = CoreTools.GetComponentRequire<Rigidbody>(gameObject);
+                r.isKinematic = baseAttr.kinematic;
+                r.useGravity = baseAttr.gravity;
+                r.drag = Mathf.Infinity;
+                r.angularDrag = Mathf.Infinity;
+                r.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezePositionY;
+            }
+        }
+
+        protected void Unaffected() {
+            Rigidbody r = GetComponent<Rigidbody>();
+            if (r != null) {
+                r.constraints = RigidbodyConstraints.FreezeAll;
             }
         }
 
@@ -143,7 +152,6 @@ namespace Gj
                         InitOtherPlayerPlugin();
                         break;
                     case ObjectControl.Ai:
-                        Debug.Log("InitAiPlugin");
                         InitAiPlugin();
                         break;
                 }
@@ -162,7 +170,6 @@ namespace Gj
 
         protected void Close()
         {
-            Info.live = false;
             if (Esse != null)
                 Esse.Destroy();
             ControlService.single.DestroyControl(gameObject);

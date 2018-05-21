@@ -18,11 +18,15 @@ namespace Gj
         protected float power = 0;
         private float startTime = 0;
 
-        protected Transform targetTransform;
+        protected Vector3 startPosition;
+        protected GameObject startObj;
+        protected GameObject endObj;
         protected GameObject target;
 
         private GameObject master;
-        protected Skill skill;
+        public Skill skill;
+
+        protected GameObject entity;
 
         public void Init(GameObject obj, Skill s)
         {
@@ -30,13 +34,22 @@ namespace Gj
             skill = s;
         }
 
+        protected virtual void SelfInfo()
+        {
+            if (skill.entity != null)
+            {
+                entity = ObjectService.single.MakeObj(skill.entity, gameObject);
+            }
+        }
+
         public void Ignition(Action<Skill> start, Action<Skill> end, Action<Skill> ready, Action<Skill> cancel, bool b)
         {
+            SelfInfo();
             startCast = start;
             endCast = end;
             readyCast = ready;
             cancelCast = cancel;
-            this.auto = b;
+            auto = b;
             if (skill.castType == SkillCastType.Now || skill.castType == SkillCastType.Sustained)
             {
                 Now();
@@ -91,7 +104,7 @@ namespace Gj
             }
         }
 
-        protected virtual void Cast() {}
+        protected virtual void Cast() { }
 
         public void Now()
         {
@@ -113,9 +126,15 @@ namespace Gj
             target = obj;
         }
 
-        public void Set(Transform transform)
+        public void Set(GameObject start, GameObject end)
         {
-            targetTransform = transform;
+            startObj = start;
+            endObj = end;
+        }
+
+        public void Set(Vector3 position)
+        {
+            startPosition = position;
         }
 
         protected void CastTarget(GameObject target)
