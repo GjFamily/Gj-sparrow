@@ -9,6 +9,7 @@ namespace Gj
         private float distance = 5;
         GameObject target;
         Vector3 offsetPosition;
+        Vector3 tmp;
         Quaternion offsetRotation;
         float r;
 
@@ -18,23 +19,28 @@ namespace Gj
             r = transform.position.y / transform.position.z;
             offsetPosition = transform.position;
             offsetRotation = transform.rotation;
+            tmp = Vector3.zero;
         }
 
-        // Update is called once per frame
-        void Update()
+        private void Update()
         {
             if (target != null) {
-                Vector3 tmp = new Vector3(SystemInput.sh * distance, 0, SystemInput.sv * distance);
                 transform.position = Vector3.Lerp(transform.position, target.transform.position + offsetPosition + tmp, Time.deltaTime * speed);
-
             }
         }
 
-        public void SetDistance (float d) {
+        public void SetRocker(float h, float v)
+        {
+            tmp = new Vector3(h * distance, 0, v * distance);
+        }
+
+        public void SetDistance(float d)
+        {
             offsetPosition = new Vector3(0, d, d / r);
         }
 
-        public void StartFollow(GameObject obj) {
+        public void StartFollow(GameObject obj)
+        {
             target = obj;
         }
 

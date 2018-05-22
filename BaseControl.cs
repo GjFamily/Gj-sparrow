@@ -13,7 +13,6 @@ namespace Gj
     public class BaseControl : MonoBehaviour, EsseBehaviour
     {
         private Info _info;
-        private Rigidbody body;
         public Info Info
         {
             get
@@ -76,13 +75,13 @@ namespace Gj
                 switch (baseAttr.collider)
                 {
                     case ObjectCollider.Box:
-                        BoxCollider boxCollider = gameObject.AddComponent<BoxCollider>();
+                        BoxCollider boxCollider = CoreTools.GetComponentRequire<BoxCollider>(gameObject);
                         boxCollider.isTrigger = baseAttr.trigger;
                         boxCollider.size = new Vector3(baseAttr.sizeX, baseAttr.sizeY, baseAttr.sizeZ);
                         boxCollider.center = new Vector3(baseAttr.centerX, baseAttr.centerY, baseAttr.centerZ);
                         break;
                     case ObjectCollider.Sphere:
-                        SphereCollider sphereCollider = gameObject.AddComponent<SphereCollider>();
+                        SphereCollider sphereCollider = CoreTools.GetComponentRequire<SphereCollider>(gameObject);
                         sphereCollider.isTrigger = baseAttr.trigger;
                         sphereCollider.radius = baseAttr.radius;
                         sphereCollider.center = new Vector3(baseAttr.centerX, baseAttr.centerY, baseAttr.centerZ);
@@ -92,9 +91,21 @@ namespace Gj
 
             if (baseAttr.rigidbody)
             {
-                body = gameObject.AddComponent<Rigidbody>();
-                body.isKinematic = baseAttr.kinematic;
-                body.useGravity = baseAttr.gravity;
+                Rigidbody r = CoreTools.GetComponentRequire<Rigidbody>(gameObject);
+                r.isKinematic = baseAttr.kinematic;
+                r.useGravity = baseAttr.gravity;
+                r.drag = Mathf.Infinity;
+                r.angularDrag = Mathf.Infinity;
+                r.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezePositionY;
+            }
+        }
+
+        protected void Unaffected()
+        {
+            Rigidbody r = GetComponent<Rigidbody>();
+            if (r != null)
+            {
+                r.constraints = RigidbodyConstraints.FreezeAll;
             }
         }
 
@@ -143,7 +154,6 @@ namespace Gj
                         InitOtherPlayerPlugin();
                         break;
                     case ObjectControl.Ai:
-                        Debug.Log("InitAiPlugin");
                         InitAiPlugin();
                         break;
                 }
@@ -162,24 +172,26 @@ namespace Gj
 
         protected void Close()
         {
-            Info.live = false;
             if (Esse != null)
                 Esse.Destroy();
             ControlService.single.DestroyControl(gameObject);
         }
 
-		public virtual void UpdateData(byte index, float value)
-		{
-			if (Esse != null)
-				Esse.UpdateData(index, (object)value);
-			else
-				OnUpdateData(index, value);
+        public virtual void OnUpdateData(object obj)
+        {
+
         }
 
         protected virtual void OnUpdateData(byte index, float value)
-		{
-			throw new System.NotImplementedException();
-		}
+        {
+            throw new System.NotImplementedException();
+        }
+
+        protected virtual float UpdateData(byte index, float value)
+        {
+            OnUpdateData(index, value);
+            return value;
+        }
 
         public virtual void OnUpdateData(byte index, object data)
         {
@@ -199,7 +211,8 @@ namespace Gj
 
         protected virtual void Command(byte type, byte category, float value)
         {
-            if (Esse != null){
+            if (Esse != null)
+            {
                 var data = new Dictionary<byte, object>();
                 data[0] = type;
                 data[1] = category;
@@ -225,7 +238,7 @@ namespace Gj
 
         public virtual void OnCommand(GamePlayer player, Dictionary<byte, object> data)
         {
-            this.OnCommand((byte)data[0], (byte)data[1], (float)data[2]);
+            this.OnCommand((byte)data[0], (byte)data[1], (int)data[2]);
         }
 
         public virtual void InitSync(NetworkEsse esse)
@@ -259,5 +272,16 @@ namespace Gj
 		{
 			throw new NotImplementedException();
 		}
-	}
+
+        public void Message(byte type)
+        {
+            Message(type, 0, 0);
+        }
+        public void Message(byte type, byte category)
+        {
+            Message(type, category, 0);
+        }
+        public virtual void Message(byte type, byte category, float value) { }
+
+    }
 }

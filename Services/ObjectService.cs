@@ -45,14 +45,14 @@ namespace Gj
 
         private GameObject CreateObj(string objName)
         {
-            GameObject obj = ObjectService.single.GetObj(objName);
+            GameObject obj = GetObj(objName);
             if (obj != null)
             {
                 return ModelTools.Create(obj);
             }
             else
             {
-                return null;
+                return ModelTools.Create(objName);
             }
         }
 
@@ -84,24 +84,7 @@ namespace Gj
                 obj.transform.position = position;
                 obj.transform.rotation = rotation;
             }
-            return obj.AddComponent(type);
-        }
-
-        public Component MakeEmpty(Type type, string objName, Vector3 position, Quaternion rotation)
-        {
-            GameObject obj = CacheService.single.GetCache(objName);
-            if (obj == null)
-            {
-                obj = ModelTools.Create(null);
-            }
-            if (obj != null)
-            {
-                obj.transform.SetParent(container.transform, false);
-                obj.transform.position = position;
-                obj.transform.rotation = rotation;
-            }
-            obj.name = objName;
-            return obj.AddComponent(type);
+            return CoreTools.GetComponentRequire(type, obj);
         }
 
         public void DestroyObj(GameObject obj)

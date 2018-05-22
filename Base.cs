@@ -195,6 +195,7 @@ namespace Gj
     public static class SKILL
     {
         public const string NAME = "name";
+        public const string ENTITY = "entity";
         public const string VALUE = "value";
         public const string NEED = "need";
         public const string RANG = "rang";
@@ -218,6 +219,7 @@ namespace Gj
         public Skill(JSONObject json)
         {
             name = json[SKILL.NAME];
+            entity = json[SKILL.ENTITY];
             value = json[SKILL.VALUE].AsFloat;
             need = json[SKILL.NEED].AsFloat;
             range = json[SKILL.RANG].AsFloat;
@@ -234,6 +236,7 @@ namespace Gj
         }
         public int id;
         public string name;
+        public string entity;
         public float value;
         public float need;
         public float range;

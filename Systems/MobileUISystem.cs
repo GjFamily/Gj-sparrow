@@ -13,6 +13,8 @@ namespace Gj
         private bool rightRocker = false;
         [SerializeField]
         private bool screenRocker = false;
+        [SerializeField]
+        private bool debug = false;
 
         private bool leftRockerTouch = false;
         private bool rightRochkerTouch = false;
@@ -25,6 +27,69 @@ namespace Gj
 
         // Update is called once per frame
         protected virtual void Update()
+        {
+            if (debug)
+            {
+#if UNITY_EDITOR
+                EditModel();
+#else
+            RealModel();
+#endif
+            }
+            else
+            {
+                RealModel();
+            }
+        }
+
+        private void EditModel()
+        {
+            float lv = !Input.GetKey("w") ? Input.GetKey("s") ? -1 : 0 : 1;
+            float lh = !Input.GetKey("d") ? Input.GetKey("a") ? -1 : 0 : 1;
+            if (System.Math.Abs(lh) > 0 || System.Math.Abs(lv) > 0)
+            {
+                HandleRocker(lh, lv, LeftRocker);
+                if (!leftRockerTouch)
+                {
+                    leftRockerKey = 0;
+                    LeftRockerEnter(leftRockerKey);
+                    leftRockerTouch = true;
+                }
+            }
+            else
+            {
+                if (leftRockerTouch)
+                {
+                    LeftRockerExit(leftRockerKey);
+                    leftRockerKey = 0;
+                    leftRockerTouch = false;
+                }
+            }
+
+            float rv = !Input.GetKey("up") ? Input.GetKey("down") ? -1 : 0 : 1;
+            float rh = !Input.GetKey("right") ? Input.GetKey("left") ? -1 : 0 : 1;
+            if (System.Math.Abs(rh) > 0 || System.Math.Abs(rv) > 0)
+            {
+                HandleRocker(rh, rv, RightRocker);
+                if (!rightRochkerTouch)
+                {
+                    rightRockerKey = 0;
+                    RightRockerEnter(rightRockerKey);
+                    rightRochkerTouch = true;
+                }
+            }
+            else
+            {
+                if (rightRochkerTouch)
+                {
+                    RightRockerExit(rightRockerKey);
+                    rightRockerKey = 0;
+                    rightRochkerTouch = false;
+                }
+            }
+        }
+
+        private void RealModel()
         {
             if (leftRocker && (System.Math.Abs(SystemInput.lh) > 0 || System.Math.Abs(SystemInput.lv) > 0))
             {

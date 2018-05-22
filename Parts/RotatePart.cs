@@ -6,7 +6,7 @@ namespace Gj
     public class RotatePart : BasePart
     {
         private GameObject target;
-        private Vector3 targetPosition;
+        private Vector3? targetPosition;
         private float angle = 0;
         private bool around = false;
         private bool rotating = false;
@@ -51,6 +51,7 @@ namespace Gj
         public void Cancel()
         {
             target = null;
+            targetPosition = null;
             angle = 0;
             rotating = false;
             around = false;
@@ -66,7 +67,7 @@ namespace Gj
             }
             else if (targetPosition != null)
             {
-                transform.LookAt(targetPosition);
+                transform.LookAt(targetPosition.Value);
             }
             else if (around)
             {

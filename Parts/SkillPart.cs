@@ -50,8 +50,8 @@ namespace Gj
         {
             if (inspect != null && inspect(skill))
             {
-                BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
-                Cast(skill, baseEngine);
+                BaseEngine baseEngine = GetEngine(skill);
+                Cast(baseEngine);
             }
         }
 
@@ -59,27 +59,41 @@ namespace Gj
         {
             if (CoreTools.AllowTarget(skill, gameObject, target) && CoreTools.AllowRange(skill, gameObject, target) && inspect != null && inspect(skill))
             {
-                BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
+                BaseEngine baseEngine = GetEngine(skill);
                 baseEngine.Set(target);
-                Cast(skill, baseEngine);
+                Cast(baseEngine);
             }
         }
 
-        public void Cast(Skill skill, Transform transform)
+        public void Cast(Skill skill, GameObject start, GameObject end)
         {
-            if (CoreTools.AllowRange(skill, gameObject, transform) && inspect != null && inspect(skill))
+            if (CoreTools.AllowRange(skill, gameObject, start) && inspect != null && inspect(skill))
             {
-                BaseEngine baseEngine = EngineService.single.MakeEngine(gameObject, skill);
-                baseEngine.Set(transform);
-                Cast(skill, baseEngine);
+                BaseEngine baseEngine = GetEngine(skill);
+                baseEngine.Set(start, end);
+                Cast(baseEngine);
             }
         }
 
-        public void Cast(Skill skill, BaseEngine baseEngine)
+        public void Cast(Skill skill, Vector3 position)
+        {
+            if (CoreTools.AllowRange(skill, gameObject, position) && inspect != null && inspect(skill))
+            {
+                BaseEngine baseEngine = GetEngine(skill);
+                baseEngine.Set(position);
+                Cast(baseEngine);
+            }
+        }
+
+        private BaseEngine GetEngine(Skill skill) {
+            return EngineService.single.MakeEngine(gameObject, skill);
+        }
+
+        private void Cast(BaseEngine baseEngine)
         {
             engine = baseEngine;
             engine.Ignition(startCast, endCast, readyCast, cancelCast, Info.attr.auto);
-            consume(skill);
+            consume(engine.skill);
         }
     }
 }

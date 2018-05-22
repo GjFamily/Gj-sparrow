@@ -22,13 +22,5 @@ namespace Gj
         public virtual void ScreenRocker(float angle, float h, float v) { }
 
         public virtual void ScreenRockerExit() { }
-
-        public void Message(int type) {
-            Message(type, 0, 0);
-        }
-        public void Message(int type, int category) {
-            Message(type, category, 0);
-        }
-        public virtual void Message(int type, int category, float value) { }
     }
 }

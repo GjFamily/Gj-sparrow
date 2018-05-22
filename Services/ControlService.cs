@@ -45,7 +45,7 @@ namespace Gj
         public BaseControl MakeControl(string targetName, ObjectControl control, Vector3 position, Quaternion rotation, GameObject master, bool isLocal = true)
         {
             ObjectAttr attr = GetTarget(targetName);
-            BaseControl baseControl = ObjectService.single.MakeEmpty(controlMap[attr.name], attr.name, position, rotation) as BaseControl;
+            BaseControl baseControl = ObjectService.single.MakeObj(controlMap[attr.name], attr.name, position, rotation) as BaseControl;
             baseControl.Init(attr, control, master, isLocal);
             baseControl.gameObject.SetActive(true);
             return baseControl;
