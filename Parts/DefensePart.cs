@@ -7,11 +7,11 @@ namespace Gj
 {
     public class DefensePart : BasePart
     {
-        private Action<Skill, bool> cureNotic;
-        private Action<Skill, bool> injuredNotic;
+        private Action<GameObject, Skill, bool> cureNotic;
+        private Action<GameObject, Skill, bool> injuredNotic;
         private Action<int, int> statusNotic;
 
-        public void SetNotic(Action<Skill, bool> cure, Action<Skill, bool> injured, Action<int, int> status)
+        public void SetNotic(Action<GameObject, Skill, bool> cure, Action<GameObject, Skill, bool> injured, Action<int, int> status)
         {
             cureNotic = cure;
             injuredNotic = injured;
@@ -25,13 +25,13 @@ namespace Gj
                 case SkillType.Injured:
                     if (injuredNotic != null)
                     {
-                        injuredNotic(skill, false);
+                        injuredNotic(target, skill, false);
                     }
                     break;
                 case SkillType.Cure:
                     if (cureNotic != null)
                     {
-                        cureNotic(skill, false);
+                        cureNotic(target, skill, false);
                     }
                     break;
             }
@@ -118,14 +118,14 @@ namespace Gj
                         case SkillExtraType.InjuredAndStatus:
                             if (injuredNotic != null)
                             {
-                                injuredNotic(status.skill, false);
+                                injuredNotic(null, status.skill, false);
                             }
                             break;
                         case SkillExtraType.Cure:
                         case SkillExtraType.CureAndStatus:
                             if (cureNotic != null)
                             {
-                                cureNotic(status.skill, false);
+                                cureNotic(null, status.skill, false);
                             }
                             break;
                     }

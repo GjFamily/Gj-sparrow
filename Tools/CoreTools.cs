@@ -10,7 +10,8 @@ namespace Gj
 {
     public static class CoreTools
     {
-        public static bool IsTarget (GameObject obj) {
+        public static bool IsTarget(GameObject obj)
+        {
             Info info = GetInfo(obj);
             if (info == null) return false;
             return info.IsTarget();
@@ -80,6 +81,18 @@ namespace Gj
                 else
                 {
                     return false;
+                }
+            }
+        }
+
+        public static void SendMessage(GameObject obj, byte type, byte category, float value)
+        {
+            if (obj != null)
+            {
+                BaseControl control = obj.GetComponent<BaseControl>();
+                if (control != null)
+                {
+                    control.Message(type, category, value);
                 }
             }
         }

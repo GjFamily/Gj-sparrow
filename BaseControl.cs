@@ -100,9 +100,11 @@ namespace Gj
             }
         }
 
-        protected void Unaffected() {
+        protected void Unaffected()
+        {
             Rigidbody r = GetComponent<Rigidbody>();
-            if (r != null) {
+            if (r != null)
+            {
                 r.constraints = RigidbodyConstraints.FreezeAll;
             }
         }
@@ -175,8 +177,9 @@ namespace Gj
             ControlService.single.DestroyControl(gameObject);
         }
 
-        public virtual void OnUpdateData(object obj) {
-            
+        public virtual void OnUpdateData(object obj)
+        {
+
         }
 
         protected virtual void OnUpdateData(byte index, float value)
@@ -184,9 +187,10 @@ namespace Gj
             throw new System.NotImplementedException();
         }
 
-        protected virtual void UpdateData(byte index, float value)
+        protected virtual float UpdateData(byte index, float value)
         {
             OnUpdateData(index, value);
+            return value;
         }
 
         public virtual void OnCommand(GamePlayer player, object type, object category, object value)
@@ -212,7 +216,8 @@ namespace Gj
 
         protected virtual void Command(byte type, byte category, float value)
         {
-            if (Esse != null){
+            if (Esse != null)
+            {
                 var data = new Dictionary<byte, object>();
                 data[0] = type;
                 data[1] = category;
@@ -238,12 +243,12 @@ namespace Gj
 
         public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
         {
-            
+
         }
 
         public virtual void OnCommand(GamePlayer player, Dictionary<byte, object> data)
         {
-            this.OnCommand((byte)data[0], (byte)data[1], (float)data[2]);
+            this.OnCommand((byte)data[0], (byte)data[1], (int)data[2]);
         }
 
         public virtual void InitSync(NetworkEsse esse)
@@ -262,6 +267,16 @@ namespace Gj
             transformView.options.rotationParam = RotationParam.FixedSpeed;
             transformView.options.rotationSpeed = 180;
         }
+
+        public void Message(byte type)
+        {
+            Message(type, 0, 0);
+        }
+        public void Message(byte type, byte category)
+        {
+            Message(type, category, 0);
+        }
+        public virtual void Message(byte type, byte category, float value) { }
 
         public virtual void OnSurvey(Dictionary<byte, object> data)
         {
