@@ -11,18 +11,22 @@ namespace Gj.Galaxy.Logic
 {
     internal class AreaEvent
     {
-        public const byte AcceptGroup = 0;
-        public const byte AcceptLevel = 1;
-        public const byte Sync = 2;
-        public const byte Instance = 3;
-        public const byte ChangeInfo = 4;
-        public const byte ChangeLocation = 5;
-        public const byte Destroy = 6;
-        public const byte Ownership = 7;
-        public const byte Survey = 8;
-        public const byte Serialize = 9;
-        public const byte Request = 10;
-        public const byte Response = 11;
+		public const byte Area = 1;
+        public const byte AcceptGroup = 2;
+        public const byte AcceptLevel = 3;
+		public const byte Instance = 4;
+		public const byte ChangeInfo = 5;
+		public const byte ChangeLocation = 6;
+		public const byte Destroy = 7;
+		public const byte Serialize = 8;
+		public const byte UpdateData = 9;
+		public const byte Request = 10;
+		public const byte Response = 11;
+		public const byte Ownership = 12;
+		public const byte Belong = 13;
+		public const byte Callback = 14;
+		public const byte Broadcast = 15;
+		public const byte Assign = 16;
     }
 
     internal class SyncEvent
@@ -35,7 +39,7 @@ namespace Gj.Galaxy.Logic
     {
         GameObject OnInstance(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation);
         void OnDestroyInstance(GameObject gameObject, GamePlayer player);
-        void OnRequest(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
+        void OnRequest(GamePlayer player, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
     }
     public interface PlayerFactory
     {
@@ -46,7 +50,7 @@ namespace Gj.Galaxy.Logic
     {
         public delegate GameObject OnInstanceDelegate(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation);
         public delegate void OnDestroyInstanceDelegate(GameObject gameObject, GamePlayer player);
-        public delegate void OnRequestDelegate(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
+        public delegate void OnRequestDelegate(GamePlayer player, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
 
         public OnInstanceDelegate OnInstanceEvent;
         public OnDestroyInstanceDelegate OnDestroyInstanceEvent;
@@ -70,24 +74,32 @@ namespace Gj.Galaxy.Logic
             if (OnDestroyInstanceEvent != null) OnDestroyInstanceEvent(gameObject, player);
         }
 
-        public void OnRequest(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
+        public void OnRequest(GamePlayer player, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
         {
-            if (OnRequestEvent != null) OnRequestEvent(player, code, value, callback);
+            if (OnRequestEvent != null) OnRequestEvent(player, value, callback);
         }
     }
 
-    public class AreaConnect : NetworkListener, NamespaceListener
+	internal class Callback
+	{
+		internal byte e;
+		internal Action<object[]> action;
+	}
+
+	public class SyncService : NetworkListener,ServiceListener
     {
-        internal static AreaDelegate Delegate;
-        private static Namespace n;
-        private static AreaConnect listener;
-        public static AreaConnect Listener
+		internal static AreaDelegate Delegate;
+        private static CometProxy proxy;
+		private static SyncService listener;
+		public static SyncService Listener
         {
             get
             {
                 return listener;
             }
         }
+		private static string area = "";
+		private static bool online = false;
         private Action<bool> OnConnectAction;
 
         private PlayerFactory players;
@@ -98,12 +110,11 @@ namespace Gj.Galaxy.Logic
         internal static HashidsNet.Hashids sceneHash = null;
         internal static string localId = "";
         internal static int lastUsedViewSubId = 0;
-        internal static int lastUsedViewSubIdScene = 0;
-        internal static int lastRequestId = 0;
+        internal static int lastHashKeyId = 0;
 
         private static HashSet<string> allowedReceivingGroups = new HashSet<string>();
         private static HashSet<string> blockSendingGroups = new HashSet<string>();
-
+        
         private readonly StreamBuffer readStream = new StreamBuffer(false, null);    // only used in OnSerializeRead()
         private readonly StreamBuffer pStream = new StreamBuffer(true, null);        // only used in OnSerializeWrite()
         private readonly Dictionary<string, Dictionary<byte, List<object[]>>> dataPerGroupReliable = new Dictionary<string, Dictionary<byte, List<object[]>>>();    // only used in RunViewUpdate()
@@ -112,132 +123,200 @@ namespace Gj.Galaxy.Logic
         private readonly Dictionary<string, Action<Dictionary<byte, object>>> requestCache = new Dictionary<string, Action<Dictionary<byte, object>>>();
         private readonly Dictionary<string, List<object[]>> waitInstanceData = new Dictionary<string, List<object[]>>();
 
+		private readonly Dictionary<string, Action<string>> ownershipCallbackCache = new Dictionary<string, Action<string>>();
+		private readonly Dictionary<string, Action<string>> belongCallbackCache = new Dictionary<string, Action<string>>();
+		private readonly Dictionary<string, Action> broadcastCallbackCache = new Dictionary<string, Action>();
 
-        static AreaConnect()
+		static SyncService()
         {
-            n = PeerClient.Of(NamespaceId.Area);
-            n.compress = true;
-            n.protocol = ProtocolType.Speed;
-            //n.messageQueue = MessageQueue.On;
-            listener = new AreaConnect();
-            n.listener = listener;
+            listener = new SyncService();
+			proxy = PeerClient.Register(1, listener);
             Delegate = new AreaDelegate();
-            listener.OnConnectEvent += (success) =>
-            {
-                if (listener.OnConnectAction != null) listener.OnConnectAction(success);
-            };
+			listener.OnConnectEvent += (bool success) => {
+				proxy.Send(AreaEvent.Area, area.GetBytes());
+				if (listener.OnConnectAction != null) listener.OnConnectAction(success);
+			};
         }
 
-        public static void Join(string token, string userId, PlayerFactory factory, Action<bool> action)
+        public static void Join(string token, string userId, PlayerFactory factory, bool o, Action<bool> action)
         {
             localId = userId;
             listener.players = factory;
             userHash = new HashidsNet.Hashids(token + localId);
-            sceneHash = new HashidsNet.Hashids(token);
 
-            if (PeerClient.offlineMode){
+			area = token;
+			online = !PeerClient.offlineMode || online;
+			if (!online){
                 action(true);
             } else {
                 listener.OnConnectAction = action;
-                n.Connect("token=" + token);
+				proxy.Join();
             }
-        }
+		}
 
         public static void Leave()
         {
-            n.Disconnect();
+			area = "";
+            proxy.Leave();
         }
 
         public static void StartInit(AreaListener listener)
         {
             Delegate.Bind(listener);
-            Listener.ResetEntityOnSerialize();
+            Listener.ResetOnSerialize();
         }
 
         public static int FinishInit()
         {
-            // 玩家初始化数量是个人拥有的加场景对象
-            return lastUsedViewSubId + lastUsedViewSubIdScene;
+            return lastUsedViewSubId;
         }
 
-        public void OnError(string message)
+        public void Update()
         {
-            Debug.Log(message);
+            if (proxy.IsConnected)
+            {
+                listener.UpdateEsse();
+                // todo移除request过期数据
+            }
         }
 
-        public object[] OnEvent(byte code, object[] param)
+        public void OnAccept(byte de, Message message)
         {
-            //Debug.Log(code);
-            switch (code)
+			object[] param = null;
+			switch (de)
             {
                 case AreaEvent.Instance:
-                    // userId, owner, hash, group, level, value
-                    listener.OnInstance((string)param[0], (string)param[1], (string)param[2], (string)param[3], (byte)param[4], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[5]), null);
-                    break;
-                case AreaEvent.ChangeInfo:
+					// group string, level byte, hash string, info []byte, dataLength, ownerId string, belong string, assign string
+					param = message.ReadObject();
+					proxy.AcceptQueue(de, param);
+					break;
+                case AreaEvent.ChangeInfo:               
+                    // group string, level byte, hash string, info []byte
+					param = message.ReadObject();
                     break;
                 case AreaEvent.ChangeLocation:
+					// group string, level byte, hash string, newGroup string, newLevel byte
+					param = message.ReadObject();
                     break;
                 case AreaEvent.Serialize:
-                    // userId, value, group, level
-                    listener.OnSerialize(players.GetPlayer((string)param[0]), MessagePackSerializer.Deserialize<List<object[]>>((byte[])param[1]), (string)param[2], (byte)param[3]);
+					// group, level, value
+					param = message.ReadObject();               
+                    proxy.AcceptQueue(de, param);
+					break;
+				case AreaEvent.UpdateData:
+					// group, level, hash, index, data
+					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
+					break;
+				case AreaEvent.Broadcast:
+                    // group, level, code, value, sendId
+					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
                     break;
-                case AreaEvent.Sync:
-                    // code, userId, value
-                    listener.OnSync((byte)param[0], (string)param[1], (byte[])param[2]);
+				case AreaEvent.Ownership:
+                    // group string, level byte, hash string, release bool, ownerId
+					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
                     break;
-                case AreaEvent.Ownership:
-                    // esse, userId
-                    listener.OnOwnership(Get((string)param[0]), (string)param[1]);
-                    break;
+				case AreaEvent.Belong:
+                    // group string, level byte, hash string, release bool, belong
+                    param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
+					break;
                 case AreaEvent.Destroy:
-                    // esse
-                    listener.OnDestroy(Get((string)param[0]));
-                    break;
-                case AreaEvent.Survey:
-                    // hash, data
-                    listener.OnSurvey(Get((string)param[0]), (string)param[1], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[2]));
+					// group string, level byte, hash string
+					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
                     break;
                 case AreaEvent.Request:
                     // userId, key, data
-                    listener.OnRequest(players.GetPlayer((string)param[0]), (byte)param[1], (string)param[2], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]));
+					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
                     break;
                 case AreaEvent.Response:
                     // userId, key, data
-                    listener.OnResponse(players.GetPlayer((string)param[0]), (byte)param[1], (string)param[2], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]));
+					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
+                    break;
+				case AreaEvent.Callback:
+					// event, key, value
+					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
+					break;
+				case AreaEvent.Assign:
+					// group string, level byte, hash string, assignId
+					param = message.ReadObject();               
+                    proxy.AcceptQueue(de, param);
+					break;
+                default:
+                    Debug.Log("AreaEvent is error:" + de);
+                    break;
+            }
+            return;
+		}
+
+		public void OnAcceptQueue(byte de, object[] param)
+        {
+            switch (de)
+            {
+                case AreaEvent.Instance:
+                    // group string, level byte, hash string, info []byte, dataLength, ownerId string, belong string, assign string
+                    listener.OnInstance((string)param[0], (byte)param[1], (string)param[2], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]), (string)param[5], (string)param[6], (string)param[7], null);
+                    break;
+                case AreaEvent.ChangeInfo:
+                    // group string, level byte, hash string, info []byte
+                    break;
+                case AreaEvent.ChangeLocation:
+                    // group string, level byte, hash string, newGroup string, newLevel byte
+                    break;
+                case AreaEvent.Serialize:
+                    // group, level, value
+                    listener.OnSerialize((string)param[0], (byte)param[1], MessagePackSerializer.Deserialize<List<object[]>>((byte[])param[2]));
+                    break;
+                case AreaEvent.UpdateData:
+                    // group, level, hash, index, data
+                    listener.OnUpdateData(Get((string)param[2]), (byte)param[3], param[4]);
+                    break;
+                case AreaEvent.Broadcast:
+                    // group, level, code, value, sendId
+                    listener.OnBroadcast((string)param[0], (byte)param[1], (byte)param[2], (byte[])param[3], (string)param[4]);
+                    break;
+                case AreaEvent.Ownership:
+                    // group string, level byte, hash string, release bool, ownerId
+                    listener.OnOwnership(Get((string)param[2]), (string)param[4]);
+                    break;
+                case AreaEvent.Belong:
+                    // group string, level byte, hash string, release bool, belong
+                    listener.OnBelong(Get((string)param[2]), Get((string)param[4]));
+                    break;
+                case AreaEvent.Destroy:
+                    // group string, level byte, hash string
+                    listener.OnDestroy(Get((string)param[2]));
+                    break;
+                case AreaEvent.Request:
+                    // userId, key, data
+                    listener.OnRequest(players.GetPlayer((string)param[0]), (string)param[1], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[2]));
+                    break;
+                case AreaEvent.Response:
+                    // userId, key, data
+                    listener.OnResponse(players.GetPlayer((string)param[0]), (string)param[1], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[2]));
+                    break;
+                case AreaEvent.Callback:
+                    // event, key, value
+                    listener.OnCallback((byte)param[0], (string)param[1], (byte[])param[2]);
+                    break;
+                case AreaEvent.Assign:
+                    // group string, level byte, hash string, assignId
+                    listener.OnAssign(Get((string)param[2]), players.GetPlayer((string)param[3]));
                     break;
                 default:
-                    Debug.Log("AreaEvent is error:" + code);
+                    Debug.Log("AreaEvent is error:" + de);
                     break;
             }
-            return null;
+            return;
         }
 
-        private static void Emit(byte code, NetworkEsse esse, object value, Action<object[]> callback)
-        {
-            object[] p;
-            if (value != null) {
-                p = new object[] { esse.hash, esse.group, esse.level, value };
-            } else {
-                p = new object[] { esse.hash, esse.group, esse.level };
-            }
-            n.Emit(code, p, callback);
-        }
-
-        private static void EmitSync(byte code, Dictionary<byte, object> value, string group, byte level)
-        {
-            n.Emit(AreaEvent.Sync, new object[] { code, MessagePackSerializer.Serialize(value), group, level });
-        }
-        private static void EmitSyncCallback(byte code, Dictionary<byte, object> value, string group, byte level, Action<object[]> callback = null)
-        {
-            n.Emit(AreaEvent.Sync, new object[] { code, MessagePackSerializer.Serialize(value), group, level }, callback);
-        }
-        private static void EmitSerialize(List<object[]> value, string group, byte level)
-        {
-            byte[] info = MessagePackSerializer.Serialize(value);
-            n.Emit(AreaEvent.Serialize, new object[] { info, group, level });
-        }
-        private void OnSync(byte code, string sendId, byte[] value)
+		private void OnBroadcast(string group, byte level, byte code, byte[] value, string sendId)
         {
             GamePlayer player = players.GetPlayer(sendId);
             switch (code)
@@ -245,96 +324,85 @@ namespace Gj.Galaxy.Logic
                 case SyncEvent.Command:
                     listener.OnCommand(player, MessagePackSerializer.Deserialize<Dictionary<byte, object>>(value));
                     break;
-                case SyncEvent.Affect:
-                    listener.OnAffect(player, MessagePackSerializer.Deserialize<Dictionary<byte, object>>(value));
-                    break;
                 default:
                     Debug.Log("Sync event is error:");
                     break;
             }
         }
 
-        public static void Ownership(NetworkEsse esse, bool release, Action<bool> callback)
+        private void OnCallback(byte code, string key, byte[] value)
+		{
+			bool result;
+			switch(code)
+			{
+				case AreaEvent.Ownership:
+					Action<string> ownershipCallback;
+					result = ownershipCallbackCache.TryGetValue(key, out ownershipCallback);
+                    if (result)
+					{
+						ownershipCallback(value.GetString());
+					}
+					break;
+				case AreaEvent.Belong:
+					Action<string> belongCallback;
+					result = belongCallbackCache.TryGetValue(key, out belongCallback);
+                    if (result)
+					{
+						belongCallback(value.GetString());
+					}
+					break;
+				case AreaEvent.Broadcast:
+					Action broadcastCallback;
+					result = broadcastCallbackCache.TryGetValue(key, out broadcastCallback);
+					if (result)
+					{
+						broadcastCallback();
+					}
+					break;
+			}
+		}
+
+        private static void Emit(byte code, NetworkEsse esse)
         {
-            if (PeerClient.offlineMode){
-                callback(!release);
-            } else {
-                Emit(AreaEvent.Ownership, esse, release, (object[] obj) => {
-                    listener.OnOwnership(esse, (string)obj[0]);
-                    callback(esse.ownerId == localId);
-                });
+			proxy.SendObject(code, new object[] { esse.group, esse.level, esse.hash });
+        }
+
+		private static void Emit(byte code, NetworkEsse esse, object value)
+        {
+			proxy.SendObject(code, new object[] { esse.group, esse.level, esse.hash, value });
+        }
+		private static void Emit(byte code, NetworkEsse esse, object value1, object value2)
+        {
+			proxy.SendObject(code, new object[] { esse.group, esse.level, esse.hash, value1, value2 });
+        }
+
+		private static void EmitBroadcast(byte code, Dictionary<byte, object> value, string group, byte level, Action callback=null)
+        {
+			string key = null;
+			if (callback != null)
+			{
+				key = AllocateHash();
+                listener.broadcastCallbackCache[key] = callback;
+			}
+			proxy.SendObject(AreaEvent.Broadcast, new object[] { group, level, code, MessagePackSerializer.Serialize(value), key });
+        }
+
+        private static void EmitSerialize(List<object[]> value, string group, byte level)
+        {
+            byte[] info = MessagePackSerializer.Serialize(value);
+			proxy.SendObject(AreaEvent.Serialize, new object[] { group, level, info });
+		}
+#region Emit event
+		public static void SetGroups(string[] disableGroups, string[] enableGroups)
+        {
+            if (online) {
+                proxy.SendObject(AreaEvent.AcceptGroup, new object[] { disableGroups, enableGroups });
             }
         }
-
-        public static void Survey(NetworkEsse esse, Dictionary<byte, object> value, int seconds, int people)
+        public static void SetLevel(byte[] disableLevel, byte[] enableLevel)
         {
-            var hash = sceneHash.EncodeHex(esse.group);
-
-            if (PeerClient.offlineMode){
-                listener.OnSurvey(esse, hash, value);
-            } else{
-                n.Emit(AreaEvent.Survey, new object[]{ esse.hash, esse.group, esse.level, hash, MessagePackSerializer.Serialize(value), seconds, people });
-            }
-        }
-
-        public static void RelationInstance(NetworkEsse esse, string prefabName, byte relation, GameObject prefabGo, bool isOwner)
-        {
-            esse.creatorId = localId;
-            esse.hash = AllocateHash();
-            var ownerId = isOwner ? localId : "";
-            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, prefabGo, relation, ownerId);
-            listener.OnInstance(esse.creatorId, ownerId, esse.hash, esse.group, esse.level, instantiateEvent, prefabGo);
-        }
-
-        public static void Destroy(NetworkEsse esse)
-        {
-            if (PeerClient.offlineMode) {
-                listener.RemoveInstantiated(esse, true);
-            } else if (n.State != ConnectionState.Connected){
-                Debug.LogError("Failed to Destroy Entity");
-                return;
-            } else {
-                listener.RemoveInstantiated(esse, false);
-            }
-        }
-
-        public static void Command(NetworkEsse esse, Action callback, Dictionary<byte, object> data)
-        {
-            if (PeerClient.offlineMode) {
-                callback();
-                return;
-            } else if (n.State != ConnectionState.Connected){
-                Debug.LogError("Failed to Send Command");
-                return;
-            }
-            data[(byte)255] = esse.hash;
-            EmitSyncCallback(SyncEvent.Command, data, esse.group, esse.level, (object[] obj) => {
-                callback();
-            });
-        }
-
-        public static void Request(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
-        {
-            var key = userHash.Encode(lastRequestId++);
-            listener.requestCache[key] = callback;
-            n.Emit(AreaEvent.Request, new object[] { player.UserId, code, key, MessagePackSerializer.Serialize(value) });
-        }
-
-        public static void SetGroups(string[] disableGroups, string[] enableGroups)
-        {
-            //listener.EmitChangeGroups(disableGroups, enableGroups);
-            if (PeerClient.offlineMode) {
-                
-            } else {
-                n.Emit(AreaEvent.AcceptGroup, new object[] { disableGroups, enableGroups });
-            }
-        }
-        public static void SetLevel(byte level)
-        {
-            if (PeerClient.offlineMode) {
-                
-            } else {
-                n.Emit(AreaEvent.AcceptLevel, new object[] { level });
+            if (online) {
+                proxy.SendObject(AreaEvent.AcceptLevel, new object[] { disableLevel, enableLevel });
             }
         }
         public static void ChangeInfo(NetworkEsse esse)
@@ -361,27 +429,104 @@ namespace Gj.Galaxy.Logic
                 instantiateEvent[(byte)3] = listener.pStream.ToArray();
             }
 
-            n.Emit(AreaEvent.ChangeInfo, new object[] { esse.hash, esse.group, esse.level, MessagePackSerializer.Serialize(instantiateEvent) });
+            proxy.SendObject(AreaEvent.ChangeInfo, new object[] { esse.hash, esse.group, esse.level, MessagePackSerializer.Serialize(instantiateEvent) });
         }
         public static void ChangeLocation(NetworkEsse esse, string group, byte level)
         {
-            if (PeerClient.offlineMode) {
-                
-            } else {
-                n.Emit(AreaEvent.ChangeLocation, new object[] { esse.hash, esse.group, esse.level, group, level });
+            if (online) {            
+                proxy.SendObject(AreaEvent.ChangeLocation, new object[] { esse.hash, esse.group, esse.level, group, level });
             }
             esse.group = group;
             esse.level = level;
-        }
-        private void ResetEntityOnSerialize()
+        }    
+
+        public static void RelationInstance(NetworkEsse esse, string prefabName, byte relation, GameObject prefabGo, bool isOwner, byte dataLength)
         {
-            foreach (NetworkEsse esse in esseList.Values)
+			esse.assign = listener.players.GetPlayer(localId);
+            esse.hash = AllocateHash();
+            var ownerId = isOwner ? localId : "";
+            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, prefabGo, relation, ownerId, dataLength);
+			//group string, level byte, hash string, info []byte, ownerId string, belong string, assign string
+			listener.OnInstance(esse.group, esse.level, esse.hash, instantiateEvent, ownerId, esse.belong != null ? esse.belong.hash : null, esse.assign.UserId, prefabGo);
+        }
+
+        public static void Destroy(NetworkEsse esse)
+        {
+            if (!online) {
+                listener.RemoveInstantiated(esse, true);
+			} else if (!proxy.IsConnected){
+                Debug.LogError("Failed to Destroy Entity");
+                return;
+            } else {
+                listener.RemoveInstantiated(esse, false);
+            }
+		}
+
+        public static void UpdateData(NetworkEsse esse, byte index, object data)
+		{
+			if(online)
+			{
+				Emit(AreaEvent.UpdateData, esse, index, data);
+			}
+		}
+
+        public static void Ownership(NetworkEsse esse, string want, Action<string> callback)
+        {
+            if (online)
             {
-                esse.lastOnSerializeDataSent = null;
+                if (listener.ownershipCallbackCache.ContainsKey(esse.hash)) return;
+				listener.ownershipCallbackCache[esse.hash] = (b)=>{
+					esse.owner = listener.players.GetPlayer(b);
+					callback(b);
+				};
+				Emit(AreaEvent.Ownership, esse, want);
+            }
+            else
+            {
+				esse.owner = listener.players.GetPlayer(want);
+				callback(want);
             }
         }
 
-        internal Dictionary<byte, object> EmitInstantiate(NetworkEsse esse, string prefabName, GameObject go, byte relation, string ownerId)
+        public static void Belong(NetworkEsse esse, NetworkEsse belong, Action<string> callback)
+		{
+			if (online)
+            {
+				if (listener.belongCallbackCache.ContainsKey(esse.hash)) return;
+				listener.belongCallbackCache[esse.hash] = (b)=>{
+					esse.belong = Get(b);
+					callback(b);
+				};
+				Emit(AreaEvent.Belong, esse, belong != null ? belong.hash : "");
+            }
+            else
+            {
+				callback(belong.hash);
+            }
+		}
+
+        public static void Command(NetworkEsse esse, Action callback, Dictionary<byte, object> data)
+        {
+            if (!online) {
+                callback();
+                return;
+			} else if (!proxy.IsConnected){
+                Debug.LogError("Failed to Send Command");
+                return;
+            }
+            data[(byte)255] = esse.hash;
+			EmitBroadcast(SyncEvent.Command, data, esse.group, esse.level, callback);
+        }
+
+        public static void Request(GamePlayer player, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
+        {
+			var key = AllocateHashKey();
+            listener.requestCache[key] = callback;
+			proxy.SendObject(AreaEvent.Request, new object[] { player.UserId, key, MessagePackSerializer.Serialize(value) });
+        }
+#endregion
+
+        internal Dictionary<byte, object> EmitInstantiate(NetworkEsse esse, string prefabName, GameObject go, byte relation, string ownerId, byte dataLength)
         {
             Dictionary<byte, object> instantiateEvent = new Dictionary<byte, object>();
 
@@ -403,49 +548,22 @@ namespace Gj.Galaxy.Logic
             {
                 instantiateEvent[(byte)4] = pStream.ToArray();
             }
-            if (!PeerClient.offlineMode)
-                n.Emit(AreaEvent.Instance, new object[] { esse.hash, esse.group, esse.level, ownerId, MessagePackSerializer.Serialize(instantiateEvent) });
+            if (online)
+				proxy.SendObject(AreaEvent.Instance, new object[] { esse.group, esse.level, esse.hash, MessagePackSerializer.Serialize(instantiateEvent), dataLength, ownerId, esse.belong });
             return instantiateEvent;
         }
 
         private void EmitDestroy(NetworkEsse esse)
         {
-            Emit(AreaEvent.Destroy, esse, null, null);
+            Emit(AreaEvent.Destroy, esse, null);
         }
 
         #region OnEvent
 
-        private void OnOwnership(NetworkEsse esse, string newOwnerId)
-        {
-            // 已经被销毁
-            if (esse == null) return;
-
-            switch (esse.ownershipTransfer)
-            {
-                case OwnershipOption.Fixed:
-                    Debug.LogWarning("Ownership mode == fixed. Ignoring request.");
-                    break;
-                case OwnershipOption.Request:
-                    esse.OnTransferOwnership(players.GetPlayer(newOwnerId));
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void OnSurvey(NetworkEsse esse, string hash, Dictionary<byte, object> data)
-        {
-            esse.OnSurvey(data);
-        }
-
-        internal GameObject OnInstance(string sendId, string ownerId, string hash, string group, byte level, Dictionary<byte, object> evData, GameObject go)
+		internal GameObject OnInstance(string group, byte level, string hash, Dictionary<byte, object> evData, string ownerId, string belong, string assign, GameObject go)
         {
             string prefabName = (string)evData[(byte)0];
             byte relation = (byte)evData[(byte)1];
-
-            //Debug.Log("Instance:" + sendId + "," + hash);
-            // 负数是该用户创建的场景物体
-            var player = players.GetPlayer(sendId);
 
             // SetReceiving filtering
             if (group != "" && !allowedReceivingGroups.Contains(group))
@@ -469,8 +587,8 @@ namespace Gj.Galaxy.Logic
             if (go == null)
             {
                 // 统计到该用户的初始化进度中
-                players.OnInstance(sendId);
-                go = Delegate.OnInstance(prefabName, relation, players.GetPlayer(sendId), position, rotation);
+                players.OnInstance(assign);
+                go = Delegate.OnInstance(prefabName, relation, players.GetPlayer(assign), position, rotation);
                 if (go == null)
                 {
                     Debug.LogError("error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
@@ -487,12 +605,13 @@ namespace Gj.Galaxy.Logic
             if (evData.ContainsKey((byte)3))
             {
                 readStream.SetReadStream((object[])evData[(byte)3], 0);
-                esse.UpdateData(readStream);
+				esse.SetData(readStream);
             }
             esse.group = group;
             esse.level = level;
+			esse.belong = Get(belong);
+			esse.assign = players.GetPlayer(assign);
             esse.isRuntimeInstantiated = true;
-            esse.creatorId = sendId;
             esse.owner = players.GetPlayer(ownerId);
             // 进入register流程
             esse.Id = hash;
@@ -501,22 +620,58 @@ namespace Gj.Galaxy.Logic
             List<object[]> waitData;
             var found = waitInstanceData.TryGetValue(hash, out waitData);
             if (found){
-                waitData.ForEach((object[] obj) => esse.OnSerializeRead(readStream, player, obj));
+                waitData.ForEach((object[] obj) => esse.OnSerializeRead(readStream, obj));
                 waitInstanceData.Remove(hash);
             }
 
             return go;
+		}
+
+        private void OnUpdateData(NetworkEsse esse, byte index, object data)
+		{
+			if (esse == null) return;
+			esse.OnUpdateData(index, data);
+		}
+
+        private void OnOwnership(NetworkEsse esse, string newOwnerId)
+        {
+            // 已经被销毁
+            if (esse == null) return;
+
+            switch (esse.ownershipTransfer)
+            {
+                case OwnershipOption.Fixed:
+                    Debug.LogWarning("Ownership mode == fixed. Ignoring request.");
+                    break;
+                case OwnershipOption.Request:
+                    esse.OnTransferOwnership(players.GetPlayer(newOwnerId));
+                    break;
+                default:
+                    break;
+            }
         }
 
-        private void OnRequest(GamePlayer player, byte code, string key, Dictionary<byte, object> data)
+		private void OnBelong(NetworkEsse esse, NetworkEsse belong)
         {
-            Delegate.OnRequest(player, code, data, (r) =>
-            {
-                n.Emit(AreaEvent.Response, new object[] { player.UserId, code, key, MessagePackSerializer.Serialize(r) });
+			if (esse == null) return;
+
+			esse.OnBelong(belong);
+		}
+
+        private void OnDestroy(NetworkEsse esse)
+        {
+            RemoveInstantiated(esse, true);
+        }
+
+        private void OnRequest(GamePlayer player, string key, Dictionary<byte, object> data)
+        {
+            Delegate.OnRequest(player, data, (r) =>
+			{
+				proxy.SendObject(AreaEvent.Response, new object[] { player.UserId, key, MessagePackSerializer.Serialize(r) });
             });
         }
 
-        private void OnResponse(GamePlayer player, byte code, string key, Dictionary<byte, object> data)
+        private void OnResponse(GamePlayer player, string key, Dictionary<byte, object> data)
         {
             Action<Dictionary<byte, object>> action;
             bool found = requestCache.TryGetValue(key, out action);
@@ -525,13 +680,7 @@ namespace Gj.Galaxy.Logic
                 requestCache.Remove(key);
             } else {
                 Debug.Log("Request not exist");
-            }
-
-        }
-
-        private void OnAffect(GamePlayer player, Dictionary<byte, object> data)
-        {
-            
+            }         
         }
 
         private void OnCommand(GamePlayer player, Dictionary<byte, object> data)
@@ -547,54 +696,20 @@ namespace Gj.Galaxy.Logic
 
             esse.OnCommand(player, data);
         }
+		private void OnAssign(NetworkEsse esse, GamePlayer player)
+		{
+			esse.OnAssign(player);
+		}
+		#endregion
 
-        private void OnDestroy(NetworkEsse esse)
+#region Esse
+		private void ResetOnSerialize()
         {
-            RemoveInstantiated(esse, true);
+            foreach (NetworkEsse esse in esseList.Values)
+            {
+                esse.lastOnSerializeDataSent = null;
+            }
         }
-        #endregion
-
-        //public void DestroyPlayerObjects(int playerId)
-        //{
-        //    if (playerId <= 0)
-        //    {
-        //        Debug.LogError("Failed to Destroy objects of playerId: " + playerId);
-        //        return;
-        //    }
-
-        //    // locally cleaning up that player's objects
-        //    HashSet<GameObject> playersGameObjects = new HashSet<GameObject>();
-        //    foreach (Dictionary<int, NetworkEntity> list in entityList.Values)
-        //    {
-        //        foreach (NetworkEntity entity in list.Values)
-        //        {
-        //            if (entity != null && entity.creatorId == playerId)
-        //            {
-        //                playersGameObjects.Add(entity.gameObject);
-        //            }
-        //        }
-        //    }
-
-        //    // any non-local work is already done, so with the list of that player's objects, we can clean up (locally only)
-        //    foreach (GameObject gameObject in playersGameObjects)
-        //    {
-        //        RemoveInstantiatedGO(gameObject, true);
-        //    }
-
-        //    // with ownership transfer, some objects might lose their owner.
-        //    // in that case, the creator becomes the owner again. every client can apply this. done below.
-        //    foreach (Dictionary<int, NetworkEntity> list in entityList.Values)
-        //    {
-        //        foreach (NetworkEntity entity in list.Values)
-        //        {
-        //            if (entity.ownerId == playerId)
-        //            {
-        //                entity.ownerId = entity.creatorId;
-        //            }
-        //        }
-        //    }
-        //}
-
         protected void DestroyAll()
         {
             HashSet<NetworkEsse> instantiateds = new HashSet<NetworkEsse>();
@@ -612,7 +727,6 @@ namespace Gj.Galaxy.Logic
             }
 
             lastUsedViewSubId = 0;
-            lastUsedViewSubIdScene = 0;
         }
 
 
@@ -669,7 +783,7 @@ namespace Gj.Galaxy.Logic
 
         public static void Register(NetworkEsse netEsse)
         {
-            if (n.State != ConnectionState.Connected)
+			if (proxy.IsConnected)
             {
                 return;
             }
@@ -709,19 +823,11 @@ namespace Gj.Galaxy.Logic
                 esseList.Add(esse.hash, esse);
             }
         }
+#endregion
 
-        public static int ObjectsInOneUpdate = 50;
+		#region sync entity
 
-        #region sync entity
-        internal static void Update()
-        {
-            if (n.State == ConnectionState.Connected)
-            {
-                listener.UpdateEsse();
-                // todo移除request过期数据
-            }
-        }
-
+		public static int ObjectsInOneUpdate = 50;
         private void UpdateEsse()
         {
             int countOfUpdatesToSend = 0;
@@ -756,7 +862,7 @@ namespace Gj.Galaxy.Logic
                     continue; // Block sending on this group
                 }
 
-                object[] evData = esse.OnSerializeWrite(pStream, players.GetPlayer(localId));
+                object[] evData = esse.OnSerializeWrite(pStream);
                 //Debug.Log(MessagePackSerializer.Serialize(evData).Length);
                 if (evData == null)
                 {
@@ -871,7 +977,7 @@ namespace Gj.Galaxy.Logic
             }
         }
 
-        private void OnSerialize(GamePlayer player, List<object[]> serializeData, string group, byte level)
+		private void OnSerialize(string group, byte level, List<object[]> serializeData)
         {
             var e = serializeData.GetEnumerator();
             while(e.MoveNext())
@@ -900,7 +1006,7 @@ namespace Gj.Galaxy.Logic
                 {
                     return; // Ignore group
                 }
-                esse.OnSerializeRead(readStream, player, d);
+                esse.OnSerializeRead(readStream, d);
             }
         }
 
@@ -908,7 +1014,6 @@ namespace Gj.Galaxy.Logic
 
         private void Clear(Action callback)
         {
-            //PeerClient.isMessageQueueRunning = false;
             allowedReceivingGroups = new HashSet<string>();
             blockSendingGroups = new HashSet<string>();
             DestroyAll();
@@ -921,15 +1026,13 @@ namespace Gj.Galaxy.Logic
             lastUsedViewSubId++;
             var hash = userHash.Encode(lastUsedViewSubId);
             return hash;
-        }
-
-        internal static string AllocateSceneHash()
+		}
+		internal static string AllocateHashKey()
         {
-            lastUsedViewSubId++;
-            var hash = userHash.Encode(lastUsedViewSubId);
+			lastHashKeyId++;
+			var hash = userHash.Encode(lastHashKeyId);
             return hash;
-        }
-        #endregion
-
-    }
+        } 
+		#endregion
+	}
 }

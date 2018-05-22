@@ -93,11 +93,9 @@ namespace Gj.Galaxy.Logic{
         protected void Update()
         {
             if (PeerClient.offlineMode) return;
-            if (PeerClient.connecting)
-            {
-                // 提供client内部更新
-                PeerClient.ClientUpdate();
-            }
+
+            // 提供client内部更新
+            PeerClient.Refresh();
 
             if (!PeerClient.connected)
             {
@@ -105,23 +103,13 @@ namespace Gj.Galaxy.Logic{
                 return;
             }
 
-            // the messageQueue might be paused. in that case a thread will send acknowledgements only. nothing else to do here.
-            //if (PeerClient.isMessageQueueRunning)
-            //{
-            //    return;
-            //}
-
-            bool doDispatch = true;
-            while (PeerClient.isMessageQueueRunning && doDispatch)
-            {
-                // DispatchIncomingCommands() returns true of it found any command to dispatch (event, result or state change)
-                Profiler.BeginSample("DispatchIncomingCommands");
-                doDispatch = PeerClient.DispatchIncomingCommands();
-                Profiler.EndSample();
-            }
+			// DispatchIncomingCommands() returns true of it found any command to dispatch (event, result or state change)
+            Profiler.BeginSample("DispatchIncomingCommands");
+            PeerClient.DispatchIncomingCommands();
+            Profiler.EndSample();
 
             int currentMsSinceStart = (int)(Time.realtimeSinceStartup * 1000);  // avoiding Environment.TickCount, which could be negative on long-running platforms
-            if (PeerClient.isMessageQueueRunning && currentMsSinceStart > this.nextSendTickCountOnSerialize)
+            if (currentMsSinceStart > this.nextSendTickCountOnSerialize)
             {
                 PeerClient.Update();
                 this.nextSendTickCountOnSerialize = currentMsSinceStart + this.updateIntervalOnSerialize;
@@ -131,14 +119,10 @@ namespace Gj.Galaxy.Logic{
             currentMsSinceStart = (int)(Time.realtimeSinceStartup * 1000);
             if (currentMsSinceStart > this.nextSendTickCount)
             {
-                bool doSend = true;
-                while (PeerClient.isMessageQueueRunning && doSend)
-                {
-                    // Send all outgoing commands
-                    Profiler.BeginSample("SendOutgoingCommands");
-                    doSend = PeerClient.SendOutgoingCommands();
-                    Profiler.EndSample();
-                }
+				// Send all outgoing commands
+                Profiler.BeginSample("SendOutgoingCommands");
+                PeerClient.SendOutgoingCommands();
+                Profiler.EndSample();
 
                 this.nextSendTickCount = currentMsSinceStart + this.updateInterval;
             }

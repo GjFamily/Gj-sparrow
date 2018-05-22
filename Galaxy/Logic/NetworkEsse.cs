@@ -13,28 +13,25 @@ namespace Gj.Galaxy.Logic{
     {
         void InitSync(NetworkEsse esse);
         bool GetData(StreamBuffer stream);
-        void UpdateData(StreamBuffer stream);
-        void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer);
+        void InitData(StreamBuffer stream);
+		void OnUpdateData(byte index, object data);
+		void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer);
+        void OnBelong(GameObject gameObject, NetworkEsse esse);
         void OnCommand(GamePlayer player, Dictionary<byte, object> data);
-        void OnSurvey(Dictionary<byte, object> data);
+		void OnAssign(GamePlayer player);
     }
+
     public class NetworkEsse : MonoBehaviour
     {
-        // 拥有人id
-        public string ownerId
-        {
-            get
-            {
-                return owner != null ? owner.UserId : "";
-            }
-        }
-
-        internal GamePlayer owner;
-        // 创建人id
-        public string creatorId;
-
+		public GamePlayer owner;
+        internal string prefabs;
+        // item id
         internal string hash;
-
+        // 负责人id
+        public GamePlayer assign;
+        // 关系item
+		public NetworkEsse belong;
+      
         internal string group = "";
         public string Group
         {
@@ -44,7 +41,7 @@ namespace Gj.Galaxy.Logic{
             }
             set
             {
-                AreaConnect.ChangeLocation(this, value, level);
+				SyncService.ChangeLocation(this, value, level);
             }
         }
 
@@ -57,33 +54,25 @@ namespace Gj.Galaxy.Logic{
             }
             set
             {
-                AreaConnect.ChangeLocation(this, group, value);
+				SyncService.ChangeLocation(this, group, value);
             }
         }
 
-        protected internal bool mixedModeIsReliable = false;
-
         public bool OwnerShipWasTransfered;
-
-        protected internal EsseBehaviour behaviour;
-
-        [SerializeField]
-        protected internal bool isRuntimeInstantiated;
-
-        protected internal bool removedFromLocalList;
-
-        protected internal string prefabs;
-
-        protected internal UInt16 version = 0;
-
-        protected internal object[] lastOnSerializeDataSent = null;
-
-        protected internal object[] lastOnSerializeDataReceived = null;
-
-        public Synchronization synchronization;
-
         public OwnershipOption ownershipTransfer = OwnershipOption.Fixed;
 
+        protected internal EsseBehaviour behaviour;
+      
+        protected internal bool mixedModeIsReliable = false;
+        [SerializeField]
+        protected internal bool isRuntimeInstantiated;      
+        protected internal bool removedFromLocalList;  
+
+        protected internal UInt16 version = 0;      
+        protected internal object[] lastOnSerializeDataSent = null;      
+        protected internal object[] lastOnSerializeDataReceived = null;
+
+        public Synchronization synchronization;      
         public List<Component> ObservedComponents = new List<Component>();
 
         public string Id
@@ -100,7 +89,7 @@ namespace Gj.Galaxy.Logic{
                 }
                 if (behaviour != null)
                     behaviour.InitSync(this);
-                AreaConnect.Register(this);
+				SyncService.Register(this);
             }
         }
 
@@ -109,16 +98,11 @@ namespace Gj.Galaxy.Logic{
             get { return owner != null ? owner.UserId : ""; }
         }
 
-        public string CreatorId
-        {
-            get { return this.creatorId; }
-        }
-
         public string SyncId
         {
             get
             {
-                return this.ownerId != "" ? this.ownerId : this.creatorId;
+				return this.assign != null ? this.assign.UserId : this.OwnerId;
             }
         }
 
@@ -126,7 +110,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return SyncId == AreaConnect.localId;
+				return SyncId == SyncService.localId;
             }
         }
 
@@ -138,73 +122,148 @@ namespace Gj.Galaxy.Logic{
                 return false;
         }
 
-        protected internal void UpdateData(StreamBuffer stream)
+        protected internal void SetData(StreamBuffer stream)
         {
             if (behaviour != null)
-                behaviour.UpdateData(stream);
+                behaviour.InitData(stream);
         }
+
+        public void UpdateData(byte index, object data)
+		{
+			SyncService.UpdateData(this, index, data);
+		}
+
+        protected internal void OnUpdateData(byte index, object data)
+		{
+			if (behaviour != null)
+				behaviour.OnUpdateData(index, data);
+		}
 
 		public void UpdateInfo()
 		{
-            AreaConnect.ChangeInfo(this);
+			SyncService.ChangeInfo(this);
 		}
-
-        internal void OnTransferOwnership(GamePlayer newPlayer)
-        {
-            behaviour.OnOwnership(owner, newPlayer);
-            owner = newPlayer;
-        }
 
         public void Takeover(Action<bool> callback)
         {
-            if (ownerId == AreaConnect.localId)
+			if (owner.UserId == SyncService.localId)
             {
                 callback(true);
             }
             else
             {
-                AreaConnect.Ownership(this, false, callback);
+				SyncService.Ownership(this, SyncService.localId, (b) => {
+					callback(b == SyncService.localId);
+                });
             }
         }
 
         public void Giveout(Action<bool> callback)
         {
-            if (ownerId != AreaConnect.localId)
+			if (owner.UserId != SyncService.localId)
             {
-                callback(false);
+                callback(true);
             }
             else
             {
-                AreaConnect.Ownership(this, true, (b)=>{
-                    callback(!b);
+				SyncService.Ownership(this, "", (b)=>{
+                    callback(b == "");
+                });
+            }
+		}
+
+		public void Transfer(GamePlayer player, Action<bool> callback)
+		{
+			if (owner.UserId != SyncService.localId)
+			{
+				callback(false);
+			}
+			else
+			{
+				SyncService.Ownership(this, player.UserId, (b) => {
+					callback(b == player.UserId);
+                });
+			}
+		}
+
+        internal void OnTransferOwnership(GamePlayer newPlayer)
+		{
+            if (behaviour != null)
+                behaviour.OnOwnership(owner, newPlayer);
+            owner = newPlayer;
+		}
+
+        public void Belong(GameObject master, Action<bool> callback)
+        {
+            NetworkEsse esse = master.GetComponent<NetworkEsse>() as NetworkEsse;
+
+            if (belong == esse)
+            {
+                callback(true);
+            }
+            else
+            {
+				SyncService.Belong(this, esse, (b) => {
+					callback(b == esse.hash);
                 });
             }
         }
 
+		public void Relieve(Action<bool> callback)
+        {
+            if (belong == null)
+            {
+                callback(true);
+            }
+            else
+            {
+				SyncService.Belong(this, null, (b) => {
+					callback(b == "");
+                });
+            }
+        }
+        
+        public void OnBelong(NetworkEsse master)
+		{
+			GameObject go = null;
+			if(master != null){
+				go = master.gameObject;
+                belong = master;
+			}else{
+				belong = null;
+			}
+            if (behaviour != null)
+			    behaviour.OnBelong(go, master);
+		}
+
         public void Command(Dictionary<byte, object> data, Action callback)
         {
-            AreaConnect.Command(this, callback, data);
+			SyncService.Command(this, callback, data);
         }
 
         internal void OnCommand(GamePlayer player, Dictionary<byte, object> data)
-        {
-            behaviour.OnCommand(player, data);
+		{
+            if (behaviour != null)
+                behaviour.OnCommand(player, data);
         }
 
-        internal void OnSurvey(Dictionary<byte, object> data)
-        {
-            behaviour.OnSurvey(data);
-        }
+		internal void OnAssign(GamePlayer player)
+		{
+			assign = player;
+            if (behaviour != null)
+			    behaviour.OnAssign(player);
+		}
+
         public void Destroy()
         {
-            AreaConnect.Destroy(this);
+			SyncService.Destroy(this);
         }
 
         protected internal void OnDestroy()
         {
             if (!this.removedFromLocalList)
             {
-                bool wasInList = AreaConnect.LocalClean(this);
+				bool wasInList = SyncService.LocalClean(this);
 
                 if (wasInList && !Handler.AppQuits && PeerClient.logLevel >= Network.LogLevel.Info)
                 {
@@ -212,11 +271,16 @@ namespace Gj.Galaxy.Logic{
                 }
             }
         }
-
+        
         // 关联数据对象，
-        public void Relation(string prefabName, byte relation, bool isOwner)
+		public void Relation(string prefabName, byte relation, bool isOwner, GameObject master=null, byte dataLength = 20)
         {
-            AreaConnect.RelationInstance(this, prefabName, relation, this.gameObject, isOwner);
+			if (master != null)
+			{
+				var esse = master.GetComponent<NetworkEsse>() as NetworkEsse;
+				this.belong = esse;
+			}
+			SyncService.RelationInstance(this, prefabName, relation, this.gameObject, isOwner, dataLength);
         }
 
         public const int SyncHash = 0;
@@ -225,7 +289,7 @@ namespace Gj.Galaxy.Logic{
         public const int SyncVersion = 3;
         public const int SyncFirstValue = 4;
 
-        internal object[] OnSerializeWrite(StreamBuffer stream, GamePlayer player)
+        internal object[] OnSerializeWrite(StreamBuffer stream)
         {
             if (synchronization == Synchronization.Off)
             {
@@ -239,7 +303,7 @@ namespace Gj.Galaxy.Logic{
             stream.SendNext(null);
 
             // each view creates a list of values that should be sent
-            MessageInfo info = new MessageInfo(player, this);
+            MessageInfo info = new MessageInfo(this);
             Serialize(stream, info);
 
             // check if there are actual values to be sent (after the "header" of viewId, (bool)compressed and (int[])nullValues)
@@ -297,7 +361,7 @@ namespace Gj.Galaxy.Logic{
             return null;
         }
 
-        internal void OnSerializeRead(StreamBuffer stream, GamePlayer player, object[] data)
+        internal void OnSerializeRead(StreamBuffer stream, object[] data)
         {
             var v = data[SyncVersion].ConverUInt16();
             if (v < version) return;
@@ -314,7 +378,7 @@ namespace Gj.Galaxy.Logic{
                 data = uncompressed;
             }
 
-            MessageInfo info = new MessageInfo(player, this);
+            MessageInfo info = new MessageInfo(this);
             stream.SetReadStream(data, SyncFirstValue);
 
             Deserialize(stream, info);

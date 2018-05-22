@@ -14,6 +14,7 @@ namespace Gj.Galaxy.Logic{
         public const byte Leave = 4;
         public const byte Lobby = 5;
     }
+
     public class TeamConnect : NetworkListener, NamespaceListener
     {
         public delegate void OnChangeDelegate(TeamPlayer player);
@@ -41,7 +42,7 @@ namespace Gj.Galaxy.Logic{
         public Dictionary<string, TeamPlayer> TeamPlayers = new Dictionary<string, TeamPlayer>();
 
         static TeamConnect(){
-            n = SceneConnect.Of(SceneRoom.Team);
+			n = PeerClient.Of(NamespaceId.Team);
             listener = new TeamConnect();
             n.listener = listener;
             listener.OnConnectEvent += (success) => {
@@ -165,5 +166,106 @@ namespace Gj.Galaxy.Logic{
             return null;
         }
 
+    }
+
+
+	public class TeamPlayer : IComparable<TeamPlayer>, IComparable<string>, IEquatable<TeamPlayer>, IEquatable<string>
+    {
+        public string UserId { get; internal set; }
+
+        public bool Status { get; set; }
+        public string Location { get; set; }
+        public bool Master { get; set; }
+        private Dictionary<string, object> info;
+        public Dictionary<string, object> Info
+        {
+            get
+            {
+                return info;
+            }
+        }
+
+        public TeamPlayer(string userId)
+        {
+            this.UserId = userId;
+
+        }
+        public override int GetHashCode()
+        {
+            return 0;
+        }
+
+        internal bool update(Dictionary<string, object> teamInfo)
+        {
+            bool flag = false;
+            var status = (bool)teamInfo["status"];
+            if (Status != status)
+            {
+                flag = true;
+                Status = status;
+            }
+            var location = (string)teamInfo["location"];
+            if (Location != location)
+            {
+                flag = true;
+                Location = location;
+            }
+            var master = (bool)teamInfo["master"];
+            if (Master != master)
+            {
+                flag = true;
+                Master = master;
+            }
+            return flag;
+        }
+
+        internal void AttachInfo(Dictionary<string, object> info)
+        {
+            this.info = info;
+        }
+
+        public override bool Equals(object p)
+        {
+            TeamPlayer pp = p as TeamPlayer;
+            return (pp != null && this.GetHashCode() == pp.GetHashCode());
+        }
+
+        #region IComparable implementation
+
+        public int CompareTo(TeamPlayer other)
+        {
+            if (other == null)
+            {
+                return 0;
+            }
+
+            return string.Compare(this.UserId, other.UserId, StringComparison.Ordinal);
+        }
+
+        public int CompareTo(string other)
+        {
+            return string.Compare(this.UserId, other, StringComparison.Ordinal);
+        }
+
+        #endregion
+
+        #region IEquatable implementation
+
+        public bool Equals(TeamPlayer other)
+        {
+            if (other == null)
+            {
+                return false;
+            }
+
+            return this.UserId.Equals(other.UserId);
+        }
+
+        public bool Equals(string other)
+        {
+            return this.UserId.Equals(other);
+        }
+
+        #endregion
     }
 }

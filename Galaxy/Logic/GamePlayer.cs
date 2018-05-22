@@ -11,7 +11,6 @@ namespace Gj.Galaxy.Logic{
 
         public readonly bool IsLocal = false;
 
-        /// <summary>Players might be inactive in a room when PlayerTTL for a room is > 0. If true, the player is not getting events from this room (now) but can return later.</summary>
         public bool IsInactive { get; set; }    // needed for rejoins
         public bool IsReady { get; set; }    // needed for rejoins
 
@@ -89,21 +88,11 @@ namespace Gj.Galaxy.Logic{
 
         #endregion
 
-        /// <summary>
-        /// Brief summary string of the PhotonPlayer. Includes name or player.ID and if it's the Master Client.
-        /// </summary>
         public override string ToString()
         {
             return string.Format("'{0}'{1}", this.UserId, this.IsInactive ? " (inactive)" : " ");
         }
 
-        /// <summary>
-        /// String summary of the NetworkPlayer: player.ID, name and all custom properties of this user.
-        /// </summary>
-        /// <remarks>
-        /// Use with care and not every frame!
-        /// Converts the customProperties to a String on every single call.
-        /// </remarks>
         public string ToStringFull()
         {
             return string.Format("#{0} '{1}'{2}", this.UserId, this.IsInactive ? " (inactive)" : "", this.Properties.ToStringFull());

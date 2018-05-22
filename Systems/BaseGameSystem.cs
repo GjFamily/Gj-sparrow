@@ -83,15 +83,15 @@ namespace Gj
             throw new System.NotImplementedException();
         }
 
-        public virtual void OnSync(bool success)
+		public virtual void OnSync(bool success)
         {
             throw new System.NotImplementedException();
         }
 
-        public virtual void OnRequest(GamePlayer player, byte code, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public virtual void OnRequest(GamePlayer player, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }
 

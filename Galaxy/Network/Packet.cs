@@ -6,31 +6,56 @@ using System;
 
 namespace Gj.Galaxy.Network
 {
-    
-    internal enum MessageType:byte{
-        Open = 0,
-        Reopen,
-        Close,
-        Ping,
-        Pong,
-        Protocol,
-        Namespace,
-        Application
-    }
-    internal class Message{
-        internal MessageType type;
+	public class Message{
+        internal byte code;
         internal ProtocolConn conn;
         internal Stream reader;
-        //internal int time;
         internal Action<Action<Stream>> GetReader;
-        //internal void GetReader(Action<Stream> action)
-        //{
-            
-        //}
         internal void Close()
         {
             conn.Release();
+        }      
+
+        public string ReadString()
+        {
+            string result = "";
+            this.GetReader((reader) =>
+            {
+                result = new StreamReader(reader).ReadToEnd();
+            });
+            return result;
         }
+        
+        public byte[] ReadBytes()
+		{
+			byte[] bytes = null;
+			this.GetReader((reader) =>
+            {
+				bytes = new byte[reader.Length];
+				reader.Read(bytes, 0, bytes.Length);
+            });
+			return bytes;
+		}
+
+        public object[] ReadObject()
+		{
+			object[] objects = null;
+            this.GetReader((reader) =>
+            {
+				objects = MessagePack.MessagePackSerializer.Deserialize<object[]>(reader);
+            });
+			return objects;
+		}
+
+		public Stream Reader()
+		{
+			Stream result = null;
+			this.GetReader((reader) =>
+			{
+				result = reader;
+            });
+			return result;
+		}
     }
     public enum DataType:byte{
         Connect = 0,
@@ -66,16 +91,12 @@ namespace Gj.Galaxy.Network
         }
 
         public void Packet(Stream writer)
-        {
-            //var serialization = SerializationContext.Default.GetSerializer<AppPacket>();
-            //serialization.Pack(writer, this);
+        {         
             MessagePack.MessagePackSerializer.Serialize<AppPacket>(writer, this);
         }
 
         public static AppPacket Unpack(Stream reader)
         {
-            //var serialization = SerializationContext.Default.GetSerializer<AppPacket>();
-            //return serialization.Unpack(reader);
             return MessagePack.MessagePackSerializer.Deserialize<AppPacket>(reader);
         }
     }

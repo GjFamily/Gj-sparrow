@@ -30,7 +30,7 @@ namespace Gj
             ServerSettings settings = PeerClient.Generate();
             settings.SetAppInfo("first", "1.0.1", "xasfd");
             settings.HostType = ServerSettings.HostingOption.OnlineMode;
-            settings.ServerAddress = "192.168.31.225:8080";
+			settings.ServerAddress = "192.168.31.225:8080";
 
             PeerClient.Listener.OnReconnectEvent += (bool success) =>
             {

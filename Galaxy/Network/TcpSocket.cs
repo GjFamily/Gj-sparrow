@@ -85,7 +85,7 @@ namespace Gj.Galaxy.Network
             state = null;
         }
 
-        public void Update()
+		public void Refresh()
         {
             // pass, Tcp stream
         }

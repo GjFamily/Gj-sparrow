@@ -154,7 +154,7 @@ namespace Gj.Galaxy.Network
             return true;
         }
 
-        public void Update()
+		public void Refresh()
         {
             m_Messages.Switch();
             while(!m_Messages.Empty())

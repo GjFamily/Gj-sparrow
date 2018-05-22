@@ -12,20 +12,56 @@ using System.IO;
 
 
 namespace Gj.Galaxy.Logic{
+	[Serializable]
+    public class ServerSettings : ScriptableObject
+    {
+        public enum HostingOption { NotSet = 0, OfflineMode = 1, OnlineMode = 4 }
+
+        public string AppId = "";
+        public string Version = "";
+        public string Secret = "";
+
+        public HostingOption HostType = HostingOption.NotSet;
+
+        public string ServerAddress = "";
+
+        public LogLevel Logging = LogLevel.Error;
+        public LogLevel NetworkLogging = LogLevel.Error;
+
+        public bool RunInBackground = true;
+
+        [HideInInspector]
+        public bool DisableAutoOpenWizard;
+
+        public void SetAppInfo(string appId, string version, string secret)
+        {
+            this.HostType = HostingOption.OnlineMode;
+            this.AppId = appId;
+            this.Version = version;
+            this.Secret = secret;
+        }
+
+        public override string ToString()
+        {
+            return "ServerSettings: " + HostType + " " + ServerAddress;
+        }
+    }
+
     public static class PeerClient
     {
         public const string version = "1.1";
 
         internal static readonly Handler back;
-
-        private static Client client = new Client();
+        
+		private static Nebula GameClient = new Nebula();
+		private static Comet CenterClient= new Comet("");
         public static NetworkListener Listener = new NetworkListener();
 
         internal const string serverSettingsAssetFile = "GalaxySettings";
 
         public static ServerSettings ServerSettings = (ServerSettings)Resources.Load(PeerClient.serverSettingsAssetFile, typeof(ServerSettings));
 
-        public static string ServerAddress { get { return (client != null) ? GetServerAddress() : "<not connected>"; } }
+		public static string ServerAddress { get { return (GameClient != null) ? GetServerAddress() : "<not connected>"; } }
 
         //public static bool InstantiateInRoomOnly = true;
         public static bool UseRpcMonoBehaviourCache = false;
@@ -73,12 +109,12 @@ namespace Gj.Galaxy.Logic{
                     return true;
                 }
 
-                if (client == null)
+				if (GameClient == null)
                 {
                     return false;
                 }
 
-                return client.IsConnected;
+				return GameClient.IsConnected;
             }
         }
 
@@ -91,11 +127,11 @@ namespace Gj.Galaxy.Logic{
                     return true;
                 }
 
-                if (client == null)
+				if (GameClient == null)
                 {
                     return false;
                 }
-                return client.IsRuning;
+				return GameClient.IsRuning;
             }
         }
 
@@ -119,9 +155,9 @@ namespace Gj.Galaxy.Logic{
                     return;
                 }
 
-                if (client.State != Network.ConnectionState.Disconnected)
+				if (GameClient.State != Network.ConnectionState.Disconnected)
                 {
-                    client.Disconnect(); // Cleanup (also calls OnLeftRoom to reset stuff)
+					GameClient.Disconnect();
                 }
                 isOfflineMode = value;
             }
@@ -196,24 +232,6 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        // 有队列namespace在运行：game同步
-        // 用来触发game.update,发送队列消息，获取队列消息
-        public static bool isMessageQueueRunning
-        {
-            get
-            {
-                return m_isMessageQueueRunning;
-            }
-
-            set
-            {
-                if (value) Handler.StartFallbackSendAckThread();
-                m_isMessageQueueRunning = value;
-            }
-        }
-
-        private static bool m_isMessageQueueRunning = true;
-
         private static bool UsePreciseTimer = true;
         static Stopwatch startupStopwatch;
 
@@ -232,7 +250,7 @@ namespace Gj.Galaxy.Logic{
                     return Environment.TickCount;
                 }
 
-                return client.ServerTimestamp;
+                return GameClient.ServerTimestamp;
             }
         }
 
@@ -240,7 +258,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return client.LocalTimestamp();
+                return GameClient.LocalTimestamp();
             }
         }
 
@@ -248,7 +266,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return client.PingTime;
+				return CenterClient.PingTime;
             }
         }
 
@@ -256,7 +274,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return client.LastPingTimestamp;
+				return CenterClient.LastPingTimestamp;
             }
         }
 
@@ -264,7 +282,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-                return client.LastTimestamp;
+				return CenterClient.LastTimestamp;
             }
         }
 
@@ -278,29 +296,20 @@ namespace Gj.Galaxy.Logic{
 
             if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
             {
-                //Debug.Log(string.Format("Not playing {0} {1}", UnityEditor.EditorApplication.isPlaying, UnityEditor.EditorApplication.isPlayingOrWillChangePlaymode));
                 return;
             }
-            //Debug.Log("PeerClient");
 
             InternalCleanMonoFromSceneIfStuck();
 #endif
 
-            //if (ServerSettings != null)
-            //{
-            //    Application.runInBackground = ServerSettings.RunInBackground;
-            //}
-
-            // Set up a MonoBehaviour to run Photon, and hide it
             GameObject GO = new GameObject();
             back = (Handler)GO.AddComponent<Handler>();
             GO.name = "GalaxyBack";
             GO.hideFlags = HideFlags.HideInHierarchy;
 
-            client.ReconnectTimes = 5;
-            //client.SentCountAllowance = 7;
-
-
+			GameClient.ReconnectTimes = 5;
+			CenterClient.ReconnectTimes = 5;
+         
 #if UNITY_XBOXONE
             client.AuthMode = AuthModeOption.Auth;
 #endif
@@ -309,7 +318,8 @@ namespace Gj.Galaxy.Logic{
             {
                 startupStopwatch = new Stopwatch();
                 startupStopwatch.Start();
-                client.LocalTimestamp = () => (long)startupStopwatch.ElapsedMilliseconds;
+				GameClient.LocalTimestamp = () => (long)startupStopwatch.ElapsedMilliseconds;
+				CenterClient.LocalTimestamp = () => (long)startupStopwatch.ElapsedMilliseconds;
             }
         }
 
@@ -321,23 +331,27 @@ namespace Gj.Galaxy.Logic{
         }
 
         public static Namespace Of(byte ns){
-            return PeerClient.client.Of(ns);
+			return PeerClient.GameClient.Of(ns);
         }
 
         public static Namespace Of(NamespaceId ns){
-            return PeerClient.client.Of((byte)ns);
+			return PeerClient.GameClient.Of((byte)ns);
         }
+
+		public static CometProxy Register(byte no, ServiceListener service){
+			return CenterClient.Register(no, service);
+		}
 
         public static void SetStatic(bool sw)
         {
             inDataLength = 0;
             outDataLength = 0;
             if(sw && !is_stat){
-                PeerClient.client.InData += PeerClient.InDataStat;
-                PeerClient.client.OutData += PeerClient.OutDataStat;
+				PeerClient.CenterClient.InData += PeerClient.InDataStat;
+				PeerClient.CenterClient.OutData += PeerClient.OutDataStat;
             }else if(!sw && is_stat){
-                PeerClient.client.InData -= PeerClient.InDataStat;
-                PeerClient.client.OutData -= PeerClient.OutDataStat;
+				PeerClient.CenterClient.InData -= PeerClient.InDataStat;
+				PeerClient.CenterClient.OutData -= PeerClient.OutDataStat;
             }
             is_stat = sw;
         }
@@ -369,9 +383,9 @@ namespace Gj.Galaxy.Logic{
 
         public static bool Connect()
         {
-            if (client.State != Network.ConnectionState.Disconnected)
+			if (GameClient.State != Network.ConnectionState.Disconnected)
             {
-                Debug.LogWarning("ConnectUsingSettings() failed. Can only connect while in state 'Disconnected'. Current state: " + client.State);
+				Debug.LogWarning("ConnectUsingSettings() failed. Can only connect while in state 'Disconnected'. Current state: " + GameClient.State);
                 return false;
             }
             if (ServerSettings == null)
@@ -392,12 +406,13 @@ namespace Gj.Galaxy.Logic{
             }
 
             // only apply Settings if logLevel is default ( see ServerSettings.cs), else it means it's been set programmatically
-            if (PeerClient.client.logLevel == LogLevel.Error)
+			if (PeerClient.GameClient.logLevel == LogLevel.Error)
             {
-                PeerClient.client.logLevel = ServerSettings.NetworkLogging;
+				PeerClient.GameClient.logLevel = ServerSettings.NetworkLogging;
             }
 
-            client.SetApp(ServerSettings.AppId, ServerSettings.Version, ServerSettings.Secret);
+			GameClient.SetApp(ServerSettings.AppId, ServerSettings.Version, ServerSettings.Secret);
+			CenterClient.SetApp(ServerSettings.AppId, ServerSettings.Version, ServerSettings.Secret);
 
             if (ServerSettings.HostType == ServerSettings.HostingOption.OfflineMode)
             {
@@ -406,17 +421,13 @@ namespace Gj.Galaxy.Logic{
             }
 
             offlineMode = false;
-            client.listener = Listener;
-            return client.Connect(GetServerAddress());
+			GameClient.listener = Listener;
+			return GameClient.Connect(GetServerAddress());
         }
 
         public static void Close(){
-            if (client.IsRuning)
-                client.Close();
-        }
-
-        public static void Reconnend(){
-            
+			GameClient.Close();
+			CenterClient.Close();
         }
 
         public static void Disconnect()
@@ -427,22 +438,40 @@ namespace Gj.Galaxy.Logic{
                 return;
             }
 
-            if (client == null)
+			if (GameClient == null)
             {
                 return; // Surpress error when quitting playmode in the editor
             }
-            if(client.IsRuning)
-                client.Disconnect();
+			if(GameClient.IsRuning)
+				GameClient.Disconnect();
         }
+
+        public static void SetToken(string token)
+		{
+			CenterClient.SetToken(token);
+		}
+
+        public static void BindCenter(string url)
+		{
+			if (CenterClient == null)
+			{
+				Debug.LogError("Center need token first");
+			}
+			else            
+			{
+				CenterClient.SwitchConnect(url);
+			}         
+		}      
 
         internal static void Update(){
-            //Debug.Log("update");
-            if (!offlineMode)
-                AreaConnect.Update();
+			//Debug.Log("update");
+			if (!offlineMode)
+				CenterClient.Update();
         }
 
-        internal static void ClientUpdate(){
-            client.Update();
+		internal static void Refresh(){
+			GameClient.Refresh();
+			CenterClient.Refresh();
         }
 
         internal static void Stat(){
@@ -451,21 +480,28 @@ namespace Gj.Galaxy.Logic{
             preInDataLength = 0;
             preOutDataLength = 0;
         }
-
-        internal static bool DispatchIncomingCommands(){
-            return client.ReadQueue(10);
+        
+        internal static void DispatchIncomingCommands(){
+			while (GameClient.ReadQueue(10)) { }
+			CenterClient.ReadQueue();
         }
 
-        internal static bool SendOutgoingCommands(){
-            return client.WriteQueue(10);
+        internal static void SendOutgoingCommands(){
+			while(GameClient.WriteQueue(10)){}
+            CenterClient.ReadQueue();         
         }
 
         public static void Ping()
         {
-            if (client.IsConnected)
-                client.Ping();
-            else if(client.IsRuning)
-                client.Reconnect();
+			if (CenterClient.IsConnected)
+				CenterClient.Ping();
+			//else if (GameClient.IsConnected)
+				//GameClient.Ping();
+
+			if (!CenterClient.IsConnected && CenterClient.IsRuning)
+				CenterClient.Reconnect();
+			if (!GameClient.IsRuning && GameClient.IsRuning)
+                GameClient.Reconnect();
         }
 
         public static HashSet<GameObject> FindGameObjectsWithComponent(Type type)

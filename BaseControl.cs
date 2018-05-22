@@ -168,39 +168,33 @@ namespace Gj
             ControlService.single.DestroyControl(gameObject);
         }
 
-        public virtual void OnUpdateData(object obj) {
-            
+		public virtual void UpdateData(byte index, float value)
+		{
+			if (Esse != null)
+				Esse.UpdateData(index, (object)value);
+			else
+				OnUpdateData(index, value);
         }
 
         protected virtual void OnUpdateData(byte index, float value)
-        {
-            throw new System.NotImplementedException();
-        }
+		{
+			throw new System.NotImplementedException();
+		}
 
-        protected virtual void UpdateData(byte index, float value)
+        public virtual void OnUpdateData(byte index, object data)
         {
-            OnUpdateData(index, value);
-        }
-
-        public virtual void OnCommand(GamePlayer player, object type, object category, object value)
-        {
-            this.OnCommand((byte)type, (byte)category, (float)value);
+            OnUpdateData(index, (float)data);
         }
 
         protected virtual void OnCommand(byte type, byte category, float value)
         {
             throw new System.NotImplementedException();
         }
-
-        protected virtual void OnOwnership(BaseControl baseControl)
-        {
-
-        }
-
+      
         protected virtual void SyncRelation(ObjectAttr attr, ObjectControl control)
         {
             if (Esse == null) return;
-            Esse.Relation(attr.name, (byte)control, control == ObjectControl.Player ? true : false);
+            Esse.Relation(attr.name, (byte)control, control == ObjectControl.Player ? true : false, null, 20);
         }
 
         protected virtual void Command(byte type, byte category, float value)
@@ -222,16 +216,11 @@ namespace Gj
         public virtual bool GetData(StreamBuffer stream)
         {
             return false;
-        }
+		}
 
-        public virtual void UpdateData(StreamBuffer stream)
+        public virtual void InitData(StreamBuffer stream)
         {
             throw new NotImplementedException();
-        }
-
-        public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
-        {
-            
         }
 
         public virtual void OnCommand(GamePlayer player, Dictionary<byte, object> data)
@@ -256,9 +245,19 @@ namespace Gj
             transformView.options.rotationSpeed = 180;
         }
 
-        public virtual void OnSurvey(Dictionary<byte, object> data)
-        {
-            throw new NotImplementedException();
-        }
-    }
+		public virtual void OnBelong(GameObject gameObject, NetworkEsse esse)
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual void OnAssign(GamePlayer player)
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
+		{
+			throw new NotImplementedException();
+		}
+	}
 }

@@ -6,6 +6,32 @@ using System.Reflection;
 
 namespace Gj.Galaxy.Network
 {
+	public class NetworkListener : ClientListener
+    {
+        public delegate void OnConnectDelegate(bool success);
+        public delegate void OnReconnectDelegate(bool success);
+        public delegate void OnDisconnectDelegate();
+
+        public event OnConnectDelegate OnConnectEvent;
+        public event OnReconnectDelegate OnReconnectEvent;
+        public event OnDisconnectDelegate OnDisconnectEvent;
+
+        public void OnConnect(bool success)
+        {
+            if (OnConnectEvent != null) OnConnectEvent(success);
+        }
+
+        public void OnDisconnect()
+        {
+            if (OnDisconnectEvent != null) OnDisconnectEvent();
+        }
+
+        public void OnReconnect(bool success)
+        {
+            if (OnReconnectEvent != null) OnReconnectEvent(success);
+        }
+    }
+
     public interface NamespaceListener:ClientListener{
         object[] OnEvent(byte eb, object[] param);
         void OnError(string message);
@@ -25,7 +51,7 @@ namespace Gj.Galaxy.Network
         //internal byte ns;
         internal byte[] nsp;
         //internal byte[] parent;
-        private Client client;
+        private Nebula client;
         private Dictionary<byte, Namespace> nss = new Dictionary<byte, Namespace>();
 
         private int ackId = 0;
@@ -41,7 +67,7 @@ namespace Gj.Galaxy.Network
             }
         }
 
-        public Namespace(Client client)
+		public Namespace(Nebula client)
         {
             //this.parent = null;
             this.nsp = new byte[]{};
@@ -50,7 +76,7 @@ namespace Gj.Galaxy.Network
             //Namespace(client, null, null);
         }
 
-        public Namespace(Client client, byte[] nsp)
+		public Namespace(Nebula client, byte[] nsp)
         {
             //this.parent = nsp;
             //this.ns = ns;

@@ -68,7 +68,7 @@ namespace Gj.Galaxy.Network
         void Read(ref byte[] content, Action callback);
         void Release(); // 触发accept的callback后，必须调用一次release
         bool Write(byte[] head, Stream reader);
-        void Update();
+		void Refresh();
         void Close();
     }
 

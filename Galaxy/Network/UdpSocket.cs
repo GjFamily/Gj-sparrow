@@ -94,7 +94,7 @@ namespace Gj.Galaxy.Network
             state = null;
         }
 
-        public void Update()
+		public void Refresh()
         {
             if(state != null) state.Update();
         }

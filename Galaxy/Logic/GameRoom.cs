@@ -17,17 +17,6 @@ namespace Gj.Galaxy.Logic{
         public GamePlayer[] mPlayerListCopy = new GamePlayer[0];
 
         public Dictionary<string, object> Properties { get; internal set; }
-        //public int number;
-        //public int initNumber;
-
-        //public int InitProcess
-        //{
-        //    get{
-        //        if (initNumber == 0) return 0;
-        //        if (number >= initNumber) return 100;
-        //        return (initNumber - number) * 100 / initNumber;
-        //    }
-        //}
 
         public GamePlayer localPlayer
         {
@@ -37,22 +26,6 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        //public GamePlayer masterClient
-        //{
-        //    get
-        //    {
-        //        return mPlayers[MasterClientId];
-        //    }
-        //}
-
-        //public bool isMasterClient
-        //{
-        //    get
-        //    {
-        //        return LocalClientId == MasterClientId;
-        //    }
-        //}
-
         public GameRoom(GameDelegate @delegate)
         {
             Delegate = @delegate;
@@ -61,25 +34,6 @@ namespace Gj.Galaxy.Logic{
             LocalId = player.UserId;
             this.Properties = new Dictionary<string, object>();
         }
-
-        //public void SetProperties(Dictionary<string, object> propertiesToSet)
-        //{
-        //    if (propertiesToSet == null)
-        //    {
-        //        return;
-        //    }
-
-        //    Dictionary<string, object> customProps = propertiesToSet;
-
-        //    if (!PeerClient.offlineMode)
-        //    {
-        //        RoomConnect.EmitRoom(propertiesToSet);
-        //    }
-        //    else
-        //    {
-        //        this.InternalProperties(customProps);
-        //    }
-        //}
 
         internal void InternalProperties(Dictionary<string, object> properties)
         {
@@ -156,17 +110,6 @@ namespace Gj.Galaxy.Logic{
                 });
             }
         }
-        //internal void OnChangeRoom(Dictionary<string, object> roomProperties)
-        //{
-        //    InternalProperties(roomProperties);
-        //    Delegate.OnRoomChange(roomProperties);
-        //}
-
-        //internal void OnChangePlayer(string userId, Dictionary<string, object> playerProperties)
-        //{
-        //    GamePlayer player = GetPlayer(userId);
-        //    player.InternalProperties(playerProperties);
-        //}
 
         internal void OnReady(string userId)
         {
@@ -194,10 +137,6 @@ namespace Gj.Galaxy.Logic{
 
         public void OnInit(string userId, int number)
         {
-            //if(actorId == 0){
-            //    this.initNumber = number;
-            //    return;
-            //}
             GamePlayer player = GetPlayer(userId);
             if (player == null)
             {
@@ -205,15 +144,10 @@ namespace Gj.Galaxy.Logic{
                 return;
             }
             player.initNumber = number;
-
         }
 
         public void OnInstance(string userId)
         {
-            //if(actorId == 0){
-            //    this.number++;
-            //    return;
-            //}
             GamePlayer player = GetPlayer(userId);
             if (player == null)
             {

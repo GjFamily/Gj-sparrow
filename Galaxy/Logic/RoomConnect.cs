@@ -216,8 +216,8 @@ namespace Gj.Galaxy.Logic
         }
 
         static RoomConnect()
-        {
-            n = SceneConnect.Of(SceneRoom.Room);
+		{
+            n = PeerClient.Of(NamespaceId.Room);
             //n.compress = CompressType.Snappy;
             //n.protocol = ProtocolType.Speed;
             //n.messageQueue = MessageQueue.On;
@@ -250,7 +250,7 @@ namespace Gj.Galaxy.Logic
         }
 
         // GameConnect所有玩家Connect后操作，执行进入游戏
-        public static void JoinGame(GameReadyListener listener)
+        public static void JoinGame(GameReadyListener listener, bool online)
         {
             if (listener == null)
                 throw new Exception("Game Ready Delegate empty");
@@ -263,7 +263,7 @@ namespace Gj.Galaxy.Logic
                 
             //} else {
             //}
-            AreaConnect.Join(areaToken, Room.LocalId, Room, listener.OnSync);
+			SyncService.Join(areaToken, Room.LocalId, Room, online, listener.OnSync);
         }
 
         // 通知服务器已经能开始游戏
@@ -299,7 +299,7 @@ namespace Gj.Galaxy.Logic
                 
             //} else {
             //}
-            AreaConnect.StartInit(gameListener);
+			SyncService.StartInit(gameListener);
         }
 
         //完成基础初始化，触发开始游戏
@@ -310,7 +310,7 @@ namespace Gj.Galaxy.Logic
             if (stage != GameStage.Init)
                 throw new Exception("game stage need start");
 
-            int number = AreaConnect.FinishInit();
+			int number = SyncService.FinishInit();
             Room.OnInit(Room.LocalId, number);
 
             if (PeerClient.offlineMode) {
@@ -334,7 +334,7 @@ namespace Gj.Galaxy.Logic
                 
             } else {
                 n.Emit(GameEvent.Finish, null);
-                AreaConnect.Leave();
+				SyncService.Leave();
             }
         }
 
@@ -352,7 +352,7 @@ namespace Gj.Galaxy.Logic
             if (stage == GameStage.Finish)
             {
                 n.Disconnect();
-                AreaConnect.Leave();
+				SyncService.Leave();
                 listener.Clear(callback);
             }
             // 如果游戏还未开始，执行退出后直接退出
@@ -361,7 +361,7 @@ namespace Gj.Galaxy.Logic
                 n.Emit(GameEvent.Exit, null, (obj) =>
                 {
                     n.Disconnect();
-                    AreaConnect.Leave();
+					SyncService.Leave();
                     listener.Clear(callback);
                 });
             }
@@ -445,7 +445,7 @@ namespace Gj.Galaxy.Logic
                 case GameEvent.Finish:
                     stage = GameStage.Finish;
                     Delegate.OnFinish(((Dictionary<object, object>)param[0]).ConverString());
-                    AreaConnect.Leave();
+					SyncService.Leave();
                     break;
                 default:
                     Debug.Log("GameEvent is error:" + code);

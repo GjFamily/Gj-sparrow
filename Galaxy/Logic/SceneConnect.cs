@@ -63,11 +63,6 @@ namespace Gj.Galaxy.Logic
             };
         }
 
-        public static Namespace Of(SceneRoom ns)
-        {
-            return n.Of((byte)ns);
-        }
-
         public static void Connect(Action<bool> a)
         {
             Listener.OnConnectAction = a;
@@ -154,7 +149,6 @@ namespace Gj.Galaxy.Logic
 
         public object[] OnEvent(byte eb, object[] param)
         {
-            //Debug.Log(eb);
             switch (eb)
             {
                 case SceneEvent.TeamInvite:

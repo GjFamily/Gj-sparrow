@@ -65,7 +65,7 @@ namespace Gj.Galaxy.Scripts
                 {
                     this.esse.group = this.cull.FIRST_GROUP_ID.ToString();
 
-                    AreaConnect.SetGroups(new string[] { this.cull.FIRST_GROUP_ID.ToString() }, null);
+					SyncService.SetGroups(new string[] { this.cull.FIRST_GROUP_ID.ToString() }, null);
                 }
                 else
                 {
@@ -177,7 +177,7 @@ namespace Gj.Galaxy.Scripts
                     disable.Add(groupId);
                 }
             }
-            AreaConnect.SetGroups(disable.ToArray(), this.activeCells.ToArray());
+			SyncService.SetGroups(disable.ToArray(), this.activeCells.ToArray());
         }
 
         #region GameObservable implementation
