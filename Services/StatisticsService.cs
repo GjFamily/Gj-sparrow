@@ -14,8 +14,6 @@ namespace Gj
             KILL = 0
         }
 
-        private Dictionary<string, List<string>> sub;
-
         private Dictionary<string, ObjectAttr> store;
 
         static StatisticsService()
@@ -26,7 +24,6 @@ namespace Gj
         public void Start()
         {
             store = new Dictionary<string, ObjectAttr>();
-            sub = new Dictionary<string, List<string>>();
         }
 
         public void Register(string id, ObjectAttr attr)
@@ -35,13 +32,6 @@ namespace Gj
             {
                 SaveAttr(id, attr);
             }
-        }
-
-        public void Register(string masterId, string id, ObjectAttr attr)
-        {
-            Register(masterId, attr);
-            SaveSub(masterId, id);
-            Register(id, attr);
         }
 
         private ObjectAttr LoadAttr(string id)
@@ -58,27 +48,6 @@ namespace Gj
             store.Add(id, attr);
         }
 
-        private List<string> LoadSub(string masterId)
-        {
-            if (sub.ContainsKey(masterId))
-            {
-                return sub[masterId];
-            }
-            return null;
-        }
-
-        private void SaveSub(string masterId, string id)
-        {
-            if (LoadSub(masterId) == null)
-            {
-                sub.Add(masterId, new List<string>());
-            }
-            if (LoadAttr(id) == null)
-            {
-                sub[masterId].Add(id);
-            }
-        }
-
         public float Count(string id, StatisticsType type)
         {
             return Get(id, type) + SubCount(id, type);
@@ -86,10 +55,10 @@ namespace Gj
 
         private float SubCount(string masterId, StatisticsType type)
         {
-            List<string> list = LoadSub(masterId);
+            List<string> list = RelationService.single.LoadSub(masterId);
             if (list == null) return 0;
             float count = 0;
-            foreach (string id in sub[masterId])
+            foreach (string id in list)
             {
                 count += Get(id, type);
             }
