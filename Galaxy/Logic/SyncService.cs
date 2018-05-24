@@ -444,7 +444,17 @@ namespace Gj.Galaxy.Logic
             esse.level = level;
         }
 
-		public static GameObject Instance(string prefabName, byte relation, Vector3 position, Quaternion rotation, bool isOwner, GameObject master, byte dataLength)
+        public static GameObject Instance(string prefabName, byte relation, Vector3 position, Quaternion rotation)
+        {
+            return Instance(prefabName, relation, position, rotation, false, null, 0);
+        }
+
+        public static GameObject Instance(string prefabName, byte relation, Vector3 position, Quaternion rotation, GameObject master)
+        {
+            return Instance(prefabName, relation, position, rotation, false, master, 0);
+        }
+
+        public static GameObject Instance(string prefabName, byte relation, Vector3 position, Quaternion rotation, bool isOwner, GameObject master, byte dataLength)
         {
 			NetworkEsse masterEsse = null;
 			if (master != null)
@@ -460,6 +470,7 @@ namespace Gj.Galaxy.Logic
             var gg = Delegate.OnInstance(prefabName, relation, assign, position, rotation, true);
 			var esse = gg.GetEsse();
 			esse.belong = masterEsse;
+            esse.assign = assign;
 
 			Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, relation, gg, ownerId,  dataLength);
 			//group string, level byte, hash string, info []byte, ownerId string, belong string, assign string
@@ -643,7 +654,7 @@ namespace Gj.Galaxy.Logic
             }
             esse.group = group;
             esse.level = level;
-			esse.belong = Get(belong);
+			esse.belong = belong != null ? Get(belong) : null;
 			esse.assign = players.GetPlayer(assign);
             esse.isRuntimeInstantiated = true;
             esse.owner = players.GetPlayer(ownerId);

@@ -316,9 +316,9 @@ namespace Gj
 
     public enum ObjectControl:byte
     {
-        Player,
-        OtherPlayer,
-        Ai
+        Player = 0,
+        OtherPlayer = 1,
+        Ai = 2
     }
 
     public enum ObjectCollider
