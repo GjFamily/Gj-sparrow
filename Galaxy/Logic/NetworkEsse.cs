@@ -71,8 +71,11 @@ namespace Gj.Galaxy.Logic{
         protected internal bool removedFromLocalList;  
 
         protected internal UInt16 version = 0;      
-        protected internal object[] lastOnSerializeDataSent = null;      
-        protected internal object[] lastOnSerializeDataReceived = null;
+		protected internal UInt16 lastOnDataSent = 0;
+		protected internal UInt16 lastOnDataReceived = 0;
+
+        protected internal object[] lastOnSerializeSent = null;      
+        protected internal object[] lastOnSerializeReceived = null;
 
         public Synchronization synchronization;      
         public List<Component> ObservedComponents = new List<Component>();
@@ -104,7 +107,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-				return this.assign.UserId;// != null ? this.assign.UserId : this.OwnerId;
+				return this.assign != null ? this.assign.UserId : "";
             }
         }
 
@@ -284,8 +287,7 @@ namespace Gj.Galaxy.Logic{
         public const int SyncHash = 0;
         public const int SyncCompressed = 1;
         public const int SyncNullValues = 2;
-        public const int SyncVersion = 3;
-        public const int SyncFirstValue = 4;
+        public const int SyncFirstValue = 3;
 
         internal object[] OnSerializeWrite(StreamBuffer stream)
         {
@@ -295,7 +297,6 @@ namespace Gj.Galaxy.Logic{
             }
 
             stream.ResetWriteStream();
-            stream.SendNext(null);
             stream.SendNext(null);
             stream.SendNext(null);
             stream.SendNext(null);
@@ -318,13 +319,12 @@ namespace Gj.Galaxy.Logic{
 
             if (synchronization == Synchronization.Unreliable)
             {
-                currentValues[SyncVersion] = version++;
                 return SerializeStream(ref currentValues);
             }
 
             if (synchronization == Synchronization.UnreliableOnChange)
             {
-                if (AlmostEquals(currentValues, lastOnSerializeDataSent))
+                if (AlmostEquals(currentValues, lastOnSerializeSent))
                 {
                     if (mixedModeIsReliable)
                     {
@@ -332,27 +332,25 @@ namespace Gj.Galaxy.Logic{
                     }
 
                     mixedModeIsReliable = true;
-                    lastOnSerializeDataSent = currentValues;
+					lastOnSerializeSent = currentValues;
                 }
                 else
                 {
                     mixedModeIsReliable = false;
-                    lastOnSerializeDataSent = currentValues;
+					lastOnSerializeSent = currentValues;
                 }
 
-                currentValues[SyncVersion] = version++;
                 return SerializeStream(ref currentValues);
             }
 
             if (synchronization == Synchronization.Reliable)
             {
-                object[] dataToSend = DeltaCompressionWrite(lastOnSerializeDataSent, currentValues);
+				object[] dataToSend = DeltaCompressionWrite(lastOnSerializeSent, currentValues);
 
-                lastOnSerializeDataSent = currentValues;
+				lastOnSerializeSent = currentValues;
 
                 if (dataToSend == null) return null;
 
-                dataToSend[SyncVersion] = version++;
                 return SerializeStream(ref dataToSend);
             }
 
@@ -361,18 +359,16 @@ namespace Gj.Galaxy.Logic{
 
         internal void OnSerializeRead(StreamBuffer stream, object[] data)
         {
-            var v = data[SyncVersion].ConverUInt16();
-            if (v < version) return;
             if (synchronization == Synchronization.Reliable)
             {
-                object[] uncompressed = this.DeltaCompressionRead(lastOnSerializeDataReceived, data);
+                object[] uncompressed = this.DeltaCompressionRead(lastOnSerializeReceived, data);
                 if (uncompressed == null)
                 {
                     return;
                 }
 
                 // store last received values (uncompressed) for delta-compression usage
-                lastOnSerializeDataReceived = uncompressed;
+                lastOnSerializeReceived = uncompressed;
                 data = uncompressed;
             }
 

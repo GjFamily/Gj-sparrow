@@ -173,7 +173,7 @@ namespace Gj.Galaxy.Logic
         {
             if (proxy.IsConnected)
             {
-                listener.UpdateEsse();
+				listener.UpdateEsse();
                 // todo移除request过期数据
             }
         }
@@ -433,15 +433,16 @@ namespace Gj.Galaxy.Logic
 
             proxy.SendObject(AreaEvent.ChangeInfo, new object[] { esse.hash, esse.group, esse.level, MessagePackSerializer.Serialize(instantiateEvent) });
         }
+
         public static void ChangeLocation(NetworkEsse esse, string group, byte level)
 		{
             if (!esse.isMine) return;
-            if (online) {            
+            if (online) {
                 proxy.SendObject(AreaEvent.ChangeLocation, new object[] { esse.hash, esse.group, esse.level, group, level });
             }
             esse.group = group;
             esse.level = level;
-        }    
+        }
 
 		public static GameObject Instance(string prefabName, byte relation, Vector3 position, Quaternion rotation, bool isOwner, GameObject master, byte dataLength)
         {
@@ -485,7 +486,7 @@ namespace Gj.Galaxy.Logic
 			esse.data[index] = data;
 			if(online)
 			{
-				// todo 队列，统一更新，按频次，没有
+				// 队列，统一更新，按频次，没有
 				Emit(AreaEvent.UpdateData, esse, index, data);
 			}
 			return esse.data[index];
@@ -635,9 +636,9 @@ namespace Gj.Galaxy.Logic
                 throw new Exception("Error in Instantiation! The resource's Entity count is not the same as in incoming data.");
             }
 
-            if (evData.ContainsKey((byte)3))
+            if (evData.ContainsKey((byte)4))
             {
-                readStream.SetReadStream((object[])evData[(byte)3], 0);
+                readStream.SetReadStream((object[])evData[(byte)4], 0);
 				esse.InitInfo(readStream, position, rotation);
             }
             esse.group = group;
@@ -665,7 +666,25 @@ namespace Gj.Galaxy.Logic
 
 		private void OnChangeInfo(NetworkEsse esse, Dictionary<byte, object> evData)
 		{
-			
+            Vector3 position = Vector3.zero;
+            if (evData.ContainsKey((byte)2))
+            {
+                var positionBytes = (byte[])evData[(byte)2];
+                position = (Vector3)Vector3SerializeFormatter.instance.Deserialize(positionBytes);
+            }
+
+            Quaternion rotation = Quaternion.identity;
+            if (evData.ContainsKey((byte)3))
+            {
+                var ratationBytes = (byte[])evData[(byte)3];
+                rotation = (Quaternion)QuaternionSerializeFormatter.instance.Deserialize(ratationBytes);
+            }
+
+			if (evData.ContainsKey((byte)4))
+            {
+                readStream.SetReadStream((object[])evData[(byte)4], 0);
+                esse.InitInfo(readStream, position, rotation);
+            }
 		}
 
         private void OnUpdateData(NetworkEsse esse, byte index, object data)
@@ -902,7 +921,7 @@ namespace Gj.Galaxy.Logic
                 {
                     continue; // Block sending on this group
                 }
-
+            
                 object[] evData = esse.OnSerializeWrite(pStream);
                 //Debug.Log(MessagePackSerializer.Serialize(evData).Length);
                 if (evData == null)
