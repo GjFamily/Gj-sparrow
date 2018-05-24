@@ -41,6 +41,20 @@ namespace Gj
         protected GameObject entity;
 
         protected byte dataCount = 255;
+        public bool IsOwner
+		{
+			get
+			{
+				return true;
+			}
+		}
+        public byte DataLength
+		{
+			get
+			{
+				return dataCount;
+			}
+		}
 
         protected void SetEntity(string entityName)
         {

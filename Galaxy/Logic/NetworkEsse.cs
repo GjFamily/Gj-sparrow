@@ -10,7 +10,9 @@ using UnityEditor;
 
 namespace Gj.Galaxy.Logic{
     public interface EsseBehaviour
-    {
+	{
+        bool IsOwner { get; }
+        byte DataLength { get; }
         void InitSync(NetworkEsse esse);
         bool GetInfo(StreamBuffer stream);
 		void InitInfo(StreamBuffer stream, Vector3 position, Quaternion rotation);
@@ -64,6 +66,18 @@ namespace Gj.Galaxy.Logic{
         public OwnershipOption ownershipTransfer = OwnershipOption.Fixed;
 
         protected internal EsseBehaviour behaviour;
+		protected internal EsseBehaviour Behaviour
+		{
+			get
+			{
+				if (behaviour == null)
+                {
+                    behaviour = GetComponent<EsseBehaviour>() as EsseBehaviour;
+                    // todo behaviour null
+                }
+				return behaviour;
+			}
+		}
       
         protected internal bool mixedModeIsReliable = false;
         [SerializeField]
@@ -87,13 +101,8 @@ namespace Gj.Galaxy.Logic{
             {
                 this.hash = value;
 
-                if (behaviour == null)
-                {
-                    behaviour = GetComponent<EsseBehaviour>() as EsseBehaviour;
-                    // todo behaviour null
-                }
-                if (behaviour != null)
-                    behaviour.InitSync(this);
+				if (Behaviour != null)
+					Behaviour.InitSync(this);
 				SyncService.Register(this);
             }
         }
@@ -121,16 +130,17 @@ namespace Gj.Galaxy.Logic{
 
         protected internal bool GetInfo(StreamBuffer stream)
         {
-            if (behaviour != null)
-				return behaviour.GetInfo(stream);
-            else
+			if (Behaviour != null)
+				return Behaviour.GetInfo(stream);
+			else{
                 return false;
+			}
         }
 
 		protected internal void InitInfo(StreamBuffer stream, Vector3 position, Quaternion rotation)
         {
-            if (behaviour != null)
-				behaviour.InitInfo(stream, position, rotation);
+			if (Behaviour != null)
+				Behaviour.InitInfo(stream, position, rotation);
         }
 
         public object UpdateData(byte index, object data)
@@ -147,8 +157,8 @@ namespace Gj.Galaxy.Logic{
 
         protected internal void OnUpdateData(byte index, object data)
 		{
-			if (behaviour != null)
-				behaviour.OnUpdateData(index, data);
+			if (Behaviour != null)
+				Behaviour.OnUpdateData(index, data);
 		}
 
 		public void UpdateInfo()
@@ -200,8 +210,8 @@ namespace Gj.Galaxy.Logic{
 
         internal void OnTransferOwnership(GamePlayer newPlayer)
 		{
-            if (behaviour != null)
-                behaviour.OnOwnership(owner, newPlayer);
+			if (Behaviour != null)
+				Behaviour.OnOwnership(owner, newPlayer);
             owner = newPlayer;
 		}
 
@@ -244,8 +254,8 @@ namespace Gj.Galaxy.Logic{
 			}else{
 				belong = null;
 			}
-            if (behaviour != null)
-			    behaviour.OnBelong(go, master);
+			if (Behaviour != null)
+				Behaviour.OnBelong(go, master);
 		}
 
         public void Command(Dictionary<byte, object> data, Action callback)
@@ -255,15 +265,15 @@ namespace Gj.Galaxy.Logic{
 
 		internal void OnCommand(GamePlayer player, Dictionary<byte, object> data)
 		{
-            if (behaviour != null)
-                behaviour.OnCommand(player, data);
+			if (Behaviour != null)
+				Behaviour.OnCommand(player, data);
         }
 
 		internal void OnAssign(GamePlayer player)
 		{
 			assign = player;
-            if (behaviour != null)
-			    behaviour.OnAssign(player);
+			if (Behaviour != null)
+				Behaviour.OnAssign(player);
 		}
 
         public void Destroy()

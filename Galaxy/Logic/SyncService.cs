@@ -462,15 +462,19 @@ namespace Gj.Galaxy.Logic
 				masterEsse = master.GetComponent<NetworkEsse>() as NetworkEsse;
 				if (!masterEsse.isMine) return null;
 			}
-			var assign = listener.players.GetPlayer(localId);
             var hash = AllocateHash();
-            var ownerId = isOwner ? localId : "";
-			var data = new object[dataLength];
-            
+			var assign = listener.players.GetPlayer(localId);
             var gg = Delegate.OnInstance(prefabName, relation, assign, position, rotation, true);
 			var esse = gg.GetEsse();
+			if (esse.Behaviour != null)
+			{
+				isOwner = esse.Behaviour.IsOwner;
+				dataLength = esse.Behaviour.DataLength;
+			}
 			esse.belong = masterEsse;
-            esse.assign = assign;
+			esse.assign = assign;
+            var data = new object[dataLength];
+            var ownerId = isOwner ? localId : "";
 
 			Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, relation, gg, ownerId,  dataLength);
 			//group string, level byte, hash string, info []byte, ownerId string, belong string, assign string
@@ -811,9 +815,9 @@ namespace Gj.Galaxy.Logic
 
             string id = esse.Id;
 
-            if (!localOnly)
+			if (!localOnly && online)
             {
-                if (esse.SyncId == localId)
+				if (esse.isMine)
                 {
                     EmitDestroy(esse);
                 }
@@ -827,12 +831,13 @@ namespace Gj.Galaxy.Logic
             }
 
             // todo 通知用户
-            Delegate.OnDestroyInstance(go, players.GetPlayer(esse.SyncId));
+            // Delegate.OnDestroyInstance(go, players.GetPlayer(esse.SyncId));
         }
 
         public static bool LocalClean(NetworkEsse esse)
         {
             esse.removedFromLocalList = true;
+			if (esse.hash == null) return false;
             if(esseList.ContainsKey(esse.hash))
             {
                 return esseList.Remove(esse.hash);
@@ -853,12 +858,7 @@ namespace Gj.Galaxy.Logic
         }
 
         public static void Register(NetworkEsse netEsse)
-        {
-			if (proxy.IsConnected)
-            {
-                return;
-            }
-
+        {         
             if (netEsse.Id == "")
             {
                 Debug.Log("Esse register is ignored, because id is 0. No id assigned yet to: " + netEsse);
