@@ -376,7 +376,6 @@ namespace Gj.Galaxy.Logic{
             stream.SetReadStream(data, SyncFirstValue);
 
             Deserialize(stream, info);
-            version = v;
         }
 
         private object[] DeltaCompressionWrite(object[] previousContent, object[] currentContent)

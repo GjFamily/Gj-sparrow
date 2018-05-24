@@ -767,7 +767,7 @@ namespace Gj.Galaxy.Logic
         {
             foreach (NetworkEsse esse in esseList.Values)
             {
-                esse.lastOnSerializeDataSent = null;
+                esse.lastOnSerializeSent = null;
             }
         }
         protected void DestroyAll()
