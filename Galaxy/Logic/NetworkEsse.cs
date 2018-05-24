@@ -12,8 +12,8 @@ namespace Gj.Galaxy.Logic{
     public interface EsseBehaviour
     {
         void InitSync(NetworkEsse esse);
-        bool GetData(StreamBuffer stream);
-        void InitData(StreamBuffer stream);
+        bool GetInfo(StreamBuffer stream);
+		void InitInfo(StreamBuffer stream, Vector3 position, Quaternion rotation);
 		void OnUpdateData(byte index, object data);
 		void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer);
         void OnBelong(GameObject gameObject, NetworkEsse esse);
@@ -57,6 +57,8 @@ namespace Gj.Galaxy.Logic{
 				SyncService.ChangeLocation(this, group, value);
             }
         }
+
+		internal object[] data;
 
         public bool OwnerShipWasTransfered;
         public OwnershipOption ownershipTransfer = OwnershipOption.Fixed;
@@ -102,7 +104,7 @@ namespace Gj.Galaxy.Logic{
         {
             get
             {
-				return this.assign != null ? this.assign.UserId : this.OwnerId;
+				return this.assign.UserId;// != null ? this.assign.UserId : this.OwnerId;
             }
         }
 
@@ -114,24 +116,31 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        protected internal bool GetData(StreamBuffer stream)
+        protected internal bool GetInfo(StreamBuffer stream)
         {
             if (behaviour != null)
-                return behaviour.GetData(stream);
+				return behaviour.GetInfo(stream);
             else
                 return false;
         }
 
-        protected internal void SetData(StreamBuffer stream)
+		protected internal void InitInfo(StreamBuffer stream, Vector3 position, Quaternion rotation)
         {
             if (behaviour != null)
-                behaviour.InitData(stream);
+				behaviour.InitInfo(stream, position, rotation);
         }
 
-        public void UpdateData(byte index, object data)
+        public object UpdateData(byte index, object data)
 		{
-			SyncService.UpdateData(this, index, data);
+			return SyncService.UpdateData(this, index, data);
 		}
+        
+        public float ChangeData(byte index, float data)
+        {
+			var value = (float)this.data[index];
+			value += data;
+            return (float)SyncService.UpdateData(this, index, value);
+        }
 
         protected internal void OnUpdateData(byte index, object data)
 		{
@@ -166,7 +175,7 @@ namespace Gj.Galaxy.Logic{
             }
             else
             {
-				SyncService.Ownership(this, "", (b)=>{
+				SyncService.Ownership(this, null, (b)=>{
                     callback(b == "");
                 });
             }
@@ -223,7 +232,7 @@ namespace Gj.Galaxy.Logic{
             }
         }
         
-        public void OnBelong(NetworkEsse master)
+        internal void OnBelong(NetworkEsse master)
 		{
 			GameObject go = null;
 			if(master != null){
@@ -241,7 +250,7 @@ namespace Gj.Galaxy.Logic{
 			SyncService.Command(this, callback, data);
         }
 
-        internal void OnCommand(GamePlayer player, Dictionary<byte, object> data)
+		internal void OnCommand(GamePlayer player, Dictionary<byte, object> data)
 		{
             if (behaviour != null)
                 behaviour.OnCommand(player, data);
@@ -270,17 +279,6 @@ namespace Gj.Galaxy.Logic{
                     Debug.Log("instantiated '" + this.gameObject.name + "' got destroyed by engine. This is OK when loading levels. Otherwise use: Destroy().");
                 }
             }
-        }
-        
-        // 关联数据对象，
-		public void Relation(string prefabName, byte relation, bool isOwner, GameObject master=null, byte dataLength = 20)
-        {
-			if (master != null)
-			{
-				var esse = master.GetComponent<NetworkEsse>() as NetworkEsse;
-				this.belong = esse;
-			}
-			SyncService.RelationInstance(this, prefabName, relation, this.gameObject, isOwner, dataLength);
         }
 
         public const int SyncHash = 0;

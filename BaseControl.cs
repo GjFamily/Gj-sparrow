@@ -134,7 +134,7 @@ namespace Gj
             Open();
         }
 
-        public void Init(ObjectAttr attr, ObjectControl control, GameObject obj, bool isLocal)
+        public void Init(ObjectAttr attr, ObjectControl control, GameObject obj)
         {
             Info.attr = attr;
             Info.master = obj;
@@ -159,8 +159,6 @@ namespace Gj
                 }
                 first = false;
             }
-            // 关联同步关系, master不同步
-            if (isLocal && obj == null) SyncRelation(attr, control);
         }
 
         protected void Open()
@@ -202,12 +200,6 @@ namespace Gj
         {
             throw new System.NotImplementedException();
         }
-      
-        protected virtual void SyncRelation(ObjectAttr attr, ObjectControl control)
-        {
-            if (Esse == null) return;
-            Esse.Relation(attr.name, (byte)control, control == ObjectControl.Player ? true : false, null, 20);
-        }
 
         protected virtual void Command(byte type, byte category, float value)
         {
@@ -226,12 +218,12 @@ namespace Gj
                 OnCommand(type, category, value);
         }
 
-        public virtual bool GetData(StreamBuffer stream)
+        public virtual bool GetInfo(StreamBuffer stream)
         {
             return false;
 		}
 
-        public virtual void InitData(StreamBuffer stream)
+		public virtual void InitInfo(StreamBuffer stream, Vector3 position, Quaternion rotation)
         {
             throw new NotImplementedException();
         }

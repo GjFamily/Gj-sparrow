@@ -32,12 +32,11 @@ namespace Gj.Galaxy.Logic
     internal class SyncEvent
     {
         public const byte Command = 1;
-        public const byte Affect = 2;
     }
 
     public interface AreaListener
     {
-        GameObject OnInstance(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation);
+        GameObject OnInstance(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotatio, bool isLocal);
         void OnDestroyInstance(GameObject gameObject, GamePlayer player);
         void OnRequest(GamePlayer player, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
     }
@@ -48,7 +47,7 @@ namespace Gj.Galaxy.Logic
     }
     public class AreaDelegate : AreaListener
     {
-        public delegate GameObject OnInstanceDelegate(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation);
+        public delegate GameObject OnInstanceDelegate(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation, bool isLocal);
         public delegate void OnDestroyInstanceDelegate(GameObject gameObject, GamePlayer player);
         public delegate void OnRequestDelegate(GamePlayer player, Dictionary<byte, object> value, Action<Dictionary<byte, object>> callback);
 
@@ -63,9 +62,9 @@ namespace Gj.Galaxy.Logic
             OnRequestEvent = listener.OnRequest;
         }
 
-        public GameObject OnInstance(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation)
+        public GameObject OnInstance(string prefabName, byte relation, GamePlayer player, Vector3 position, Quaternion rotation, bool isLocal)
         {
-            if (OnInstanceEvent != null) return OnInstanceEvent(prefabName, relation, player, position, rotation);
+			if (OnInstanceEvent != null) return OnInstanceEvent(prefabName, relation, player, position, rotation, isLocal);
             return null;
         }
 
@@ -107,7 +106,6 @@ namespace Gj.Galaxy.Logic
         protected static internal Dictionary<string, NetworkEsse> esseList = new Dictionary<string, NetworkEsse>();
 
         internal static HashidsNet.Hashids userHash = null;
-        internal static HashidsNet.Hashids sceneHash = null;
         internal static string localId = "";
         internal static int lastUsedViewSubId = 0;
         internal static int lastHashKeyId = 0;
@@ -193,10 +191,12 @@ namespace Gj.Galaxy.Logic
                 case AreaEvent.ChangeInfo:               
                     // group string, level byte, hash string, info []byte
 					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
                     break;
                 case AreaEvent.ChangeLocation:
 					// group string, level byte, hash string, newGroup string, newLevel byte
 					param = message.ReadObject();
+                    proxy.AcceptQueue(de, param);
                     break;
                 case AreaEvent.Serialize:
 					// group, level, value
@@ -260,11 +260,12 @@ namespace Gj.Galaxy.Logic
             switch (de)
             {
                 case AreaEvent.Instance:
-                    // group string, level byte, hash string, info []byte, dataLength, ownerId string, belong string, assign string
-                    listener.OnInstance((string)param[0], (byte)param[1], (string)param[2], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]), (string)param[5], (string)param[6], (string)param[7], null);
+                    // group string, level byte, hash string, info []byte, data []object, ownerId string, belong string, assign string
+                    listener.OnInstance((string)param[0], (byte)param[1], (string)param[2], MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]), (object[])param[4],(string)param[5], (string)param[6], (string)param[7], null);
                     break;
                 case AreaEvent.ChangeInfo:
-                    // group string, level byte, hash string, info []byte
+					// group string, level byte, hash string, info []byte
+					listener.OnChangeInfo(Get((string)param[2]), MessagePackSerializer.Deserialize<Dictionary<byte, object>>((byte[])param[3]));
                     break;
                 case AreaEvent.ChangeLocation:
                     // group string, level byte, hash string, newGroup string, newLevel byte
@@ -407,6 +408,7 @@ namespace Gj.Galaxy.Logic
         }
         public static void ChangeInfo(NetworkEsse esse)
         {
+			if (!esse.isMine) return;
             GameObject go = esse.gameObject;
             Dictionary<byte, object> instantiateEvent = new Dictionary<byte, object>();
 
@@ -422,9 +424,9 @@ namespace Gj.Galaxy.Logic
                 instantiateEvent[(byte)2] = QuaternionSerializeFormatter.instance.Serialize(go.transform.rotation);
             }
 
-            var data = esse.GetData(listener.pStream);
+            var info = esse.GetInfo(listener.pStream);
 
-            if (data)
+			if (info)
             {
                 instantiateEvent[(byte)3] = listener.pStream.ToArray();
             }
@@ -432,7 +434,8 @@ namespace Gj.Galaxy.Logic
             proxy.SendObject(AreaEvent.ChangeInfo, new object[] { esse.hash, esse.group, esse.level, MessagePackSerializer.Serialize(instantiateEvent) });
         }
         public static void ChangeLocation(NetworkEsse esse, string group, byte level)
-        {
+		{
+            if (!esse.isMine) return;
             if (online) {            
                 proxy.SendObject(AreaEvent.ChangeLocation, new object[] { esse.hash, esse.group, esse.level, group, level });
             }
@@ -440,18 +443,32 @@ namespace Gj.Galaxy.Logic
             esse.level = level;
         }    
 
-        public static void RelationInstance(NetworkEsse esse, string prefabName, byte relation, GameObject prefabGo, bool isOwner, byte dataLength)
+		public static GameObject Instance(string prefabName, byte relation, Vector3 position, Quaternion rotation, bool isOwner, GameObject master, byte dataLength)
         {
-			esse.assign = listener.players.GetPlayer(localId);
-            esse.hash = AllocateHash();
+			NetworkEsse masterEsse = null;
+			if (master != null)
+			{
+				masterEsse = master.GetComponent<NetworkEsse>() as NetworkEsse;
+				if (!masterEsse.isMine) return null;
+			}
+			var assign = listener.players.GetPlayer(localId);
+            var hash = AllocateHash();
             var ownerId = isOwner ? localId : "";
-            Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, prefabGo, relation, ownerId, dataLength);
+			var data = new object[dataLength];
+            
+            var gg = Delegate.OnInstance(prefabName, relation, assign, position, rotation, true);
+			var esse = gg.GetEsse();
+			esse.belong = masterEsse;
+
+			Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, relation, gg, ownerId,  dataLength);
 			//group string, level byte, hash string, info []byte, ownerId string, belong string, assign string
-			listener.OnInstance(esse.group, esse.level, esse.hash, instantiateEvent, ownerId, esse.belong != null ? esse.belong.hash : null, esse.assign.UserId, prefabGo);
+			listener.OnInstance(esse.group, esse.level, hash, instantiateEvent, data, ownerId, esse.belong != null ? esse.belong.hash : null, esse.assign.UserId, gg);
+			return gg;
         }
 
         public static void Destroy(NetworkEsse esse)
         {
+            if (!esse.isMine) return;
             if (!online) {
                 listener.RemoveInstantiated(esse, true);
 			} else if (!proxy.IsConnected){
@@ -462,17 +479,25 @@ namespace Gj.Galaxy.Logic
             }
 		}
 
-        public static void UpdateData(NetworkEsse esse, byte index, object data)
+        public static object UpdateData(NetworkEsse esse, byte index, object data)
 		{
+            if (!esse.isMine) return esse.data[index];
+			esse.data[index] = data;
 			if(online)
 			{
+				// todo 队列，统一更新，按频次，没有
 				Emit(AreaEvent.UpdateData, esse, index, data);
 			}
+			return esse.data[index];
 		}
 
         public static void Ownership(NetworkEsse esse, string want, Action<string> callback)
         {
-            if (online)
+			if (!esse.isMine)
+			{
+				callback(esse.owner.UserId);
+			}
+			else if (online)
             {
                 if (listener.ownershipCallbackCache.ContainsKey(esse.hash)) return;
 				listener.ownershipCallbackCache[esse.hash] = (b)=>{
@@ -490,7 +515,11 @@ namespace Gj.Galaxy.Logic
 
         public static void Belong(NetworkEsse esse, NetworkEsse belong, Action<string> callback)
 		{
-			if (online)
+			if (!esse.isMine)
+            {
+				callback(esse.belong.hash);
+            }
+			else if (online)
             {
 				if (listener.belongCallbackCache.ContainsKey(esse.hash)) return;
 				listener.belongCallbackCache[esse.hash] = (b)=>{
@@ -507,14 +536,18 @@ namespace Gj.Galaxy.Logic
 
         public static void Command(NetworkEsse esse, Action callback, Dictionary<byte, object> data)
         {
-            if (!online) {
+			if (!esse.isMine)
+            {
+                callback();
+            }
+            else if (!online) {
                 callback();
                 return;
 			} else if (!proxy.IsConnected){
                 Debug.LogError("Failed to Send Command");
                 return;
             }
-            data[(byte)255] = esse.hash;
+            data[(byte)254] = esse.hash;
 			EmitBroadcast(SyncEvent.Command, data, esse.group, esse.level, callback);
         }
 
@@ -526,7 +559,7 @@ namespace Gj.Galaxy.Logic
         }
 #endregion
 
-        internal Dictionary<byte, object> EmitInstantiate(NetworkEsse esse, string prefabName, GameObject go, byte relation, string ownerId, byte dataLength)
+		internal Dictionary<byte, object> EmitInstantiate(NetworkEsse esse, string prefabName, byte relation, GameObject go, string ownerId, byte dataLength)
         {
             Dictionary<byte, object> instantiateEvent = new Dictionary<byte, object>();
 
@@ -542,7 +575,7 @@ namespace Gj.Galaxy.Logic
                 instantiateEvent[(byte)3] = QuaternionSerializeFormatter.instance.Serialize(go.transform.rotation);
             }
 
-            var data = esse.GetData(pStream);
+            var data = esse.GetInfo(pStream);
 
             if (data)
             {
@@ -560,7 +593,7 @@ namespace Gj.Galaxy.Logic
 
         #region OnEvent
 
-		internal GameObject OnInstance(string group, byte level, string hash, Dictionary<byte, object> evData, string ownerId, string belong, string assign, GameObject go)
+		internal GameObject OnInstance(string group, byte level, string hash, Dictionary<byte, object> evData, object[]data ,string ownerId, string belong, string assign, GameObject go)
         {
             string prefabName = (string)evData[(byte)0];
             byte relation = (byte)evData[(byte)1];
@@ -583,12 +616,12 @@ namespace Gj.Galaxy.Logic
                 var ratationBytes = (byte[])evData[(byte)3];
                 rotation = (Quaternion)QuaternionSerializeFormatter.instance.Deserialize(ratationBytes);
             }
-
+            
             if (go == null)
             {
                 // 统计到该用户的初始化进度中
                 players.OnInstance(assign);
-                go = Delegate.OnInstance(prefabName, relation, players.GetPlayer(assign), position, rotation);
+                go = Delegate.OnInstance(prefabName, relation, players.GetPlayer(assign), position, rotation, false);
                 if (go == null)
                 {
                     Debug.LogError("error: Could not Instantiate the prefab [" + prefabName + "]. Please verify you have this gameobject in a Resources folder.");
@@ -605,7 +638,7 @@ namespace Gj.Galaxy.Logic
             if (evData.ContainsKey((byte)3))
             {
                 readStream.SetReadStream((object[])evData[(byte)3], 0);
-				esse.SetData(readStream);
+				esse.InitInfo(readStream, position, rotation);
             }
             esse.group = group;
             esse.level = level;
@@ -616,6 +649,9 @@ namespace Gj.Galaxy.Logic
             // 进入register流程
             esse.Id = hash;
 
+			// 跟新data
+			esse.data = data;
+
             // 延后执行
             List<object[]> waitData;
             var found = waitInstanceData.TryGetValue(hash, out waitData);
@@ -625,6 +661,11 @@ namespace Gj.Galaxy.Logic
             }
 
             return go;
+		}
+
+		private void OnChangeInfo(NetworkEsse esse, Dictionary<byte, object> evData)
+		{
+			
 		}
 
         private void OnUpdateData(NetworkEsse esse, byte index, object data)
@@ -685,7 +726,7 @@ namespace Gj.Galaxy.Logic
 
         private void OnCommand(GamePlayer player, Dictionary<byte, object> data)
         {
-            var hash = (string)data[(byte)255];
+            var hash = (string)data[(byte)254];
             NetworkEsse esse = Get(hash);
 
             if (esse == null)
@@ -979,6 +1020,11 @@ namespace Gj.Galaxy.Logic
 
 		private void OnSerialize(string group, byte level, List<object[]> serializeData)
         {
+			// SetReceiving filtering
+            if (!allowedReceivingGroups.Contains(group))
+            {
+                return; // Ignore group
+			}
             var e = serializeData.GetEnumerator();
             while(e.MoveNext())
             {
@@ -1001,11 +1047,7 @@ namespace Gj.Galaxy.Logic
                     return;
                 }
 
-                // SetReceiving filtering
-                if (esse.group != "" && !allowedReceivingGroups.Contains(esse.group))
-                {
-                    return; // Ignore group
-                }
+               
                 esse.OnSerializeRead(readStream, d);
             }
         }
