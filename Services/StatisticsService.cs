@@ -9,15 +9,12 @@ namespace Gj
     {
         public static StatisticsService single;
 
-        private Dictionary<string, float> store;
-
-        private Dictionary<string, List<Notic>> noticDic;
-
-        private struct Notic
+        public enum StatisticsType
         {
-            public Action<float> notic;
-            public Action<byte, float> cateNotic;
+            KILL = 0
         }
+
+        private Dictionary<string, ObjectAttr> store;
 
         static StatisticsService()
         {
@@ -26,146 +23,58 @@ namespace Gj
 
         public void Start()
         {
-            store = new Dictionary<string, float>();
-            noticDic = new Dictionary<string, List<Notic>>();
+            store = new Dictionary<string, ObjectAttr>();
         }
 
-        public void OnChange(byte type, byte category, Action<float> action)
+        public void Register(string id, ObjectAttr attr)
         {
-            OnChange(GetKey(type, category), new Notic { notic = action });
-        }
-
-        public void OnChange(byte type, Action<byte, float> action)
-        {
-            OnChange(GetKey(type), new Notic { cateNotic = action });
-        }
-
-        private void OnChange(string key, Notic n)
-        {
-            if (!noticDic.ContainsKey(key))
+            if (LoadAttr(id) == null)
             {
-                noticDic.Add(key, new List<Notic>());
-            }
-            noticDic[key].Add(n);
-        }
-
-        public void Record(GameObject player, GameObject target, byte type, byte category, float value)
-        {
-            Debug.LogFormat("{0} -> {1}: {2} {3} {4}", player.name, target.name, type, category, value);
-            SaveLog(type, category, value);
-        }
-
-        public void Event(GameObject player, byte type, byte category, float value)
-        {
-            Debug.LogFormat("{0}: {1} {2} {3}", player.name, type, category, value);
-            SaveLog(type, category, value);
-        }
-
-        private void SaveLog(byte type, byte category, float value)
-        {
-            SaveLog(GetKey(type), value);
-            SaveLog(GetKey(type, category), value);
-
-            Broadcast(type, category, value);
-        }
-
-        private void SaveLog(string key, float value) {
-            if (!store.ContainsKey(key))
-            {
-                store.Add(key, value);
-            }
-            else
-            {
-                store[key] = store[key] + value;
+                SaveAttr(id, attr);
             }
         }
 
-        private List<Notic> GetNoticList(string key)
+        private ObjectAttr LoadAttr(string id)
         {
-            if (noticDic.ContainsKey(key))
+            if (store.ContainsKey(id))
             {
-                return noticDic[key];
+                return store[id];
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
-        private void Broadcast(byte type, byte category, float value)
+        private void SaveAttr(string id, ObjectAttr attr)
         {
-            List<Notic> noticList = GetNoticList(GetKey(type));
-            if (noticList != null)
-            {
-                foreach (Notic n in noticList)
-                {
-                    if (n.cateNotic != null)
-                    {
-                        n.cateNotic(category, value);
-                    }
-                    else
-                    {
-                        noticList.Remove(n);
-                    }
-                }
-            }
-            if (category != 0)
-            {
-                noticList = GetNoticList(GetKey(type, category));
-                if (noticList != null)
-                {
-                    foreach (Notic n in noticList)
-                    {
-                        if (n.notic != null)
-                        {
-                            n.notic(value);
-                        }
-                        else
-                        {
-                            noticList.Remove(n);
-                        }
-                    }
-                }
-            }
+            store.Add(id, attr);
         }
 
-        public float LoadLog(byte type, byte category)
+        public float Count(string id, StatisticsType type)
         {
-            if (type != 0 && category != 0)
-            {
-                return LoadLog(GetKey(type, category));
-            }
-            else
-            {
-                return 0;
-            }
+            return Get(id, type) + SubCount(id, type);
         }
 
-        public float LoadLog(byte type)
+        private float SubCount(string masterId, StatisticsType type)
         {
-            return LoadLog(GetKey(type));
-        }
-
-        public float LoadLog(string key)
-        {
-            if (store.ContainsKey(key))
+            List<string> list = RelationService.single.LoadSub(masterId);
+            if (list == null) return 0;
+            float count = 0;
+            foreach (string id in list)
             {
-                return store[key];
+                count += Get(id, type);
             }
-            else
+            return count;
+        }
+
+        private float Get(string id, StatisticsType type)
+        {
+            ObjectAttr attr = LoadAttr(id);
+            if (attr == null) return 0;
+            switch (type)
             {
-                return 0;
+                case StatisticsType.KILL:
+                    return attr.kill;
             }
-        }
-
-        private string GetKey(byte type)
-        {
-            return type + "*";
-        }
-
-        private string GetKey(byte type, byte category)
-        {
-            return type + "-" + category;
+            return 0;
         }
     }
 }

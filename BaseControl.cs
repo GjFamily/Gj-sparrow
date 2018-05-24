@@ -40,6 +40,8 @@ namespace Gj
         private bool first = true;
         protected GameObject entity;
 
+        protected byte dataCount = 255;
+
         protected void SetEntity(string entityName)
         {
             if (entity != null)
@@ -200,7 +202,7 @@ namespace Gj
         {
             throw new System.NotImplementedException();
         }
-
+        
         protected virtual void Command(byte type, byte category, float value)
         {
             if (Esse != null)
