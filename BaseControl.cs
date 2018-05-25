@@ -251,7 +251,7 @@ namespace Gj
 
         public virtual void InitSync(NetworkEsse esse)
         {
-            esse.synchronization = Synchronization.Reliable;
+			esse.serializeStatus = Synchronization.Fixed;
             esse.ownershipTransfer = OwnershipOption.Request;
             var transformView = gameObject.AddComponent(typeof(TransformView)) as TransformView;
             esse.BindComponent(transformView);

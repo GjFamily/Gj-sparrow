@@ -43,7 +43,7 @@ namespace Gj.Galaxy.Logic{
         public const byte Secret2 = 2;
     }
 
-    public enum Synchronization : byte { Off, Reliable, Unreliable, UnreliableOnChange }
+    public enum Synchronization : byte { Off, Fixed, Manual }
 
     /// <summary>
     /// Options to define how Ownership Transfer is handled per PhotonView.

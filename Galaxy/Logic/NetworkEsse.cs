@@ -84,14 +84,20 @@ namespace Gj.Galaxy.Logic{
         protected internal bool isRuntimeInstantiated;      
         protected internal bool removedFromLocalList;  
 
-        protected internal UInt16 version = 0;      
-		protected internal UInt16 lastOnDataSent = 0;
-		protected internal UInt16 lastOnDataReceived = 0;
+        protected internal int version = 0;      
+		protected internal int lastOnDataSent = 0;
+		protected internal HashSet<byte> changeDataIndex = new HashSet<byte>();
 
         protected internal object[] lastOnSerializeSent = null;      
         protected internal object[] lastOnSerializeReceived = null;
 
-        public Synchronization synchronization;      
+        public Synchronization serializeStatus;
+		public Synchronization dataStatus;
+		public delegate bool ManualSerializeDelegate();
+		public delegate bool ManualDataDelegate();
+		public ManualSerializeDelegate ManualSerialize;
+		public ManualDataDelegate ManualData;
+
         public List<Component> ObservedComponents = new List<Component>();
 
         public string Id
@@ -143,7 +149,7 @@ namespace Gj.Galaxy.Logic{
 				Behaviour.InitInfo(stream, position, rotation);
         }
 
-        public object UpdateData(byte index, object data)
+		public object UpdateData(byte index, object data)
 		{
 			return SyncService.UpdateData(this, index, data);
 		}
@@ -154,13 +160,7 @@ namespace Gj.Galaxy.Logic{
 			value += data;
             return (float)SyncService.UpdateData(this, index, value);
         }
-
-        protected internal void OnUpdateData(byte index, object data)
-		{
-			if (Behaviour != null)
-				Behaviour.OnUpdateData(index, data);
-		}
-
+      
 		public void UpdateInfo()
 		{
 			SyncService.ChangeInfo(this);
@@ -292,7 +292,52 @@ namespace Gj.Galaxy.Logic{
                     Debug.Log("instantiated '" + this.gameObject.name + "' got destroyed by engine. This is OK when loading levels. Otherwise use: Destroy().");
                 }
             }
-        }
+		}
+        
+        internal byte[] OnDataWrite(StreamBuffer stream)
+		{
+			if (version == lastOnDataSent) return null;
+			if (changeDataIndex.Count == 0) return null;
+			switch(dataStatus)
+			{
+				case Synchronization.Off:
+					return null;
+				case Synchronization.Fixed:
+					// todo 计算时间
+					break;
+				case Synchronization.Manual:
+					if (ManualData != null && !ManualData()){
+						return null;
+					}
+					else
+						return null;
+                    break;               
+			}
+            stream.ResetWriteStream();
+			var i = new byte[changeDataIndex.Count];
+			var e = changeDataIndex.GetEnumerator();
+			while(e.MoveNext())
+			{
+				stream.SendNext(data[e.Current]);
+			}
+			lastOnDataSent = version;
+			return i;
+		}
+
+		internal void OnDataRead(byte[] indexList, object[] data, StreamBuffer stream)
+		{
+			stream.SetReadStream(data, 0);
+			var e = indexList.GetEnumerator();
+			while(e.MoveNext())
+			{
+				var o = stream.ReceiveNext();
+				var index = (byte)e.Current;
+
+                if (Behaviour != null)
+                    Behaviour.OnUpdateData(index, data);
+				data[index] = o;            
+			}         
+		}
 
         public const int SyncHash = 0;
         public const int SyncCompressed = 1;
@@ -301,9 +346,20 @@ namespace Gj.Galaxy.Logic{
 
         internal object[] OnSerializeWrite(StreamBuffer stream)
         {
-            if (synchronization == Synchronization.Off)
+			switch (serializeStatus)
             {
-                return null;
+                case Synchronization.Off:
+                    return null;
+                case Synchronization.Fixed:
+                    break;
+                case Synchronization.Manual:
+					if (ManualSerialize != null && !ManualSerialize())
+                    {
+                        return null;
+                    }
+                    else
+                        return null;
+                    break;
             }
 
             stream.ResetWriteStream();
@@ -327,60 +383,26 @@ namespace Gj.Galaxy.Logic{
             currentValues[SyncCompressed] = false;
             currentValues[SyncNullValues] = null;
 
-            if (synchronization == Synchronization.Unreliable)
-            {
-                return SerializeStream(ref currentValues);
-            }
+			object[] dataToSend = DeltaCompressionWrite(lastOnSerializeSent, currentValues);
 
-            if (synchronization == Synchronization.UnreliableOnChange)
-            {
-                if (AlmostEquals(currentValues, lastOnSerializeSent))
-                {
-                    if (mixedModeIsReliable)
-                    {
-                        return null;
-                    }
+            lastOnSerializeSent = currentValues;
 
-                    mixedModeIsReliable = true;
-					lastOnSerializeSent = currentValues;
-                }
-                else
-                {
-                    mixedModeIsReliable = false;
-					lastOnSerializeSent = currentValues;
-                }
+            if (dataToSend == null) return null;
 
-                return SerializeStream(ref currentValues);
-            }
-
-            if (synchronization == Synchronization.Reliable)
-            {
-				object[] dataToSend = DeltaCompressionWrite(lastOnSerializeSent, currentValues);
-
-				lastOnSerializeSent = currentValues;
-
-                if (dataToSend == null) return null;
-
-                return SerializeStream(ref dataToSend);
-            }
-
-            return null;
+            return SerializeStream(ref dataToSend);
         }
 
         internal void OnSerializeRead(StreamBuffer stream, object[] data)
         {
-            if (synchronization == Synchronization.Reliable)
+			object[] uncompressed = this.DeltaCompressionRead(lastOnSerializeReceived, data);
+            if (uncompressed == null)
             {
-                object[] uncompressed = this.DeltaCompressionRead(lastOnSerializeReceived, data);
-                if (uncompressed == null)
-                {
-                    return;
-                }
-
-                // store last received values (uncompressed) for delta-compression usage
-                lastOnSerializeReceived = uncompressed;
-                data = uncompressed;
+                return;
             }
+
+            // store last received values (uncompressed) for delta-compression usage
+            lastOnSerializeReceived = uncompressed;
+            data = uncompressed;
 
             MessageInfo info = new MessageInfo(this);
             stream.SetReadStream(data, SyncFirstValue);
