@@ -145,6 +145,11 @@ namespace Gj
 
         }
 
+        public virtual void FormatAi(JSONObject json)
+        {
+
+        }
+
         public virtual void Init()
         {
             Open();
@@ -156,6 +161,7 @@ namespace Gj
             Info.master = obj;
             Info.control = control;
             FormatExtend(attr.extend);
+            FormatAi(attr.ai);
             SetEntity(attr.entity);
             Init();
             if (first)

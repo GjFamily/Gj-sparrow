@@ -13,29 +13,32 @@ namespace Gj
         public const string PREREQUISITE_VALUE = "value";
     }
 
-
     public class Ai
     {
-        public Ai(JSONObject json)
+        public Ai(JSONObject json, ObjectAttr attr)
         {
+            aiStatus = new AiStatus(attr);
             models = new List<AiModel>();
             foreach (JSONArray array in json[AI.MODEL_LIST].AsArray)
             {
                 models.Add(new AiModel(array));
             }
         }
+        public AiStatus aiStatus;
         public List<AiModel> models;
         private AiModelKey modelKey = AiModelKey.Standby;
+
         public void ChangeModel(AiModelKey aiModelKey)
         {
             modelKey = aiModelKey;
         }
+
         private AiModel GetModel()
         {
             return models[(int)modelKey];
         }
 
-        public byte CheckBehavior(AiStatus status)
+        public byte CheckBehavior()
         {
             AiBehavior? aiBehavior = null;
             List<AiBehavior> aiBehaviors = GetModel().behaviors;
@@ -47,7 +50,7 @@ namespace Gj
                     bool check = true;
                     foreach (AiPrerequisite prerequisite in prerequisites)
                     {
-                        if (!status.Check(prerequisite))
+                        if (!aiStatus.Check(prerequisite))
                         {
                             check = false;
                             break;
@@ -116,6 +119,10 @@ namespace Gj
 
     public class AiStatus
     {
+        public AiStatus(ObjectAttr objectAttr)
+        {
+            attr = objectAttr;
+        }
         public ObjectAttr attr;
         public bool Check(AiPrerequisite prerequisite)
         {
@@ -126,6 +133,8 @@ namespace Gj
     public enum AiModelKey
     {
         Standby = 0,
-        Attack = 1
+        Attack = 1,
+        Defense = 2,
+        Escape = 3
     }
 }

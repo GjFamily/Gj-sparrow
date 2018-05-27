@@ -98,6 +98,7 @@ namespace Gj
         public const string ENERGY = "energy";
         public const string SCAN_RADIUS = "scanRadius";
         public const string EXTEND = "extend";
+        public const string AI = "ai";
     }
 
     public class ObjectAttr
@@ -126,6 +127,7 @@ namespace Gj
             energyTotal = json[OBJECT_ATTR.ENERGY].AsFloat;
             scanRadius = json[OBJECT_ATTR.SCAN_RADIUS].AsFloat;
             extend = json[OBJECT_ATTR.EXTEND].AsObject;
+            ai = json[OBJECT_ATTR.AI].AsObject;
             statusList = new List<Status?>();
         }
         public string name;
@@ -152,6 +154,7 @@ namespace Gj
         public float scanRadius;
         public List<Status?> statusList;
         public JSONObject extend;
+        public JSONObject ai;
     }
 
     public struct Status
