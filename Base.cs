@@ -1,7 +1,4 @@
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
-using System;
 using SimpleJSON;
 
 namespace Gj
@@ -254,9 +251,9 @@ namespace Gj
 
     public enum SkillExtraStatus
     {
-        frozen = 0,
-        fire = 1,
-        dizzy = 2,
+        Frozen = 0,
+        Fire = 1,
+        Dizzy = 2,
         Fear = 3,
         Aim = 4
     }

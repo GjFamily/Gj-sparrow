@@ -2,20 +2,21 @@ using UnityEngine;
 using System.Collections;
 using Gj.Galaxy.Logic;
 using Gj.Galaxy.Scripts;
+using SimpleJSON;
 
 namespace Gj
 {
     public class AiControl : BaseControl
     {
-		public override void Init()
-		{
+        public override void Init()
+        {
             Info.attr.auto = true;
             base.Init();
-		}
+        }
 
-        protected override void Command(byte type, byte category, float value)
+        public override void FormatExtend(JSONObject json)
         {
-            OnCommand(type, category, value);
+
         }
 
         public override void InitSync(NetworkEsse esse)
@@ -23,5 +24,15 @@ namespace Gj
             esse.synchronization = Synchronization.Reliable;
             esse.ownershipTransfer = OwnershipOption.Request;
         }
-	}
+
+        public void ChangeMode()
+        {
+
+        }
+
+        private void CheckStatus()
+        {
+
+        }
+    }
 }
