@@ -41,6 +41,20 @@ namespace Gj
         protected GameObject entity;
 
         protected byte dataCount = 255;
+        public bool IsOwner
+		{
+			get
+			{
+				return true;
+			}
+		}
+        public byte DataLength
+		{
+			get
+			{
+				return dataCount;
+			}
+		}
 
         protected void SetEntity(string entityName)
         {
@@ -237,7 +251,7 @@ namespace Gj
 
         public virtual void InitSync(NetworkEsse esse)
         {
-            esse.synchronization = Synchronization.Reliable;
+			esse.serializeStatus = Synchronization.Fixed;
             esse.ownershipTransfer = OwnershipOption.Request;
             var transformView = gameObject.AddComponent(typeof(TransformView)) as TransformView;
             esse.BindComponent(transformView);

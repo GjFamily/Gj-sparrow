@@ -276,7 +276,7 @@ namespace Gj.Galaxy.Logic
                     break;
                 case AreaEvent.UpdateData:
                     // group, level, hash, index, data
-                    listener.OnUpdateData(Get((string)param[2]), (byte)param[3], param[4]);
+                    listener.OnUpdateData(Get((string)param[2]), (byte[])param[3], (object[])param[4]);
                     break;
                 case AreaEvent.Broadcast:
                     // group, level, code, value, sendId
@@ -462,15 +462,19 @@ namespace Gj.Galaxy.Logic
 				masterEsse = master.GetComponent<NetworkEsse>() as NetworkEsse;
 				if (!masterEsse.isMine) return null;
 			}
-			var assign = listener.players.GetPlayer(localId);
             var hash = AllocateHash();
-            var ownerId = isOwner ? localId : "";
-			var data = new object[dataLength];
-            
+			var assign = listener.players.GetPlayer(localId);
             var gg = Delegate.OnInstance(prefabName, relation, assign, position, rotation, true);
 			var esse = gg.GetEsse();
+			if (esse.Behaviour != null)
+			{
+				isOwner = esse.Behaviour.IsOwner;
+				dataLength = esse.Behaviour.DataLength;
+			}
 			esse.belong = masterEsse;
-            esse.assign = assign;
+			esse.assign = assign;
+            var data = new object[dataLength];
+            var ownerId = isOwner ? localId : "";
 
 			Dictionary<byte, object> instantiateEvent = listener.EmitInstantiate(esse, prefabName, relation, gg, ownerId,  dataLength);
 			//group string, level byte, hash string, info []byte, ownerId string, belong string, assign string
@@ -495,11 +499,8 @@ namespace Gj.Galaxy.Logic
 		{
             if (!esse.isMine) return esse.data[index];
 			esse.data[index] = data;
-			if(online)
-			{
-				// 队列，统一更新，按频次，没有
-				Emit(AreaEvent.UpdateData, esse, index, data);
-			}
+			esse.changeDataIndex.Add(index);
+			esse.version++;
 			return esse.data[index];
 		}
 
@@ -698,10 +699,10 @@ namespace Gj.Galaxy.Logic
             }
 		}
 
-        private void OnUpdateData(NetworkEsse esse, byte index, object data)
+        private void OnUpdateData(NetworkEsse esse, byte[] index, object[] data)
 		{
 			if (esse == null) return;
-			esse.OnUpdateData(index, data);
+			esse.OnDataRead(index, data, readStream);
 		}
 
         private void OnOwnership(NetworkEsse esse, string newOwnerId)
@@ -811,9 +812,9 @@ namespace Gj.Galaxy.Logic
 
             string id = esse.Id;
 
-            if (!localOnly)
+			if (!localOnly && online)
             {
-                if (esse.SyncId == localId)
+				if (esse.isMine)
                 {
                     EmitDestroy(esse);
                 }
@@ -827,12 +828,13 @@ namespace Gj.Galaxy.Logic
             }
 
             // todo 通知用户
-            Delegate.OnDestroyInstance(go, players.GetPlayer(esse.SyncId));
+            // Delegate.OnDestroyInstance(go, players.GetPlayer(esse.SyncId));
         }
 
         public static bool LocalClean(NetworkEsse esse)
         {
             esse.removedFromLocalList = true;
+			if (esse.hash == null) return false;
             if(esseList.ContainsKey(esse.hash))
             {
                 return esseList.Remove(esse.hash);
@@ -853,12 +855,7 @@ namespace Gj.Galaxy.Logic
         }
 
         public static void Register(NetworkEsse netEsse)
-        {
-			if (proxy.IsConnected)
-            {
-                return;
-            }
-
+        {         
             if (netEsse.Id == "")
             {
                 Debug.Log("Esse register is ignored, because id is 0. No id assigned yet to: " + netEsse);
@@ -921,9 +918,9 @@ namespace Gj.Galaxy.Logic
 
                     continue;
                 }
-
+                
                 // 根据isMine确定同步关系
-                if (esse.synchronization == Synchronization.Off || !esse.isMine || esse.gameObject.activeInHierarchy == false)
+                if (!esse.isMine || esse.gameObject.activeInHierarchy == false)
                 {
                     continue;
                 }
@@ -932,17 +929,18 @@ namespace Gj.Galaxy.Logic
                 {
                     continue; // Block sending on this group
                 }
+
+				byte[] d = esse.OnDataWrite(pStream);
+                if (d != null)
+				{
+					Emit(AreaEvent.UpdateData, esse, d, pStream.ToArray());
+				}
             
                 object[] evData = esse.OnSerializeWrite(pStream);
                 //Debug.Log(MessagePackSerializer.Serialize(evData).Length);
-                if (evData == null)
+                if (evData != null)
                 {
-                    continue;
-                }
-
-                if (esse.synchronization == Synchronization.Reliable || esse.mixedModeIsReliable)
-                {
-                    Dictionary<byte, List<object[]>> groupHashtable = null;
+					Dictionary<byte, List<object[]>> groupHashtable = null;
                     bool found = this.dataPerGroupReliable.TryGetValue(esse.group, out groupHashtable);
                     if (!found)
                     {
@@ -966,33 +964,7 @@ namespace Gj.Galaxy.Logic
                         continue;
                     }
                 }
-                else
-                {
-                    Dictionary<byte, List<object[]>> groupHashtable = null;
-                    bool found = this.dataPerGroupUnreliable.TryGetValue(esse.group, out groupHashtable);
-                    if (!found)
-                    {
-                        groupHashtable = new Dictionary<byte, List<object[]>>();
-                        this.dataPerGroupUnreliable[esse.group] = groupHashtable;
-                    }
-                    List<object[]> levelList = null;
-                    found = groupHashtable.TryGetValue(esse.level, out levelList);
-                    if (!found)
-                    {
-                        levelList = new List<object[]>();
-                        groupHashtable[esse.level] = levelList;
-                    }
-                    levelList.Add(evData);
-
-                    if (levelList.Count >= ObjectsInOneUpdate)
-                    {
-                        countOfUpdatesToSend -= levelList.Count;
-                        EmitSerialize(levelList, esse.group, esse.level);
-                        levelList.Clear();
-                        continue;
-                    }
-                }
-                countOfUpdatesToSend++;
+            
             }
 
             if (toRemove != null)
@@ -1023,25 +995,6 @@ namespace Gj.Galaxy.Logic
                         continue;
                     }
                     //Debug.Log("reliable-data:" + levelList.Count);
-                    EmitSerialize(levelList, groupId, level);
-                    levelList.Clear();
-                }
-            }
-
-            foreach (string groupId in this.dataPerGroupUnreliable.Keys)
-            {
-                Dictionary<byte, List<object[]>> groupHashtable = this.dataPerGroupUnreliable[groupId];
-                if (groupHashtable.Count == 0)
-                {
-                    continue;
-                }
-                foreach (byte level in groupHashtable.Keys)
-                {
-                    List<object[]> levelList = groupHashtable[level];
-                    if (levelList.Count == 0)
-                    {
-                        continue;
-                    }
                     EmitSerialize(levelList, groupId, level);
                     levelList.Clear();
                 }

@@ -21,7 +21,7 @@ namespace Gj
 
         public override void InitSync(NetworkEsse esse)
         {
-            esse.synchronization = Synchronization.Reliable;
+            esse.serializeStatus = Synchronization.Fixed;
             esse.ownershipTransfer = OwnershipOption.Request;
         }
 
