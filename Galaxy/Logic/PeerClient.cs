@@ -12,40 +12,6 @@ using System.IO;
 
 
 namespace Gj.Galaxy.Logic{
-	[Serializable]
-    public class ServerSettings : ScriptableObject
-    {
-        public enum HostingOption { NotSet = 0, OfflineMode = 1, OnlineMode = 4 }
-
-        public string AppId = "";
-        public string Version = "";
-        public string Secret = "";
-
-        public HostingOption HostType = HostingOption.NotSet;
-
-        public string ServerAddress = "";
-
-        public LogLevel Logging = LogLevel.Error;
-        public LogLevel NetworkLogging = LogLevel.Error;
-
-        public bool RunInBackground = true;
-
-        [HideInInspector]
-        public bool DisableAutoOpenWizard;
-
-        public void SetAppInfo(string appId, string version, string secret)
-        {
-            this.HostType = HostingOption.OnlineMode;
-            this.AppId = appId;
-            this.Version = version;
-            this.Secret = secret;
-        }
-
-        public override string ToString()
-        {
-            return "ServerSettings: " + HostType + " " + ServerAddress;
-        }
-    }
 
     public static class PeerClient
     {
@@ -57,9 +23,9 @@ namespace Gj.Galaxy.Logic{
 		private static Comet CenterClient= new Comet("");
         public static NetworkListener Listener = new NetworkListener();
 
-        internal const string serverSettingsAssetFile = "GalaxySettings";
+		public const string DefaultSettingsAssetFile = "GalaxyServerSettings";
 
-        public static ServerSettings ServerSettings = (ServerSettings)Resources.Load(PeerClient.serverSettingsAssetFile, typeof(ServerSettings));
+		public static GalaxyServerSettings ServerSettings;
 
 		public static string ServerAddress { get { return (GameClient != null) ? GetServerAddress() : "<not connected>"; } }
 
@@ -323,12 +289,19 @@ namespace Gj.Galaxy.Logic{
             }
         }
 
-        public static ServerSettings Generate()
+		public static GalaxyServerSettings Generate()
         {
-            var settings = ScriptableObject.CreateInstance<ServerSettings>();
+			var settings = ScriptableObject.CreateInstance<GalaxyServerSettings>();
             PeerClient.ServerSettings = settings;
             return settings;
         }
+
+		public static GalaxyServerSettings DefaultSettings(string file)
+		{
+			var settings = (GalaxyServerSettings)Resources.Load(file, typeof(GalaxyServerSettings));
+			PeerClient.ServerSettings = settings;
+			return settings;
+		}
 
         public static Namespace Of(byte ns){
 			return PeerClient.GameClient.Of(ns);
@@ -383,26 +356,25 @@ namespace Gj.Galaxy.Logic{
 
         public static bool Connect()
         {
-			if (GameClient.State != Network.ConnectionState.Disconnected)
-            {
-				Debug.LogWarning("ConnectUsingSettings() failed. Can only connect while in state 'Disconnected'. Current state: " + GameClient.State);
-                return false;
-            }
+			if (PeerClient.ServerSettings == null)
+			{
+				DefaultSettings(DefaultSettingsAssetFile);
+			}
             if (ServerSettings == null)
             {
-                Debug.LogError("Can't connect: Loading settings failed. ServerSettings asset must be in any 'Resources' folder as: " + serverSettingsAssetFile);
+				Debug.LogError("Can't connect: Loading settings failed. ServerSettings asset must be in any 'Resources' folder as: " + DefaultSettingsAssetFile);
                 return false;
-            }
-            if (ServerSettings.HostType == ServerSettings.HostingOption.NotSet)
+			}
+            if (GameClient.State != Network.ConnectionState.Disconnected)
             {
-                Debug.LogError("You did not select a Hosting Type in your ServerSettings. Please set it up or don't use ConnectUsingSettings().");
+                Debug.LogWarning("ConnectUsingSettings() failed. Can only connect while in state 'Disconnected'. Current state: " + GameClient.State);
                 return false;
             }
 
             // only apply Settings if logLevel is default ( see ServerSettings.cs), else it means it's been set programmatically
-            if (PeerClient.logLevel == LogLevel.Error)
+			if (PeerClient.logLevel == LogLevel.Error)
             {
-                PeerClient.logLevel = ServerSettings.Logging;
+				PeerClient.logLevel = ServerSettings.Logging;
             }
 
             // only apply Settings if logLevel is default ( see ServerSettings.cs), else it means it's been set programmatically
@@ -414,7 +386,7 @@ namespace Gj.Galaxy.Logic{
 			GameClient.SetApp(ServerSettings.AppId, ServerSettings.Version, ServerSettings.Secret);
 			CenterClient.SetApp(ServerSettings.AppId, ServerSettings.Version, ServerSettings.Secret);
 
-            if (ServerSettings.HostType == ServerSettings.HostingOption.OfflineMode)
+            if (ServerSettings.HostType == GalaxyServerSettings.HostingOption.OfflineMode)
             {
                 offlineMode = true;
                 return true;
