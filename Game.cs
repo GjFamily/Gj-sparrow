@@ -27,11 +27,6 @@ namespace Gj
 			single.audioSoundSource = game.AddComponent<AudioSource> ();
 			single.audioSoundSource.volume = Cache.soundVolume;
 
-            ServerSettings settings = PeerClient.Generate();
-            settings.SetAppInfo("first", "1.0.1", "xasfd");
-            settings.HostType = ServerSettings.HostingOption.OnlineMode;
-			settings.ServerAddress = "192.168.31.225:8080";
-
             PeerClient.Listener.OnReconnectEvent += (bool success) =>
             {
                 if (success)
@@ -40,10 +35,35 @@ namespace Gj
                 else
                 {
                     Debug.LogError("Server reconnect fail");
-                }
-
+                }            
             };
             PeerClient.Connect();
+		}
+		void Awake()
+		{
+			StartCoroutine(
+				Resource.InitAppInfo(false, (bool arg1, bool arg2) =>
+                {
+				    Debug.Log("app status:" + arg1);
+                    Debug.Log("resource status:" + arg2);
+                    if (arg1)
+                    {
+                        // app需要更新
+                        var info = Resource.GetAppInfo();
+                    }
+                    else if (arg2)
+                    {
+						// 资源更新
+						StartCoroutine(
+    						Resource.Update((int obj) =>
+    						{
+    							// obj是更新进度，从大到小，0更新完成
+    							Debug.Log(obj);
+    						})
+	                    );
+                    }
+                })
+			);
 		}
 
 		public static string GetVersion ()
