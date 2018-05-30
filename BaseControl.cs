@@ -42,19 +42,19 @@ namespace Gj
 
         protected byte dataCount = 255;
         public bool IsOwner
-		{
-			get
-			{
-				return true;
-			}
-		}
+        {
+            get
+            {
+                return true;
+            }
+        }
         public byte DataLength
-		{
-			get
-			{
-				return dataCount;
-			}
-		}
+        {
+            get
+            {
+                return dataCount;
+            }
+        }
 
         protected void SetEntity(string entityName)
         {
@@ -125,30 +125,9 @@ namespace Gj
             }
         }
 
-        protected virtual void InitPlayerPlugin()
-        {
+        protected virtual void InitPlugin() { }
 
-        }
-
-        protected virtual void InitOtherPlayerPlugin()
-        {
-
-        }
-
-        protected virtual void InitAiPlugin()
-        {
-
-        }
-
-        public virtual void FormatExtend(JSONObject json)
-        {
-
-        }
-
-        public virtual void FormatAi(JSONObject json)
-        {
-
-        }
+        public virtual void OnMaster() { }
 
         public virtual void Init()
         {
@@ -160,25 +139,12 @@ namespace Gj
             Info.attr = attr;
             Info.master = obj;
             Info.control = control;
-            FormatExtend(attr.extend);
-            FormatAi(attr.ai);
             SetEntity(attr.entity);
             Init();
             if (first)
             {
                 InitBase(Info.attr.baseAttr);
-                switch (control)
-                {
-                    case ObjectControl.Player:
-                        InitPlayerPlugin();
-                        break;
-                    case ObjectControl.OtherPlayer:
-                        InitOtherPlayerPlugin();
-                        break;
-                    case ObjectControl.Ai:
-                        InitAiPlugin();
-                        break;
-                }
+                InitPlugin();
                 first = false;
             }
         }
@@ -197,10 +163,7 @@ namespace Gj
             ControlService.single.DestroyControl(gameObject);
         }
 
-        public virtual void OnUpdateData(object obj)
-        {
-
-        }
+        public virtual void OnUpdateData(object obj){}
 
         protected virtual void OnUpdateData(byte index, float value)
         {
@@ -218,11 +181,16 @@ namespace Gj
             OnUpdateData(index, (float)data);
         }
 
+        public virtual void OnCommand(GamePlayer player, Dictionary<byte, object> data)
+        {
+            this.OnCommand((byte)data[0], (byte)data[1], (int)data[2]);
+        }
+
         protected virtual void OnCommand(byte type, byte category, float value)
         {
             throw new System.NotImplementedException();
         }
-        
+
         protected virtual void Command(byte type, byte category, float value)
         {
             if (Esse != null)
@@ -243,21 +211,16 @@ namespace Gj
         public virtual bool GetInfo(StreamBuffer stream)
         {
             return false;
-		}
+        }
 
-		public virtual void InitInfo(StreamBuffer stream, Vector3 position, Quaternion rotation)
+        public virtual void InitInfo(StreamBuffer stream, Vector3 position, Quaternion rotation)
         {
             throw new NotImplementedException();
         }
 
-        public virtual void OnCommand(GamePlayer player, Dictionary<byte, object> data)
-        {
-            this.OnCommand((byte)data[0], (byte)data[1], (int)data[2]);
-        }
-
         public virtual void InitSync(NetworkEsse esse)
         {
-			esse.serializeStatus = Synchronization.Fixed;
+            esse.serializeStatus = Synchronization.Fixed;
             esse.ownershipTransfer = OwnershipOption.Request;
             var transformView = gameObject.AddComponent(typeof(TransformView)) as TransformView;
             esse.BindComponent(transformView);
@@ -272,20 +235,20 @@ namespace Gj
             transformView.options.rotationSpeed = 180;
         }
 
-		public virtual void OnBelong(GameObject gameObject, NetworkEsse esse)
-		{
-			throw new NotImplementedException();
-		}
+        public virtual void OnBelong(GameObject gameObject, NetworkEsse esse)
+        {
+            throw new NotImplementedException();
+        }
 
-		public virtual void OnAssign(GamePlayer player)
-		{
-			throw new NotImplementedException();
-		}
+        public virtual void OnAssign(GamePlayer player)
+        {
+            throw new NotImplementedException();
+        }
 
-		public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
-		{
-			throw new NotImplementedException();
-		}
+        public virtual void OnOwnership(GamePlayer oldPlayer, GamePlayer newPlayer)
+        {
+            throw new NotImplementedException();
+        }
 
         public void Message(byte type)
         {

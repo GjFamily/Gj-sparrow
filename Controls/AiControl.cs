@@ -6,19 +6,35 @@ using SimpleJSON;
 
 namespace Gj
 {
+    [RequireComponent(typeof(AiPart))]
     public class AiControl : BaseControl
     {
-        public Ai ai;
+        public AiBrain aiBrain;
+        private AiPart aiPart;
+        public AiPart AiPart {
+            get {
+                if (aiPart == null) {
+                    aiPart = GetComponent<AiPart>();
+                }
+                return aiPart;
+            }
+        }
 
         public override void Init()
         {
-            Info.attr.auto = true;
             base.Init();
+            Info.attr.auto = true;
+            FormatAi(Info.attr.ai);
         }
 
-        public override void FormatAi(JSONObject json)
+        public void FormatAi(JSONObject json)
         {
-            ai = new Ai(json, Info.attr);
+            aiBrain = new AiBrain(json);
+        }
+
+        public override void OnMaster()
+        {
+            AiPart.Init(Info.attr, aiBrain, Command);
         }
 
         public override void InitSync(NetworkEsse esse)

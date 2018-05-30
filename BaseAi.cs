@@ -1,30 +1,33 @@
 ﻿using System.Collections.Generic;
 using SimpleJSON;
+using UnityEngine;
 
 namespace Gj
 {
     public static class AI
     {
         public const string MODEL_LIST = "list";
+        public const string MODEL_RADIUS = "radius";
+        public const string BEHAVIOR_LIST = "list";
         public const string BEHAVIOR_KEY = "key";
+        public const string BEHAVIOR_TIME = "time";
         public const string PREREQUISITES = "list";
         public const string PREREQUISITE_TYPE = "type";
         public const string PREREQUISITE_CATEGORY = "category";
         public const string PREREQUISITE_VALUE = "value";
     }
 
-    public class Ai
+    public class AiBrain
     {
-        public Ai(JSONObject json, ObjectAttr attr)
+        public AiBrain(JSONObject json)
         {
-            aiStatus = new AiStatus(attr);
             models = new List<AiModel>();
-            foreach (JSONArray array in json[AI.MODEL_LIST].AsArray)
+            foreach (JSONObject model in json[AI.MODEL_LIST].AsArray)
             {
-                models.Add(new AiModel(array));
+                models.Add(new AiModel(model));
             }
         }
-        public AiStatus aiStatus;
+
         public List<AiModel> models;
         private AiModelKey modelKey = AiModelKey.Standby;
 
@@ -33,12 +36,12 @@ namespace Gj
             modelKey = aiModelKey;
         }
 
-        private AiModel GetModel()
+        public AiModel GetModel()
         {
             return models[(int)modelKey];
         }
 
-        public byte CheckBehavior()
+        public AiBehavior CheckBehavior(AiStatus aiStatus)
         {
             AiBehavior? aiBehavior = null;
             List<AiBehavior> aiBehaviors = GetModel().behaviors;
@@ -67,21 +70,43 @@ namespace Gj
             {
                 aiBehavior = aiBehaviors[aiBehaviors.Count - 1];
             }
-            return aiBehavior.Value.key;
+            return aiBehavior.Value;
+        }
+
+        public AiCommand FormatCommand(AiBehavior aiBehavior) {
+            byte type = aiBehavior.key;
+            byte category = 0;
+            float vale = 0;
+            return new AiCommand(type, category, vale);
         }
     }
 
     public struct AiModel
     {
-        public AiModel(JSONArray array)
+        public AiModel(JSONObject json)
         {
             behaviors = new List<AiBehavior>();
-            foreach (JSONObject json in array)
+            foreach (JSONObject behavior in json[AI.BEHAVIOR_LIST].AsArray)
             {
-                behaviors.Add(new AiBehavior(json));
+                behaviors.Add(new AiBehavior(behavior));
             }
+            radius = json[AI.MODEL_RADIUS];
         }
         public List<AiBehavior> behaviors;
+        public float radius;
+    }
+
+    public struct AiCommand
+    {
+        public AiCommand(byte t, byte c, float v)
+        {
+            type = t;
+            category = c;
+            value = v;
+        }
+        public byte type;
+        public byte category;
+        public float value;
     }
 
     public struct AiBehavior
@@ -89,6 +114,7 @@ namespace Gj
         public AiBehavior(JSONObject json)
         {
             key = (byte)json[AI.BEHAVIOR_KEY].AsInt;
+            time = json[AI.BEHAVIOR_TIME].AsFloat;
             prerequisites = new List<List<AiPrerequisite>>();
             foreach (JSONArray array in json[AI.PREREQUISITES].AsArray)
             {
@@ -101,6 +127,7 @@ namespace Gj
             }
         }
         public byte key;
+        public float time;
         public List<List<AiPrerequisite>> prerequisites;
     }
 
@@ -123,10 +150,38 @@ namespace Gj
         {
             attr = objectAttr;
         }
+
         public ObjectAttr attr;
+        public GameObject target;
+        public GameObject nearestTarget;
+        public Dictionary<string, float> skillTime;
+        public List<GameObject> teammate;
+        public List<GameObject> enemy;
+        public List<GameObject> partner;
+        public List<GameObject> safe;
+        public List<GameObject> attack;
+        public List<GameObject> beAttack;
+        public float lastHitTime;
+        public AiBehavior? lastBehavior;
+        public float lastBehaviorTime;
+
         public bool Check(AiPrerequisite prerequisite)
         {
+            switch (prerequisite.type)
+            {
+                default:
+                    break;
+            }
             return false;
+        }
+
+        public bool IsFree() {
+            if (lastBehavior != null) {
+                if (Time.time > lastBehavior.Value.time + lastBehaviorTime) {
+                    return true;
+                }
+            }
+            return true;
         }
     }
 

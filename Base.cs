@@ -96,7 +96,6 @@ namespace Gj
         public const string BLOCK = "block";
         public const string MAGIC = "magic";
         public const string ENERGY = "energy";
-        public const string SCAN_RADIUS = "scanRadius";
         public const string EXTEND = "extend";
         public const string AI = "ai";
     }
@@ -125,7 +124,6 @@ namespace Gj
             magicTotal = json[OBJECT_ATTR.MAGIC].AsFloat;
             energy = json[OBJECT_ATTR.ENERGY].AsFloat;
             energyTotal = json[OBJECT_ATTR.ENERGY].AsFloat;
-            scanRadius = json[OBJECT_ATTR.SCAN_RADIUS].AsFloat;
             extend = json[OBJECT_ATTR.EXTEND].AsObject;
             ai = json[OBJECT_ATTR.AI].AsObject;
             statusList = new List<Status?>();
@@ -151,7 +149,6 @@ namespace Gj
         public float magicTotal;
         public float energy;
         public float energyTotal;
-        public float scanRadius;
         public List<Status?> statusList;
         public JSONObject extend;
         public JSONObject ai;

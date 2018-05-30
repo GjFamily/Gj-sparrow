@@ -5,6 +5,24 @@ namespace Gj
 {
     public class PlayerControl : BaseControl
     {
+
+        protected override void InitPlugin()
+        {
+            switch (Info.control)
+            {
+                case ObjectControl.Player:
+                    InitPlayerPlugin();
+                    break;
+                case ObjectControl.OtherPlayer:
+                    InitOtherPlayerPlugin();
+                    break;
+            }
+        }
+
+        protected virtual void InitPlayerPlugin() { }
+
+        protected virtual void InitOtherPlayerPlugin() { }
+
         public virtual void LeftRockerEnter(int key) { }
 
         public virtual void LeftRocker(float angle, float h, float v) { }
